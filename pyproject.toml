@@ -1,0 +1,45 @@
+[project]
+name = "gcp-skills"
+version = "1.0.0"
+description = "Google Cloud Platform operational Agent Skills — CLI-first with JIT Python/Go SDK fallback"
+readme = "README.md"
+license = {text = "MIT"}
+dependencies = [
+    "markdownlint-cli2>=0.17.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.uv]
+python-version = "3.10"
+
+[project.optional-dependencies]
+dev = [
+    "ruff>=0.5.0",
+    "pytest>=8.0",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["gcp-gcl-runner-ops/scripts"]
+python_files = ["test_*.py"]
+addopts = "-v --tb=short --strict-markers"
+
+[tool.ruff]
+target-version = "py311"
+line-length = 120
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W", "UP"]
+ignore = [
+    "N802", "N803", "N806", "N815", "N816",  # 允许产品API名含大写 (DeleteInstance等)
+]
+
+[tool.ruff.lint.per-file-ignores]
+"gcp-gcl-runner-ops/scripts/gcl_runner.py" = ["E501"]  # 允许长命令行长
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "lf"

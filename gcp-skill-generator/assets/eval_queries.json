@@ -1,0 +1,22 @@
+[
+  { "query": "Generate a skill for Google Cloud Compute Engine instances", "should_trigger": true },
+  { "query": "生成 Google Cloud SQL 的运维技能", "should_trigger": true },
+  { "query": "I need a new gcp-gke-ops skill from gcloud reference", "should_trigger": true },
+  { "query": "Add an ops skill for Cloud Storage in this repo: buckets, objects, lifecycle", "should_trigger": true },
+  { "query": "Create gcp-vpc-ops for VPC, subnets, firewall rules management", "should_trigger": true },
+  { "query": "Scaffold a skill for GKE cluster lifecycle, the docs are at cloud.google.com/kubernetes-engine", "should_trigger": true },
+  { "query": "Regenerate the GCE skill — gcloud API changed and we have gaps in the current version", "should_trigger": true },
+  { "query": "The Cloud SQL skill is missing backup operations, please add them", "should_trigger": true },
+  { "query": "Add a new skill for Google Cloud Run services", "should_trigger": true },
+  { "query": "The GCP skill for BigQuery needs an update after the latest API changes", "should_trigger": true },
+  { "query": "Create a Compute Engine instance in us-central1-a", "should_trigger": false },
+  { "query": "How much does my GCP project cost this month?", "should_trigger": false },
+  { "query": "My Cloud SQL instance is showing high CPU, help me investigate", "should_trigger": false },
+  { "query": "List all running GKE clusters in production", "should_trigger": false },
+  { "query": "Add an IAM policy binding allowing read-only access to a bucket", "should_trigger": false },
+  { "query": "Set up a Cloud Monitoring alert for high CPU on compute instances", "should_trigger": false },
+  { "query": "What's the best practice for GCP VPC design?", "should_trigger": false },
+  { "query": "Delete the GCE instance my-instance in us-central1-a", "should_trigger": false },
+  { "query": "Configure auto-scaling for my GKE cluster based on CPU utilization", "should_trigger": false },
+  { "query": "Run a slow query analysis on my Cloud SQL database", "should_trigger": false }
+]

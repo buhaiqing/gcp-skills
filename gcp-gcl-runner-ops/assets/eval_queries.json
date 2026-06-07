@@ -1,0 +1,12 @@
+[
+  { "query": "Run GCL on the DeleteInstance command for GCE", "should_trigger": true },
+  { "query": "Delegate GCL quality gate to gcp-gcl-runner-ops before deleting the Cloud SQL instance", "should_trigger": true },
+  { "query": "Need to run Generator-Critic-Loop on this gcloud command", "should_trigger": true },
+  { "query": "Validate the production change with GCL before executing", "should_trigger": true },
+  { "query": "Run GCL on gcp-gke-ops delete cluster command", "should_trigger": true },
+  { "query": "Describe the GCE instance in us-central1-a", "should_trigger": false },
+  { "query": "List all GKE clusters in my project", "should_trigger": false },
+  { "query": "What's the cost of my current GCP resources?", "should_trigger": false },
+  { "query": "Set up monitoring alert for instance", "should_trigger": false },
+  { "query": "Give me IAM permissions for this project", "should_trigger": false }
+]
