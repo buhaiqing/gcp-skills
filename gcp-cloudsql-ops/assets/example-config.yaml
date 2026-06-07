@@ -1,0 +1,82 @@
+x-common: &common
+  project: "my-project"
+  region: "us-central1"
+  database_version: "MYSQL_8_0"
+  tier: "db-n1-standard-2"
+  storage_size: 100
+  storage_type: "SSD"
+  backup_start_time: "03:00"
+  network: "default"
+
+dev:
+  <<: *common
+  name: "dev-web-mysql-01"
+  database_version: "MYSQL_8_0"
+  tier: "db-f1-micro"
+  storage_size: 20
+  labels:
+    env: dev
+    app: web
+    db: mysql
+
+staging:
+  <<: *common
+  name: "staging-web-pg-01"
+  database_version: "POSTGRES_15"
+  tier: "db-n1-standard-2"
+  storage_size: 50
+  availability_type: "REGIONAL"
+  enable_point_in_time_recovery: true
+  labels:
+    env: staging
+    app: web
+    db: postgres
+
+prod:
+  <<: *common
+  name: "prod-web-mysql-01"
+  database_version: "MYSQL_8_0"
+  tier: "db-n1-standard-4"
+  storage_size: 500
+  storage_type: "SSD"
+  availability_type: "REGIONAL"
+  backup_start_time: "02:00"
+  enable_point_in_time_recovery: true
+  deletion_protection: true
+  require_ssl: true
+  authorized_networks:
+    - "10.0.0.0/8"
+    - "172.16.0.0/12"
+  labels:
+    env: prod
+    app: web
+    db: mysql
+    criticality: high
+
+prod-replica:
+  <<: *common
+  name: "prod-web-mysql-replica-01"
+  region: "us-east1"
+  master_instance_name: "prod-web-mysql-01"
+  tier: "db-n1-standard-2"
+  labels:
+    env: prod
+    app: web
+    db: mysql
+    type: replica
+
+prod-read-replicas:
+  <<: *common
+  name: "prod-web-pg-01"
+  database_version: "POSTGRES_16"
+  tier: "db-n1-standard-4"
+  storage_size: 500
+  availability_type: "REGIONAL"
+  flags:
+    cloudsql.iam_authentication: "on"
+    max_connections: "500"
+    work_mem: "8192"
+  labels:
+    env: prod
+    app: web
+    db: postgres

@@ -1,0 +1,91 @@
+x-common: &common
+  project: "my-project"
+  location: "us-central1"
+  region: "us-central1"
+  network: "default"
+  subnetwork: "default"
+  cluster_ipv4_cidr: "/14"
+  services_ipv4_cidr: "/20"
+  node_disk_size_gb: 100
+  node_disk_type: "pd-balanced"
+  release_channel: "regular"
+
+dev:
+  <<: *common
+  name: "dev-web-cluster"
+  location: "us-central1-a"
+  zone: "us-central1-a"
+  node_count: 1
+  machine_type: "e2-small"
+  node_pool_name: "dev-web-pool"
+  labels:
+    env: dev
+    app: web
+  workload_pool_enabled: false
+
+staging:
+  <<: *common
+  name: "staging-web-cluster"
+  node_count: 3
+  machine_type: "e2-standard-2"
+  node_pool_name: "staging-web-pool"
+  min_nodes: 1
+  max_nodes: 5
+  labels:
+    env: staging
+    app: web
+
+prod:
+  <<: *common
+  name: "prod-web-cluster"
+  region: "us-central1"
+  node_count: 3
+  machine_type: "n2-standard-4"
+  node_pool_name: "prod-web-pool"
+  min_nodes: 3
+  max_nodes: 20
+  disk_size_gb: 200
+  disk_type: "pd-ssd"
+  release_channel: "stable"
+  labels:
+    env: prod
+    app: web
+    team: platform
+
+prod-gpu-pool:
+  <<: *common
+  name: "prod-gpu-pool"
+  cluster_name: "prod-web-cluster"
+  location: "us-central1"
+  node_count: 1
+  machine_type: "g2-standard-4"
+  accelerator: "nvidia-l4"
+  disk_size_gb: 200
+  spot: false
+  node_taints:
+    - key: "dedicated"
+      value: "gpu"
+      effect: "NoSchedule"
+  node_labels:
+    workload: "ml-inference"
+    env: prod
+
+prod-spot-pool:
+  <<: *common
+  name: "prod-spot-pool"
+  cluster_name: "prod-web-cluster"
+  location: "us-central1"
+  node_count: 5
+  machine_type: "c2-standard-8"
+  spot: true
+  min_nodes: 0
+  max_nodes: 50
+  node_labels:
+    workload: "batch"
+    env: prod
+
+autopilot-dev:
+  <<: *common
+  name: "dev-autopilot-cluster"
+  location: "us-central1"
+  release_channel: "regular"

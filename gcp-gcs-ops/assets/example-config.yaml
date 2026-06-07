@@ -1,0 +1,67 @@
+x-common: &common
+  project: "my-gcp-project"
+  location: "US"
+  storage_class: "STANDARD"
+  uniform_bucket_level_access: true
+  public_access_prevention: "enforced"
+  soft_delete_duration: 604800
+
+dev:
+  <<: *common
+  name: "my-project-dev-assets"
+  labels:
+    env: dev
+    app: assets
+
+staging:
+  <<: *common
+  name: "my-project-staging-assets"
+  location: "US-EAST1"
+  storage_class: "NEARLINE"
+  labels:
+    env: staging
+    app: assets
+  lifecycle:
+    rule:
+      - action:
+          type: "Delete"
+        condition:
+          age: 365
+
+prod:
+  <<: *common
+  name: "my-project-prod-assets"
+  location: "US"
+  storage_class: "STANDARD"
+  versioning:
+    enabled: true
+  autoclass:
+    enabled: true
+  retention_policy:
+    retention_period: 86400
+  labels:
+    env: prod
+    app: assets
+  cors:
+    - origin: ["https://example.com"]
+      method: ["GET", "HEAD"]
+      responseHeader: ["Content-Type"]
+      maxAgeSeconds: 3600
+
+prod-compliant:
+  <<: *common
+  name: "my-project-prod-compliance"
+  location: "US"
+  retention_policy:
+    retention_period: 31536000
+  labels:
+    env: prod
+    app: compliance
+  iam:
+    bindings:
+      - role: "roles/storage.objectViewer"
+        members:
+          - "group:auditors@example.com"
+      - role: "roles/storage.objectAdmin"
+        members:
+          - "user:admin@example.com"
