@@ -1,0 +1,22 @@
+[
+  {"query": "create a VM in us-central1-a", "should_trigger": true},
+  {"query": "my instance won't start, help me debug", "should_trigger": true},
+  {"query": "resize my disk from 20GB to 50GB", "should_trigger": true},
+  {"query": "snapshot my boot disk", "should_trigger": true},
+  {"query": "SSH into my-instance", "should_trigger": true},
+  {"query": "create a managed instance group with autoscaling", "should_trigger": true},
+  {"query": "list all running instances", "should_trigger": true},
+  {"query": "my disk is full, what do I do?", "should_trigger": true},
+  {"query": "create a machine image from my-prod-vm", "should_trigger": true},
+  {"query": "scale up my instance group to 5 replicas", "should_trigger": true},
+  {"query": "create a load balancer for my instances", "should_trigger": false},
+  {"query": "set up a VPC with subnets", "should_trigger": false},
+  {"query": "how much does my GCP project cost?", "should_trigger": false},
+  {"query": "create a GKE cluster", "should_trigger": false},
+  {"query": "add a DNS A record for my domain", "should_trigger": false},
+  {"query": "create a Cloud SQL instance", "should_trigger": false},
+  {"query": "deploy a service to Cloud Run", "should_trigger": false},
+  {"query": "create an IAM policy binding", "should_trigger": false},
+  {"query": "create a monitoring alert for CPU", "should_trigger": false},
+  {"query": "set up a VPN tunnel to on-premises", "should_trigger": false}
+]
