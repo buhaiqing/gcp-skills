@@ -1,0 +1,97 @@
+# VPC Network Configuration Examples
+
+> YAML anchors used for token efficiency (TE-5).
+
+x-prod: &prod
+  project: "my-prod-project"
+  region: "us-central1"
+  network: "prod-vpc"
+
+x-staging: &staging
+  project: "my-staging-project"
+  region: "us-central1"
+  network: "staging-vpc"
+
+x-subnet-defaults: &subnet-defaults
+  privateIpGoogleAccess: true
+  enableFlowLogs: true
+  flowLogs:
+    aggregationInterval: INTERVAL_5_SEC
+    flowSampling: 0.5
+    metadata: INCLUDE_ALL_METADATA
+
+x-firewall-common: &firewall-common
+  direction: INGRESS
+  priority: 1000
+  network: *prod.network
+
+---
+# Example 1: Production VPC with subnets
+networks:
+  - name: "prod-vpc"
+    <<: *prod
+    subnetMode: "custom"
+    routingMode: "GLOBAL"
+
+subnets:
+  - name: "prod-web-subnet"
+    <<: *prod
+    <<: *subnet-defaults
+    ipCidrRange: "10.0.1.0/24"
+    description: "Web tier subnet"
+
+  - name: "prod-api-subnet"
+    <<: *prod
+    <<: *subnet-defaults
+    ipCidrRange: "10.0.2.0/24"
+    description: "API tier subnet"
+
+  - name: "prod-db-subnet"
+    <<: *prod
+    <<: *subnet-defaults
+    ipCidrRange: "10.0.3.0/24"
+    privateIpGoogleAccess: true
+    description: "Database tier subnet"
+
+# Example 2: Firewall rules
+firewallRules:
+  - name: "allow-web-ingress"
+    <<: *firewall-common
+    sourceRanges: ["0.0.0.0/0"]
+    allowed:
+      - IPProtocol: tcp
+        ports: ["80", "443"]
+    targetTags: ["web-server"]
+
+  - name: "allow-health-checks"
+    <<: *firewall-common
+    sourceRanges: ["35.191.0.0/16", "130.211.0.0/22"]
+    allowed:
+      - IPProtocol: tcp
+        ports: ["80", "443"]
+    targetTags: ["web-server"]
+
+  - name: "allow-ssh-admin"
+    <<: *firewall-common
+    sourceRanges: ["10.0.0.0/8"]
+    allowed:
+      - IPProtocol: tcp
+        ports: ["22"]
+    targetTags: ["bastion"]
+
+# Example 3: Cloud NAT
+natGateways:
+  - name: "prod-nat"
+    <<: *prod
+    router: "prod-router"
+    natAllocateOption: "AUTO_ONLY"
+    sourceSubnetIpRanges: "ALL_SUBNETWORKS_ALL_IP_RANGES"
+
+# Example 4: VPC Peering
+peerings:
+  - name: "prod-to-shared"
+    <<: *prod
+    peerProject: "shared-services-project"
+    peerNetwork: "shared-vpc"
+    exportCustomRoutes: true
+    importCustomRoutes: true
