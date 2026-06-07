@@ -41,7 +41,10 @@ go get google.golang.org/api/option
 package main
 
 import (
-    "context" "fmt" "log" "os"
+    "context"
+    "fmt"
+    "log"
+    "os"
     kms "cloud.google.com/go/kms/apiv1"
     "cloud.google.com/go/kms/apiv1/kmspb"
     "google.golang.org/api/option"

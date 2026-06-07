@@ -83,13 +83,15 @@ gcp-[product]-ops/
 |----------------|---------|:----:|
 | [`gcp-gce-ops`](gcp-gce-ops/SKILL.md) | Compute Engine（虚拟机实例、磁盘、快照、MIG） | ✅ 已发布 |
 | [`gcp-lb-ops`](gcp-lb-ops/SKILL.md) | Cloud Load Balancing（转发规则、后端服务、URL 映射、NEG、SSL 证书） | ✅ 已发布 |
+| [`gcp-logging-ops`](gcp-logging-ops/SKILL.md) | Cloud Logging（日志存储桶、视图、接收器、指标、排除规则） | ✅ 已发布 |
+| [`gcp-kms-ops`](gcp-kms-ops/SKILL.md) | Cloud KMS（密钥环、加密密钥、密钥版本、加密/解密） | ✅ 已发布 |
+| [`gcp-memorystore-ops`](gcp-memorystore-ops/SKILL.md) | Memorystore for Redis（实例、扩容、导出/导入、故障转移） | ✅ 已发布 |
 | `gcp-vpc-ops` | VPC（网络、子网、防火墙规则、VPN、Cloud NAT） | 开发中 |
 | `gcp-gke-ops` | Google Kubernetes Engine | 规划中 |
 | `gcp-cloudsql-ops` | Cloud SQL | 规划中 |
 | `gcp-gcs-ops` | Cloud Storage | 规划中 |
 | `gcp-iam-ops` | IAM | 规划中 |
 | `gcp-dns-ops` | Cloud DNS | 规划中 |
-| ... | ... | ... |
 
 完整路线图请参见 [AGENTS.md 附录 A](AGENTS.md#appendix-a-gcp-product--directory-mapping-planned)。
 

@@ -265,6 +265,11 @@ gcloud logging tail \
 
 #### Execution — Python SDK (Primary Fallback)
 
+> **API level note:** This skill uses two Python client levels:
+> - `google.cloud.logging.Client` (high-level) — simpler API for log entries, sinks, and metrics
+> - `google.cloud.logging_v2.ConfigClientV2` (low-level gapic) — full control for bucket and view operations
+> Both are from the same `google-cloud-logging` package; choose the level that matches your operation.
+
 ```python
 # list_log_entries.py
 import os
@@ -289,7 +294,10 @@ python3 list_log_entries.py
 package main
 
 import (
-    "context" "fmt" "log" "os"
+    "context"
+    "fmt"
+    "log"
+    "os"
     "google.golang.org/api/option"
     logging "cloud.google.com/go/logging/apiv2"
     loggingpb "cloud.google.com/go/logging/apiv2/loggingpb"
@@ -444,6 +452,56 @@ gcloud logging buckets describe "{{user.log_bucket_name}}" --location="{{user.re
 
 ---
 
+### Operation: Create Log View
+
+#### Pre-flight Checks
+
+| Check | Method | Expected | On Failure |
+|-------|--------|----------|------------|
+| Bucket exists | Describe bucket | Exit 0 | HALT — create bucket first |
+| View name unique | `gcloud logging views describe "{{user.log_view_name}}" --bucket="{{user.log_bucket_name}}" --location="{{user.region}}" --quiet` | NOT_FOUND | HALT — name in use |
+
+#### Execution — CLI (`gcloud`)
+
+```bash
+gcloud logging views create "{{user.log_view_name}}" \
+  --bucket="{{user.log_bucket_name}}" \
+  --location="{{user.region:-global}}" \
+  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
+  --log-filter="{{user.filter_query}}" \
+  --description="{{user.description}}" \
+  --format="json"
+```
+
+#### Post-execution Validation
+
+```bash
+gcloud logging views describe "{{user.log_view_name}}" \
+  --bucket="{{user.log_bucket_name}}" \
+  --location="{{user.region:-global}}" \
+  --format="json" | jq '{name, filter, description}'
+```
+
+---
+
+### Operation: Delete Log View
+
+#### Pre-flight (Safety Gate)
+
+- **MUST** obtain explicit user confirmation: deletion of view `{{user.log_view_name}}`
+
+#### Execution — CLI (`gcloud`)
+
+```bash
+gcloud logging views delete "{{user.log_view_name}}" \
+  --bucket="{{user.log_bucket_name}}" \
+  --location="{{user.region:-global}}" \
+  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
+  --format="json"
+```
+
+---
+
 ### Operation: Delete Log Bucket
 
 #### Pre-flight (Safety Gate)
@@ -472,6 +530,19 @@ gcloud logging buckets delete "{{user.log_bucket_name}}" \
 ```
 
 **Never use `--quiet` to bypass this safety gate.**
+
+#### Execution — Python SDK (Primary Fallback)
+
+```python
+# delete_log_bucket.py
+import os
+from google.cloud import logging_v2
+client = logging_v2.ConfigClientV2()
+name = f"projects/{os.environ['CLOUDSDK_CORE_PROJECT']}/locations/{os.environ.get('LOGGING_LOCATION','global')}/buckets/{{user.log_bucket_name}}"
+request = logging_v2.DeleteBucketRequest(name=name)
+client.delete_bucket(request=request)
+print(f"Deleted bucket: {{user.log_bucket_name}}")
+```
 
 #### Post-execution Validation
 
@@ -650,6 +721,51 @@ gcloud logging metrics describe "{{user.metric_name}}" \
 
 ```bash
 gcloud logging metrics delete "{{user.metric_name}}" \
+  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
+  --format="json"
+```
+
+---
+
+### Operation: Create Log Exclusion
+
+#### Pre-flight Checks
+
+| Check | Method | Expected | On Failure |
+|-------|--------|----------|------------|
+| Exclusion name unique | `gcloud logging exclusions describe "{{user.exclusion_name}}" --quiet` | NOT_FOUND | HALT — name in use |
+| Filter valid | Validate filter syntax | Pass | Fix expression |
+
+#### Execution — CLI (`gcloud`)
+
+```bash
+gcloud logging exclusions create "{{user.exclusion_name}}" \
+  --log-filter="{{user.filter_query}}" \
+  --description="{{user.description}}" \
+  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
+  --format="json"
+```
+
+#### Post-execution Validation
+
+```bash
+gcloud logging exclusions describe "{{user.exclusion_name}}" \
+  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
+  --format="json" | jq '{name, filter, description, createTime}'
+```
+
+---
+
+### Operation: Delete Log Exclusion
+
+#### Pre-flight (Safety Gate)
+
+- **MUST** obtain explicit user confirmation: deletion of exclusion `{{user.exclusion_name}}`
+
+#### Execution — CLI (`gcloud`)
+
+```bash
+gcloud logging exclusions delete "{{user.exclusion_name}}" \
   --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
   --format="json"
 ```
