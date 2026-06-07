@@ -83,13 +83,15 @@ gcp-[product]-ops/
 |----------------|---------|--------|
 | [`gcp-gce-ops`](gcp-gce-ops/SKILL.md) | Compute Engine (VM instances, disks, snapshots, MIGs) | ✅ Released |
 | [`gcp-lb-ops`](gcp-lb-ops/SKILL.md) | Cloud Load Balancing (forwarding rules, backend services, URL maps, NEGs, SSL certs) | ✅ Released |
+| [`gcp-logging-ops`](gcp-logging-ops/SKILL.md) | Cloud Logging (log buckets, views, sinks, metrics, exclusions) | ✅ Released |
+| [`gcp-kms-ops`](gcp-kms-ops/SKILL.md) | Cloud KMS (key rings, crypto keys, versions, encrypt/decrypt) | ✅ Released |
+| [`gcp-memorystore-ops`](gcp-memorystore-ops/SKILL.md) | Memorystore for Redis (instances, scaling, export/import, failover) | ✅ Released |
 | `gcp-vpc-ops` | VPC (networks, subnets, firewall rules, VPN, Cloud NAT) | In development |
 | `gcp-gke-ops` | Google Kubernetes Engine | Planned |
 | `gcp-cloudsql-ops` | Cloud SQL | Planned |
 | `gcp-gcs-ops` | Cloud Storage | Planned |
 | `gcp-iam-ops` | IAM | Planned |
 | `gcp-dns-ops` | Cloud DNS | Planned |
-| ... | ... | ... |
 
 See [AGENTS.md Appendix A](AGENTS.md#appendix-a-gcp-product--directory-mapping-planned) for the full roadmap.
 

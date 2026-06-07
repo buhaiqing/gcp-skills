@@ -41,7 +41,10 @@ go get google.golang.org/api/option
 package main
 
 import (
-    "context" "fmt" "log" "os"
+    "context"
+    "fmt"
+    "log"
+    "os"
     "google.golang.org/api/option"
     logging "cloud.google.com/go/logging/apiv2"
     loggingpb "cloud.google.com/go/logging/apiv2/loggingpb"

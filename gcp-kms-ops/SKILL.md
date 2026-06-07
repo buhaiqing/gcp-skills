@@ -239,7 +239,7 @@ Every operation: **Pre-flight → Execute (gcloud + SDK/API) → Validate → Re
 | Credentials | `gcloud auth print-access-token` | Token returned | HALT — authenticate |
 | Project | `gcloud config get-value project` | Set and valid | HALT — set project |
 | KMS API | `gcloud services list --enabled | grep cloudkms.googleapis.com` | Enabled | HALT — enable `cloudkms.googleapis.com` |
-| Key ring name | Check uniqueness | NOT_FOUND | HALT — name in use |
+| Key ring name unique | `gcloud kms keyrings describe "{{user.keyring_name}}" --location="{{user.location:-global}}" --quiet` | NOT_FOUND (exit != 0) | HALT — name in use |
 
 #### Execution — CLI (`gcloud`) (Primary Path)
 
@@ -268,7 +268,10 @@ print(f"Created key ring: {response.name}")
 ```go
 package main
 import (
-    "context" "fmt" "log" "os"
+    "context"
+    "fmt"
+    "log"
+    "os"
     kms "cloud.google.com/go/kms/apiv1"
     "cloud.google.com/go/kms/apiv1/kmspb"
     "google.golang.org/api/option"

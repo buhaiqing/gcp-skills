@@ -41,7 +41,10 @@ go get google.golang.org/api/option
 package main
 
 import (
-    "context" "fmt" "log" "os"
+    "context"
+    "fmt"
+    "log"
+    "os"
     redis "cloud.google.com/go/redis/apiv1"
     "cloud.google.com/go/redis/apiv1/redispb"
     "google.golang.org/api/option"

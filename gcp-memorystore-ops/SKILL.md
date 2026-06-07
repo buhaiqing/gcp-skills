@@ -308,7 +308,10 @@ print(f"Created: {response.host}:{response.port}")
 ```go
 package main
 import (
-    "context" "fmt" "log" "os"
+    "context"
+    "fmt"
+    "log"
+    "os"
     redis "cloud.google.com/go/redis/apiv1"
     "cloud.google.com/go/redis/apiv1/redispb"
     "google.golang.org/api/option"
@@ -316,15 +319,16 @@ import (
 func main() {
     ctx := context.Background()
     project := os.Getenv("CLOUDSDK_CORE_PROJECT")
+    region := os.Getenv("REDIS_REGION")
+    if region == "" { region = "us-central1" }
     client, err := redis.NewCloudRedisClient(ctx,
         option.WithCredentialsFile(os.Getenv("GOOGLE_APPLICATION_CREDENTIALS")))
     if err != nil { log.Fatalf("NewClient: %v", err) }
     defer client.Close()
     req := &redispb.CreateInstanceRequest{
-        Parent:     fmt.Sprintf("projects/%s/locations/us-central1", project),
+        Parent:     fmt.Sprintf("projects/%s/locations/%s", project, region),
         InstanceId: "{{user.instance_name}}",
         Instance: &redispb.Instance{
-            Name:          "{{user.instance_name}}",
             MemorySizeGb:  1,
             Tier:          redispb.Instance_BASIC,
             RedisVersion:  "redis_7_0",
@@ -516,6 +520,33 @@ gcloud redis instances import "{{user.instance_name}}" \
   --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
   "{{user.export_gcs_uri}}" \
   --format="json"
+```
+
+---
+
+### Operation: Trigger HA Failover
+
+#### Pre-flight Checks
+
+| Check | Method | Expected | On Failure |
+|-------|--------|----------|------------|
+| Instance is STANDARD_HA | `gcloud redis instances describe "{{user.instance_name}}" --region="{{user.region}}" --format=json \| jq -r '.tier'` | STANDARD_HA | HALT — basic tier has no failover |
+| Instance is READY | Describe | State = READY | HALT — instance not available |
+
+#### Execution — CLI (`gcloud`)
+
+```bash
+gcloud redis instances failover "{{user.instance_name}}" \
+  --region="{{user.region:-us-central1}}" \
+  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
+  --format="json"
+```
+
+#### Post-execution Validation
+
+```bash
+gcloud redis instances describe "{{user.instance_name}}" \
+  --region="{{user.region}}" --format="json" | jq '{host, port, state, currentLocationId}'
 ```
 
 ---
