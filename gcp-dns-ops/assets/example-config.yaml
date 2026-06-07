@@ -1,0 +1,70 @@
+# Cloud DNS Example Configuration
+# Use YAML anchors to eliminate duplication (TE-5)
+
+defaults: &defaults
+  project: "{{env.CLOUDSDK_CORE_PROJECT}}"
+  visibility: public
+  ttl: 300
+
+zones:
+  production:
+    name: prod-zone
+    dns_name: example.com.
+    description: Production DNS zone
+    <<: *defaults
+    dnssec:
+      state: "on"
+
+  staging:
+    name: staging-zone
+    dns_name: staging.example.com.
+    description: Staging DNS zone
+    <<: *defaults
+    dnssec:
+      state: "off"
+
+  private:
+    name: internal-zone
+    dns_name: internal.example.com.
+    description: Private DNS zone for internal services
+    visibility: private
+    networks:
+      - network: production-vpc
+        project: "{{env.CLOUDSDK_CORE_PROJECT}}"
+
+record_sets:
+  www:
+    name: "www.example.com."
+    type: A
+    ttl: 300
+    data:
+      - "192.0.2.1"
+
+  api:
+    name: "api.example.com."
+    type: A
+    ttl: 300
+    data:
+      - "192.0.2.2"
+
+  mail:
+    name: "example.com."
+    type: MX
+    ttl: 3600
+    data:
+      - "10 mail.example.com."
+      - "20 mail-backup.example.com."
+
+  spf:
+    name: "example.com."
+    type: TXT
+    ttl: 3600
+    data:
+      - '"v=spf1 include:_spf.google.com ~all"'
+
+  wildcard:
+    name: "*.example.com."
+    type: CNAME
+    ttl: 300
+    data:
+      - "www.example.com."

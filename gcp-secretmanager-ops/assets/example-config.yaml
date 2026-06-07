@@ -1,0 +1,76 @@
+# Example Configuration — Cloud Secret Manager
+
+## Secret Organization with Labels
+
+```yaml
+# example-config.yaml
+secrets:
+  &defaults  # YAML anchor for common properties
+    project: my-project
+    replication: automatic
+    labels:
+      managed_by: automation
+      env: prod
+
+  api_keys:
+    - name: &api_key_name prod-payment-api-key
+      <<: *defaults
+      labels:
+        <<: *defaults.labels
+        service: payment
+        type: api_key
+      rotation:
+        period: 30d
+      topics:
+        - projects/my-project/topics/secret-rotation-alerts
+
+  database:
+    - name: &db_password prod-postgres-password
+      <<: *defaults
+      labels:
+        <<: *defaults.labels
+        service: postgres
+        type: database_credential
+      rotation:
+        period: 90d
+      topics:
+        - projects/my-project/topics/secret-rotation-alerts
+
+  certificates:
+    - name: &tls_cert prod-tls-certificate
+      <<: *defaults
+      labels:
+        <<: *defaults.labels
+        service: ingress
+        type: tls_certificate
+      rotation:
+        period: 365d
+```
+
+## User-Managed Replication Example
+
+```yaml
+user_managed_secrets:
+  - name: eu-compliant-secret
+    project: my-project
+    replication: user-managed
+    locations:
+      - europe-west1
+      - europe-west2
+    labels:
+      compliance: gdpr
+      data_residency: eu
+```
+
+## IAM Policy Template
+
+```yaml
+iam_policy:
+  bindings:
+    - role: roles/secretmanager.secretAccessor
+      members:
+        - serviceAccount:app-sa@my-project.iam.gserviceaccount.com
+    - role: roles/secretmanager.admin
+      members:
+        - group:secret-managers@my-domain.com
+```
