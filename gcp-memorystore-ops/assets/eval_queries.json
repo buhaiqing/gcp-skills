@@ -1,0 +1,22 @@
+[
+  { "query": "Help me set up Memorystore for Redis caching", "should_trigger": true },
+  { "query": "创建 Cloud Memorystore 的 Redis 实例", "should_trigger": true },
+  { "query": "I need a new gcp-memorystore-ops skill for Redis management", "should_trigger": true },
+  { "query": "Add ops skill for Cloud Memorystore: Redis create, describe, delete, scale", "should_trigger": true },
+  { "query": "Create gcp-memorystore-ops for Redis instance lifecycle and backup", "should_trigger": true },
+  { "query": "Scaffold a skill for Cloud Memorystore Redis, docs at cloud.google.com/memorystore", "should_trigger": true },
+  { "query": "Regenerate the Memorystore skill — gcloud API changed and we have gaps", "should_trigger": true },
+  { "query": "The Cloud Memorystore skill is missing export/import operations", "should_trigger": true },
+  { "query": "Add a new skill for Google Cloud Memorystore Redis management", "should_trigger": true },
+  { "query": "The GCP skill for Memorystore Redis needs an update after latest API changes", "should_trigger": true },
+  { "query": "Create a Redis cache for my application session storage", "should_trigger": false },
+  { "query": "How much does Memorystore Redis cost per GB?", "should_trigger": false },
+  { "query": "My Redis instance is showing high memory usage", "should_trigger": false },
+  { "query": "Connect to Redis instance my-cache from a Compute Engine VM", "should_trigger": false },
+  { "query": "Scale up Redis instance from 2GB to 4GB", "should_trigger": false },
+  { "query": "What's the best practice for Redis replication in GCP?", "should_trigger": false },
+  { "query": "Delete Redis instance prod-cache in us-central1", "should_trigger": false },
+  { "query": "Export Redis instance data to Cloud Storage bucket", "should_trigger": false },
+  { "query": "Configure auth string for Redis connections", "should_trigger": false },
+  { "query": "Create a Cloud Monitoring alert for Redis memory usage > 85%", "should_trigger": false }
+]

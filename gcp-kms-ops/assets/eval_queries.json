@@ -1,0 +1,22 @@
+[
+  { "query": "Help me set up Cloud KMS for key management — key rings and crypto keys", "should_trigger": true },
+  { "query": "创建 Cloud KMS 的 key ring 和 encryption key", "should_trigger": true },
+  { "query": "I need a new gcp-kms-ops skill for cryptographic key management", "should_trigger": true },
+  { "query": "Add ops skill for Cloud KMS: key rings, keys, versions, encrypt, decrypt", "should_trigger": true },
+  { "query": "Create gcp-kms-ops for key rotation and encryption/decryption operations", "should_trigger": true },
+  { "query": "Scaffold a skill for Cloud KMS, the docs are at cloud.google.com/kms", "should_trigger": true },
+  { "query": "Regenerate the KMS skill — gcloud API changed and we have gaps", "should_trigger": true },
+  { "query": "The Cloud KMS skill is missing key version operations like enable/disable", "should_trigger": true },
+  { "query": "Add a new skill for Google Cloud KMS key management", "should_trigger": true },
+  { "query": "The GCP skill for Cloud KMS needs an update after the latest API changes", "should_trigger": true },
+  { "query": "Create a symmetric encryption key for a Cloud Storage CMEK integration", "should_trigger": false },
+  { "query": "How much does my KMS key management cost this month?", "should_trigger": false },
+  { "query": "My Cloud SQL instance is showing high CPU, help me investigate", "should_trigger": false },
+  { "query": "Encrypt a file using the key my-key in keyring my-keyring", "should_trigger": false },
+  { "query": "Decrypt a file using the primary key version of my-app-key", "should_trigger": false },
+  { "query": "What's the best practice for Cloud KMS key rotation?", "should_trigger": false },
+  { "query": "Destroy key version 3 of my-app-key in keyring production-keys", "should_trigger": false },
+  { "query": "Configure HSM protection level for a new crypto key", "should_trigger": false },
+  { "query": "Grant encrypt/decrypt permission on my-app-key to a service account", "should_trigger": false },
+  { "query": "Rotate the primary key version for my-encryption-key", "should_trigger": false }
+]

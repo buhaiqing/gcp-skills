@@ -1,0 +1,29 @@
+kms_defaults: &kms_defaults
+  location: global
+  protection_level: software
+
+kms_prod_keys:
+  <<: *kms_defaults
+  location: us-central1
+  protection_level: hsm
+  purpose: encryption
+  rotation_period: 7776000s  # 90 days
+
+kms_dev_keys:
+  <<: *kms_defaults
+  location: global
+  purpose: encryption
+  rotation_period: ""
+
+keyring_defaults: &keyring_defaults
+  project: &project "{{env.CLOUDSDK_CORE_PROJECT}}"
+
+prod_keyring:
+  <<: *keyring_defaults
+  name: "prod-keys"
+  location: us-central1
+
+dev_keyring:
+  <<: *keyring_defaults
+  name: "dev-keys"
+  location: global

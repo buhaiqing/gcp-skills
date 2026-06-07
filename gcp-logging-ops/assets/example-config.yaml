@@ -1,0 +1,35 @@
+logging_defaults: &logging_defaults
+  retention_days: 30
+  location: global
+
+logging_prod:
+  <<: *logging_defaults
+  retention_days: 365
+  location: global
+  cmek_enabled: true
+  description: "Production log bucket for compliance"
+
+logging_dev:
+  <<: *logging_defaults
+  retention_days: 7
+  location: global
+  description: "Development log bucket"
+
+sink_defaults: &sink_defaults
+  project: &project "{{env.CLOUDSDK_CORE_PROJECT}}"
+  include_children: true
+
+bigquery_sink:
+  <<: *sink_defaults
+  destination: "bigquery.googleapis.com/*project/datasets/audit_logs"
+  filter: "severity>=WARNING"
+
+storage_sink:
+  <<: *sink_defaults
+  destination: "storage.googleapis.com/audit-logs-bucket"
+  filter: "severity>=ERROR"
+
+pubsub_sink:
+  <<: *sink_defaults
+  destination: "pubsub.googleapis.com/projects/*project/topics/log-stream"
+  filter: "severity>=CRITICAL"
