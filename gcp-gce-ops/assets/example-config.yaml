@@ -1,0 +1,48 @@
+x-common: &common
+  project: "my-project"
+  zone: "us-central1-a"
+  region: "us-central1"
+  network: "default"
+  subnet: "default"
+  network_tier: "STANDARD"
+  boot_disk_size: 20
+  boot_disk_type: "pd-balanced"
+  image_project: "debian-cloud"
+  image_family: "debian-12"
+
+dev:
+  <<: *common
+  name: "dev-web-01"
+  machine_type: "n1-standard-1"
+  labels:
+    env: dev
+    app: web
+
+staging:
+  <<: *common
+  name: "staging-web-01"
+  machine_type: "n2-standard-2"
+  boot_disk_size: 50
+  labels:
+    env: staging
+    app: web
+
+prod:
+  <<: *common
+  name: "prod-web-01"
+  machine_type: "n2-standard-4"
+  boot_disk_size: 100
+  boot_disk_type: "pd-ssd"
+  network_tier: "PREMIUM"
+  labels:
+    env: prod
+    app: web
+
+prod-mig:
+  <<: *common
+  name: "prod-web-mig"
+  template: "prod-web-template"
+  base_instance_name: "prod-web"
+  size: 3
+  max_replicas: 10
+  target_cpu_utilization: 0.8

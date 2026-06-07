@@ -1,0 +1,122 @@
+# YAML anchors example — Cloud Load Balancing configuration
+# Use anchors (&) to eliminate repeated fields across environments
+
+x-prod: &prod
+  project: "my-production-project"
+  region: "us-central1"
+  network_tier: "PREMIUM"
+  min_cpu_platform: "Intel Cascade Lake"
+  health_check_path: "/healthz"
+  health_check_port: 8080
+  connection_draining_timeout: 300
+  log_config:
+    enable: true
+    sample_rate: 1.0
+
+x-staging: &staging
+  <<: *prod
+  project: "my-staging-project"
+  region: "us-west1"
+
+x-dev: &dev
+  <<: *prod
+  project: "my-dev-project"
+  region: "us-east1"
+  health_check_path: "/"
+  connection_draining_timeout: 60
+  log_config:
+    enable: false
+
+# ─── Resources ───────────────────────────────────────────────────
+
+x-common-hc: &common-hc
+  checkIntervalSec: 10
+  timeoutSec: 5
+  healthyThreshold: 2
+  unhealthyThreshold: 3
+
+# ─── External HTTPS LB ───────────────────────────────────────────
+
+prod-external-https:
+  forwarding_rule:
+    name: "prod-web-https-rule"
+    loadBalancingScheme: "EXTERNAL_MANAGED"
+    ports: ["443"]
+    ipProtocol: "TCP"
+    <<: *prod
+  ssl_certificate:
+    name: "prod-web-cert"
+    domains: ["www.example.com"]
+    <<: *prod
+  target_https_proxy:
+    name: "prod-web-https-proxy"
+    <<: *prod
+  url_map:
+    name: "prod-web-url-map"
+    default_service: "prod-web-bs"
+    <<: *prod
+  backend_service:
+    name: "prod-web-bs"
+    protocol: "HTTP"
+    timeoutSec: 30
+    enableCDN: true
+    <<: *prod
+  health_check:
+    name: "prod-web-hc"
+    type: "http"
+    port: 8080
+    requestPath: "/healthz"
+    <<: *common-hc
+
+staging-external-https:
+  forwarding_rule:
+    name: "staging-web-https-rule"
+    loadBalancingScheme: "EXTERNAL_MANAGED"
+    ports: ["443"]
+    ipProtocol: "TCP"
+    <<: *staging
+  ssl_certificate:
+    name: "staging-web-cert"
+    domains: ["staging.example.com"]
+    <<: *staging
+  target_https_proxy:
+    name: "staging-web-https-proxy"
+    <<: *staging
+  url_map:
+    name: "staging-web-url-map"
+    default_service: "staging-web-bs"
+    <<: *staging
+  backend_service:
+    name: "staging-web-bs"
+    protocol: "HTTP"
+    timeoutSec: 30
+    enableCDN: false
+    <<: *staging
+  health_check:
+    name: "staging-web-hc"
+    type: "http"
+    port: 8080
+    requestPath: "/healthz"
+    <<: *common-hc
+
+# ─── Internal TCP LB ────────────────────────────────────────────
+
+prod-internal-tcp:
+  forwarding_rule:
+    name: "prod-internal-tcp-rule"
+    loadBalancingScheme: "INTERNAL_MANAGED"
+    ports: ["ALL"]
+    network: "default"
+    subnet: "prod-private-subnet"
+    <<: *prod
+  backend_service:
+    name: "prod-internal-tcp-bs"
+    protocol: "TCP"
+    loadBalancingScheme: "INTERNAL_MANAGED"
+    timeoutSec: 60
+    <<: *prod
+  health_check:
+    name: "prod-internal-tcp-hc"
+    type: "tcp"
+    port: 3306
+    <<: *common-hc
