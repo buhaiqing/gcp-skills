@@ -1,0 +1,103 @@
+x-common: &common
+  project: "my-gcp-project"
+  organization: "123456789012"
+  folder: "987654321098"
+  region: "us-central1"
+
+dev:
+  <<: *common
+  sa_name: "dev-app-sa"
+  sa_display_name: "Dev Application Service Account"
+  sa_description: "Service account for dev application workloads"
+  role_id: "devAppRole"
+  role_title: "Dev Application Role"
+  role_description: "Custom role for dev app - compute and storage access"
+  permissions:
+    - "compute.instances.list"
+    - "compute.instances.get"
+    - "storage.objects.list"
+    - "storage.objects.get"
+  member: "user:dev-team@example.com"
+  bindings:
+    - role: "roles/compute.viewer"
+      members:
+        - "user:dev-team@example.com"
+    - role: "roles/storage.objectViewer"
+      members:
+        - "user:dev-team@example.com"
+
+staging:
+  <<: *common
+  sa_name: "staging-app-sa"
+  sa_display_name: "Staging Application Service Account"
+  sa_description: "Service account for staging application workloads"
+  role_id: "stagingAppRole"
+  role_title: "Staging Application Role"
+  role_description: "Custom role for staging app - broader access"
+  permissions:
+    - "compute.instances.list"
+    - "compute.instances.get"
+    - "compute.instances.create"
+    - "compute.disks.list"
+    - "compute.disks.get"
+    - "storage.objects.list"
+    - "storage.objects.get"
+    - "storage.objects.create"
+  member: "user:staging-team@example.com"
+  bindings:
+    - role: "roles/compute.instanceAdmin"
+      members:
+        - "user:staging-team@example.com"
+    - role: "roles/storage.objectAdmin"
+      members:
+        - "user:staging-team@example.com"
+
+prod:
+  <<: *common
+  sa_name: "prod-app-sa"
+  sa_display_name: "Production Application Service Account"
+  sa_description: "Service account for production application workloads"
+  role_id: "prodAppRole"
+  role_title: "Production Application Role"
+  role_description: "Custom role for production app - full access"
+  permissions:
+    - "compute.instances.list"
+    - "compute.instances.get"
+    - "compute.instances.create"
+    - "compute.instances.delete"
+    - "compute.disks.list"
+    - "compute.disks.get"
+    - "compute.disks.create"
+    - "compute.disks.delete"
+    - "storage.objects.list"
+    - "storage.objects.get"
+    - "storage.objects.create"
+    - "storage.objects.delete"
+  member: "user:prod-team@example.com"
+  bindings:
+    - role: "roles/compute.admin"
+      members:
+        - "user:prod-team@example.com"
+        - "group:prod-oncall@example.com"
+    - role: "roles/storage.admin"
+      members:
+        - "user:prod-team@example.com"
+  condition: "request.time < timestamp('2027-01-01T00:00:00Z')"
+  condition_title: "prod_access_2026"
+  deny_policy_id: "prod-deny-sa-delete"
+  deny_rules:
+    - denied_principals:
+        - "principalSet://goog/public:all"
+      denied_permissions:
+        - "iam.serviceAccounts.delete"
+      title: "Deny SA deletion in production"
+
+ghes-workload-identity:
+  <<: *common
+  pool_id: "github-actions-pool"
+  pool_display_name: "GitHub Actions Workload Identity Pool"
+  pool_description: "Pool for GitHub Actions workflows"
+  provider_id: "github-provider"
+  issuer_uri: "https://token.actions.githubusercontent.com"
+  attribute_mapping: "google.subject=assertion.sub,attribute.actor=assertion.actor,attribute.repository=assertion.repository"
+  attribute_condition: "assertion.repository_owner == 'my-org'"
