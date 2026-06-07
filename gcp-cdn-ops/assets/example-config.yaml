@@ -1,0 +1,135 @@
+# Cloud CDN Example Configuration
+# Uses YAML anchors to eliminate duplication (TE-5)
+
+# Backend service defaults
+&backend_defaults
+  project: &project "my-gcp-project"
+  scope: global
+  protocol: HTTP
+  timeout_sec: 30
+
+# CDN policy defaults
+&cdn_defaults
+  enable_cdn: true
+  cache_mode: CACHE_ALL_STATIC
+  default_ttl: 3600      # 1 hour
+  max_ttl: 86400         # 24 hours
+  client_ttl: 3600       # 1 hour
+  negative_caching: true
+  request_coalescing: true
+
+# Negative caching policy
+&negative_caching_policy
+  - code: 300
+    ttl: 60
+  - code: 301
+    ttl: 120
+  - code: 302
+    ttl: 120
+  - code: 404
+    ttl: 30
+  - code: 405
+    ttl: 60
+  - code: 410
+    ttl: 120
+  - code: 421
+    ttl: 60
+  - code: 451
+    ttl: 120
+  - code: 501
+    ttl: 30
+
+# Cache key policy defaults
+&cache_key_policy
+  include_host: true
+  include_protocol: false
+  include_query_string: true
+  include_named_cookies: []
+  include_http_headers: []
+
+# Example 1: Static content CDN (web assets)
+static_content_cdn:
+  backend_service: &backend_static "static-assets-backend"
+  <<: *backend_defaults
+  cdn_policy:
+    <<: *cdn_defaults
+    cache_mode: CACHE_ALL_STATIC
+    default_ttl: 86400     # 24 hours for static assets
+    max_ttl: 604800        # 7 days max for static
+    negative_caching: false  # Not needed for static content
+    cache_key_policy:
+      <<: *cache_key_policy
+      include_query_string: true  # Cache different query params separately
+
+# Example 2: API response CDN
+api_cdn:
+  backend_service: &backend_api "api-backend"
+  <<: *backend_defaults
+  protocol: HTTPS
+  cdn_policy:
+    <<: *cdn_defaults
+    cache_mode: USE_ORIGIN_HEADERS  # Respect origin Cache-Control
+    default_ttl: 60        # 1 minute default for API
+    max_ttl: 300           # 5 minutes max
+    client_ttl: 60
+    negative_caching: true
+    negative_caching_policy: *negative_caching_policy
+    cache_key_policy:
+      <<: *cache_key_policy
+      include_query_string: true
+      include_http_headers:
+        - Authorization    # Cache per auth header (if using CDN with auth)
+
+# Example 3: Media delivery CDN (FORCE_CACHE_ALL)
+media_cdn:
+  backend_service: &backend_media "media-delivery-backend"
+  <<: *backend_defaults
+  protocol: HTTP
+  cdn_policy:
+    <<: *cdn_defaults
+    cache_mode: FORCE_CACHE_ALL
+    default_ttl: 86400     # 24 hours
+    max_ttl: 2592000       # 30 days max for media
+    client_ttl: 86400
+    negative_caching: true
+    negative_caching_policy: *negative_caching_policy
+
+# Signed URL configuration
+signed_url_config:
+  signed_url_key_max_version: 3
+  signed_url_keys:
+    - key_name: "production-key-2026"
+      # keyValue is only returned on creation via API/gcloud
+      # Store securely after creation; cannot be retrieved
+    - key_name: "staging-key-2026"
+
+# Cache invalidation patterns
+invalidation_patterns:
+  full_flush:
+    host: "*"
+    path: "/*"
+    description: "Emergency full cache flush — causes origin load spike"
+  static_assets:
+    host: "*"
+    path: "/static/*"
+    description: "Invalidate static assets only"
+  api_responses:
+    host: "api.example.com"
+    path: "/api/v1/*"
+    description: "Invalidate API responses for specific version"
+  single_file:
+    host: "*"
+    path: "/path/to/file.css"
+    description: "Invalidate a single file"
+
+# Monitoring thresholds
+monitoring:
+  cache_hit_ratio:
+    warning_threshold: 0.8    # Alert if hit ratio drops below 80%
+    critical_threshold: 0.5   # Critical alert below 50%
+  error_rate:
+    warning_threshold: 0.01   # 1% error rate
+    critical_threshold: 0.05  # 5% error rate
+  latency:
+    warning_p99_ms: 5000     # 5 seconds p99
+    critical_p99_ms: 10000   # 10 seconds p99

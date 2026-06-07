@@ -1,0 +1,82 @@
+[
+  {
+    "id": "cdn-enable-basic",
+    "description": "Enable CDN on a backend service with default settings",
+    "trigger": "Enable CDN on my-backend",
+    "expected_operation": "Enable CDN on Backend Service",
+    "expected_command_pattern": "gcloud compute backend-services update.*--enable-cdn",
+    "expected_validation": "enableCdn is true"
+  },
+  {
+    "id": "cdn-update-config",
+    "description": "Update CDN cache mode and TTL settings",
+    "trigger": "Change CDN cache mode to USE_ORIGIN_HEADERS with 5 minute TTL",
+    "expected_operation": "Update CDN Configuration",
+    "expected_command_pattern": "gcloud compute backend-services update.*--cache-mode=USE_ORIGIN_HEADERS",
+    "expected_validation": "cacheMode is USE_ORIGIN_HEADERS, defaultTtl is 300"
+  },
+  {
+    "id": "cdn-describe-config",
+    "description": "Describe backend service CDN configuration",
+    "trigger": "Show CDN config for my-backend",
+    "expected_operation": "Describe Backend Service with CDN",
+    "expected_command_pattern": "gcloud compute backend-services describe.*--format=json",
+    "expected_validation": "Returns CDN policy JSON"
+  },
+  {
+    "id": "cdn-list-enabled",
+    "description": "List all CDN-enabled backend services",
+    "trigger": "List all CDN backends",
+    "expected_operation": "List CDN-Enabled Backend Services",
+    "expected_command_pattern": "gcloud compute backend-services list.*--filter=\"enableCdn=true\"",
+    "expected_validation": "Returns list of CDN-enabled backends"
+  },
+  {
+    "id": "cdn-disable",
+    "description": "Disable CDN on a backend service with safety confirmation",
+    "trigger": "Disable CDN on my-backend",
+    "expected_operation": "Disable CDN",
+    "expected_command_pattern": "gcloud compute backend-services update.*--no-enable-cdn",
+    "expected_validation": "enableCdn is false, user confirmation obtained"
+  },
+  {
+    "id": "cdn-signed-url-add",
+    "description": "Add a signed URL key to a CDN-enabled backend",
+    "trigger": "Add signed URL key 'prod-key' to my-backend",
+    "expected_operation": "Configure Signed URLs",
+    "expected_command_pattern": "gcloud compute backend-services add-signed-url-key.*--key-name=prod-key",
+    "expected_validation": "Key appears in signedUrlKeys list"
+  },
+  {
+    "id": "cdn-invalidate-cache",
+    "description": "Invalidate cached content by host and path",
+    "trigger": "Invalidate cache for example.com /images/*",
+    "expected_operation": "Invalidate Cache",
+    "expected_command_pattern": "gcloud compute url-maps invalidate-cache.*--host.*--path",
+    "expected_validation": "Operation status is DONE"
+  },
+  {
+    "id": "cdn-signed-url-delete",
+    "description": "Delete a signed URL key with safety confirmation",
+    "trigger": "Delete signed URL key 'old-key' from my-backend",
+    "expected_operation": "Delete Signed URL Key",
+    "expected_command_pattern": "gcloud compute backend-services delete-signed-url-key.*--key-name=old-key",
+    "expected_validation": "Key no longer in signedUrlKeys list, user confirmation obtained"
+  },
+  {
+    "id": "cdn-troubleshoot-miss",
+    "description": "Diagnose high cache miss rate",
+    "trigger": "Cache hit ratio is low, how to fix?",
+    "expected_operation": "Describe Backend Service with CDN + Troubleshooting",
+    "expected_command_pattern": "gcloud compute backend-services describe.*cdnPolicy",
+    "expected_validation": "Returns cache mode, TTL settings, and recommendations"
+  },
+  {
+    "id": "cdn-negative-caching",
+    "description": "Enable negative caching with custom TTLs",
+    "trigger": "Enable negative caching with 404=30 and 501=10",
+    "expected_operation": "Update CDN Configuration",
+    "expected_command_pattern": "gcloud compute backend-services update.*--negative-caching",
+    "expected_validation": "negativeCaching is true, negativeCachingPolicy has correct TTLs"
+  }
+]

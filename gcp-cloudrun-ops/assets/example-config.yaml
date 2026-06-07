@@ -1,0 +1,104 @@
+# Cloud Run Example Configurations
+# Uses YAML anchors (TE-5) to eliminate duplication
+
+# Base service configuration
+base_service: &base_service
+  apiVersion: serving.knative.dev/v1
+  kind: Service
+  metadata:
+    name: my-service
+    labels: &common_labels
+      app: my-service
+      env: production
+      team: platform
+
+# Development environment
+dev:
+  <<: *base_service
+  metadata:
+    name: my-service-dev
+    labels:
+      <<: *common_labels
+      env: development
+  spec:
+    template:
+      spec:
+        containers:
+          - image: us-docker.pkg.dev/my-project/my-repo/my-image:dev
+            resources:
+              limits:
+                cpu: "500m"
+                memory: "256Mi"
+            ports:
+              - containerPort: 8080
+        scaling:
+          minInstanceCount: 0
+          maxInstanceCount: 5
+        containerConcurrency: 80
+        timeoutSeconds: 60
+
+# Production environment
+production:
+  <<: *base_service
+  metadata:
+    name: my-service-prod
+    labels:
+      <<: *common_labels
+      env: production
+  spec:
+    template:
+      spec:
+        containers:
+          - image: us-docker.pkg.dev/my-project/my-repo/my-image:latest
+            resources:
+              limits:
+                cpu: "2"
+                memory: "1Gi"
+            ports:
+              - containerPort: 8080
+            env:
+              - name: NODE_ENV
+                value: production
+        scaling:
+          minInstanceCount: 1
+          maxInstanceCount: 100
+        containerConcurrency: 80
+        timeoutSeconds: 300
+        serviceAccountName: my-service-sa@my-project.iam.gserviceaccount.com
+        vpcAccess:
+          connector: projects/my-project/locations/us-central1/connectors/my-connector
+          egress: private-ranges-only
+
+# Staging with secrets
+staging:
+  <<: *base_service
+  metadata:
+    name: my-service-staging
+    labels:
+      <<: *common_labels
+      env: staging
+  spec:
+    template:
+      spec:
+        containers:
+          - image: us-docker.pkg.dev/my-project/my-repo/my-image:staging
+            resources:
+              limits:
+                cpu: "1"
+                memory: "512Mi"
+            env:
+              - name: DATABASE_URL
+                valueFrom:
+                  secretKeyRef:
+                    key: latest
+                    secret: db-url
+              - name: API_KEY
+                valueFrom:
+                  secretKeyRef:
+                    key: latest
+                    secret: api-key
+        scaling:
+          minInstanceCount: 0
+          maxInstanceCount: 10
+        containerConcurrency: 40
+        timeoutSeconds: 120

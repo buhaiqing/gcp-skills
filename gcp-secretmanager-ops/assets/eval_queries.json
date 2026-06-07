@@ -1,0 +1,63 @@
+[
+  {
+    "query": "Create a secret named 'test-api-key' with automatic replication in project 'test-project'",
+    "expected_operation": "create_secret",
+    "validation": {
+      "command_pattern": "gcloud secrets create.*--replication-policy=automatic",
+      "json_path": "$.name",
+      "expected_match": "projects/test-project/secrets/test-api-key"
+    }
+  },
+  {
+    "query": "List all secrets in project 'my-project' with label environment=production",
+    "expected_operation": "list_secrets",
+    "validation": {
+      "command_pattern": "gcloud secrets list.*--filter=.*environment=production",
+      "json_path": "$.secrets[].name",
+      "expected_match": "projects/my-project/secrets/*"
+    }
+  },
+  {
+    "query": "Access the latest version of secret 'db-password'",
+    "expected_operation": "access_secret_version",
+    "validation": {
+      "command_pattern": "gcloud secrets versions access latest.*--secret=db-password",
+      "security_check": "payload_not_logged"
+    }
+  },
+  {
+    "query": "Delete secret 'old-api-key' in project 'my-project'",
+    "expected_operation": "delete_secret",
+    "validation": {
+      "command_pattern": "gcloud secrets delete.*old-api-key",
+      "safety_check": "user_confirmation_required",
+      "no_quiet_flag": true
+    }
+  },
+  {
+    "query": "Rotate secret 'payment-key' by adding a new version",
+    "expected_operation": "add_secret_version",
+    "validation": {
+      "command_pattern": "gcloud secrets versions add.*payment-key",
+      "json_path": "$.name",
+      "expected_match": "projects/*/secrets/payment-key/versions/*"
+    }
+  },
+  {
+    "query": "Set rotation schedule for secret 'tls-cert' to rotate every 90 days",
+    "expected_operation": "update_secret_rotation",
+    "validation": {
+      "command_pattern": "gcloud secrets update.*--rotation-period=90d",
+      "json_path": "$.rotation.rotationPeriod",
+      "expected_match": "7776000s"
+    }
+  },
+  {
+    "query": "Grant secret accessor role to service account 'app-sa' for secret 'db-password'",
+    "expected_operation": "add_iam_policy_binding",
+    "validation": {
+      "command_pattern": "gcloud secrets add-iam-policy-binding.*--role=roles/secretmanager.secretAccessor",
+      "member_check": "serviceAccount:app-sa*"
+    }
+  }
+]
