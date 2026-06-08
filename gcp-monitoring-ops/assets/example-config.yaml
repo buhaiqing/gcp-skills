@@ -1,0 +1,135 @@
+# Default configurations for Cloud Monitoring operations
+# Uses YAML anchors to reduce duplication (TE-5)
+
+alert_defaults: &alert_defaults
+  combiner: OR
+  enabled: true
+  condition_duration: 300s  # 5 minutes
+
+notification_defaults: &notification_defaults
+  project: &project "{{env.CLOUDSDK_CORE_PROJECT}}"
+  verification_required: true
+
+uptime_defaults: &uptime_defaults
+  period: 60  # seconds
+  timeout: 10  # seconds
+  check_regions:
+    - usa
+    - europe
+    - asia
+
+# ── Alert Policies ──
+
+cpu_alert:
+  <<: *alert_defaults
+  name: high-cpu-alert
+  display_name: "High CPU Utilization"
+  condition:
+    display_name: "CPU > 80%"
+    filter: 'resource.type = "gce_instance" AND metric.type = "compute.googleapis.com/instance/cpu/utilization"'
+    threshold_value: 0.8
+    comparison: COMPARISON_GT
+
+memory_alert:
+  <<: *alert_defaults
+  name: high-memory-alert
+  display_name: "High Memory Usage"
+  condition:
+    display_name: "Memory > 90%"
+    filter: 'resource.type = "gce_instance" AND metric.type = "agent.googleapis.com/memory/percent_used"'
+    threshold_value: 0.9
+    comparison: COMPARISON_GT
+
+disk_alert:
+  <<: *alert_defaults
+  name: high-disk-alert
+  display_name: "High Disk Utilization"
+  condition:
+    display_name: "Disk > 85%"
+    filter: 'resource.type = "gce_instance" AND metric.type = "agent.googleapis.com/disk/percent_used"'
+    threshold_value: 0.85
+    comparison: COMPARISON_GT
+
+# ── Notification Channels ──
+
+email_channel:
+  <<: *notification_defaults
+  display_name: "Ops Team Email"
+  type: email
+  labels:
+    email_address: "ops@example.com"
+
+slack_channel:
+  <<: *notification_defaults
+  display_name: "Engineering Slack"
+  type: slack
+  labels:
+    channel_name: "#eng-alerts"
+
+webhook_channel:
+  <<: *notification_defaults
+  display_name: "PagerDuty Webhook"
+  type: webhook
+  labels:
+    url: "https://events.pagerduty.com/v2/enqueue"
+
+# ── Dashboard Template ──
+
+dashboard_infra:
+  display_name: "Infrastructure Overview"
+  grid_layout:
+    columns: 2
+    widgets:
+      - title: "CPU Utilization"
+        filter: 'resource.type = "gce_instance" AND metric.type = "compute.googleapis.com/instance/cpu/utilization"'
+        aggregation:
+          alignment_period: 300s
+          per_series_aligner: ALIGN_MEAN
+          cross_series_reducer: REDUCE_MEAN
+      - title: "Disk IOPS"
+        filter: 'resource.type = "gce_instance" AND metric.type = "compute.googleapis.com/instance/disk/read_ops_count"'
+        aggregation:
+          alignment_period: 60s
+          per_series_aligner: ALIGN_RATE
+
+# ── Uptime Checks ──
+
+uptime_http:
+  <<: *uptime_defaults
+  name: web-health-check
+  display_name: "Website Health Check"
+  hostname: example.com
+  check_type: HTTP
+  path: /health
+
+uptime_https:
+  <<: *uptime_defaults
+  name: api-health-check
+  display_name: "API Health Check"
+  hostname: api.example.com
+  check_type: HTTPS
+  path: /v1/health
+  port: 443
+
+uptime_tcp:
+  <<: *uptime_defaults
+  name: db-health-check
+  display_name: "Database TCP Check"
+  hostname: db.example.com
+  check_type: TCP
+  port: 3306
+
+# ── Environment Overrides ──
+
+prod_alerts:
+  <<: *alert_defaults
+  condition_duration: 180s  # 3 minutes for prod (faster response)
+  cpu_alert:
+    <<: *alert_defaults
+    condition_duration: 180s
+    threshold_value: 0.75  # 75% for prod
+
+dev_alerts:
+  <<: *alert_defaults
+  condition_duration: 600s  # 10 minutes for dev (reduce noise)
+  enabled: false  # disabled by default in dev

@@ -1,0 +1,148 @@
+# Cloud Functions Configuration Examples
+# Uses YAML anchors to eliminate duplication (TE-5)
+
+# Base configuration for HTTP functions
+http_function_base: &http_base
+  gen: 2
+  region: us-central1
+  trigger: http
+  ingress: all
+  allow_unauthenticated: true
+  memory: 256Mi
+  timeout: 60
+  max_instances: 100
+  min_instances: 0
+  concurrency: 1
+
+# Base configuration for event-triggered functions
+event_function_base: &event_base
+  gen: 2
+  region: us-central1
+  trigger: event
+  memory: 512Mi
+  timeout: 300
+  max_instances: 3000
+  min_instances: 0
+  service_account: "function-sa@${PROJECT}.iam.gserviceaccount.com"
+
+# HTTP Function - Python
+http_python_function:
+  <<: *http_base
+  name: hello-http-python
+  runtime: python312
+  entry_point: hello_http
+  source_dir: ./src/python-http
+  env_vars:
+    LOG_LEVEL: info
+    API_VERSION: v1
+
+# HTTP Function - Node.js
+http_node_function:
+  <<: *http_base
+  name: hello-http-node
+  runtime: nodejs20
+  entry_point: helloHttp
+  source_dir: ./src/node-http
+  memory: 512Mi
+  timeout: 30
+  env_vars:
+    NODE_ENV: production
+    LOG_LEVEL: info
+
+# HTTP Function - Go
+http_go_function:
+  <<: *http_base
+  name: hello-http-go
+  runtime: go122
+  entry_point: HelloWorld
+  source_dir: ./src/go-http
+  memory: 256Mi
+  timeout: 30
+  env_vars:
+    LOG_LEVEL: info
+
+# HTTP Function - Java
+http_java_function:
+  <<: *http_base
+  name: hello-http-java
+  runtime: java21
+  entry_point: com.example.HelloHttp
+  source_dir: ./src/java-http
+  memory: 512Mi
+  timeout: 30
+
+# Event Function - Cloud Storage (Python)
+event_gcs_function:
+  <<: *event_base
+  name: process-upload
+  runtime: python312
+  entry_point: handle_gcs_event
+  source_dir: ./src/python-event
+  event_filters:
+    - attribute: type
+      value: google.cloud.storage.object.v1.final
+    - attribute: bucket
+      value: my-upload-bucket
+  env_vars:
+    OUTPUT_BUCKET: my-processed-bucket
+    LOG_LEVEL: info
+
+# Event Function - Pub/Sub (Node.js)
+event_pubsub_function:
+  <<: *event_base
+  name: process-message
+  runtime: nodejs20
+  entry_point: handlePubSub
+  source_dir: ./src/node-pubsub
+  memory: 256Mi
+  timeout: 60
+  event_filters:
+    - attribute: type
+      value: google.cloud.pubsub.topic.v1.messagePublished
+    - attribute: topic
+      value: projects/${PROJECT}/topics/my-topic
+  env_vars:
+    LOG_LEVEL: info
+
+# Production HTTP Function (optimized)
+production_http_function:
+  <<: *http_base
+  name: api-production
+  runtime: python312
+  entry_point: api_handler
+  source_dir: ./src/api
+  memory: 1Gi
+  cpu: "1"
+  timeout: 300
+  max_instances: 500
+  min_instances: 2  # Prevent cold starts for critical path
+  concurrency: 80  # Higher concurrency for throughput
+  ingress: internal-and-gclb  # Only allow via load balancer
+  allow_unauthenticated: false
+  service_account: "api-sa@${PROJECT}.iam.gserviceaccount.com"
+  vpc_connector: my-vpc-connector
+  vpc_egress: all-traffic
+  secrets:
+    DB_PASSWORD: db-password:latest
+    API_KEY: api-key:latest
+  env_vars:
+    ENV: production
+    LOG_LEVEL: warning
+    DB_HOST: 10.0.0.1
+    DB_PORT: "5432"
+
+# Development HTTP Function (cost-optimized)
+dev_http_function:
+  <<: *http_base
+  name: api-dev
+  runtime: python312
+  entry_point: api_handler
+  source_dir: ./src/api
+  memory: 256Mi
+  timeout: 60
+  max_instances: 10
+  min_instances: 0  # Scale to zero to save cost
+  concurrency: 1
+  env_vars:
+    ENV: development
+    LOG_LEVEL: debug
