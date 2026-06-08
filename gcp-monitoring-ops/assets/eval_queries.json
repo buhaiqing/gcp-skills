@@ -1,0 +1,22 @@
+[
+  {"query": "create an alert policy for high CPU utilization on GCE instances", "should_trigger": true},
+  {"query": "list all my monitoring dashboards", "should_trigger": true},
+  {"query": "set up a notification channel for Slack alerts", "should_trigger": true},
+  {"query": "create an uptime check for my website", "should_trigger": true},
+  {"query": "query CPU metrics for the last 2 hours", "should_trigger": true},
+  {"query": "delete alert policy 'old-cpu-alert'", "should_trigger": true},
+  {"query": "my alert is not firing, help me troubleshoot", "should_trigger": true},
+  {"query": "create a dashboard with memory and disk widgets", "should_trigger": true},
+  {"query": "disable notification channel that's not being used", "should_trigger": true},
+  {"query": "set up monitoring for custom application metrics", "should_trigger": true},
+  {"query": "create a Cloud SQL instance with monitoring enabled", "should_trigger": false},
+  {"query": "set up a VPC firewall rule", "should_trigger": false},
+  {"query": "deploy a container to GKE", "should_trigger": false},
+  {"query": "create a Cloud Storage bucket", "should_trigger": false},
+  {"query": "configure IAM roles for my team", "should_trigger": false},
+  {"query": "set up log-based metrics and alerts", "should_trigger": false},
+  {"query": "analyze billing costs for my project", "should_trigger": false},
+  {"query": "create a DNS record for my domain", "should_trigger": false},
+  {"query": "set up a Cloud Build trigger", "should_trigger": false},
+  {"query": "configure Cloud CDN for my backend bucket", "should_trigger": false}
+]

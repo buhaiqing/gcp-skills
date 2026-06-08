@@ -58,25 +58,15 @@
 
 ## Record-Set Transaction Workflow
 
-The transaction API ensures atomic record-set changes:
+The transaction API ensures atomic record-set changes. See [SKILL.md §Create Record-Set](../SKILL.md#operation-create-record-set) for the complete Pre-flight → Execute → Validate → Recover flow.
 
+**Quick reference:**
 ```bash
-# 1. Start transaction (creates transaction.yaml in current directory)
-gcloud dns record-sets transaction start --zone="{{user.zone_name}}"
-
-# 2. Add/remove records (modifies transaction.yaml)
-gcloud dns record-sets transaction add "www.{{user.dns_name}}" \
-  --type="A" --ttl="300" --rrdatas="192.0.2.1" \
-  --zone="{{user.zone_name}}"
-
-# 3. Review pending changes
-gcloud dns record-sets transaction describe --zone="{{user.zone_name}}"
-
-# 4. Execute (applies atomically)
-gcloud dns record-sets transaction execute \
-  --zone="{{user.zone_name}}" \
-  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
-  --format="json"
+gcloud dns record-sets transaction start --zone=ZONE
+gcloud dns record-sets transaction add NAME --type=TYPE --ttl=TTL --rrdatas=DATA --zone=ZONE
+gcloud dns record-sets transaction remove NAME --type=TYPE --ttl=TTL --rrdatas=DATA --zone=ZONE
+gcloud dns record-sets transaction describe --zone=ZONE
+gcloud dns record-sets transaction execute --zone=ZONE --project=PROJECT
 ```
 
 **Important:** Only one active transaction per directory. Aborted transactions require cleanup:

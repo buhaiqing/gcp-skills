@@ -1,0 +1,122 @@
+[
+  {
+    "id": "cf-001",
+    "category": "list",
+    "description": "List all gen2 functions in a project/region",
+    "query": "gcloud functions list --gen2 --region={{user.region}} --project={{env.CLOUDSDK_CORE_PROJECT}} --format=json",
+    "expected_fields": ["name", "state", "serviceConfig.uri", "buildConfig.runtime"],
+    "validation": "Response is an array; each item has name, state, and serviceConfig.uri"
+  },
+  {
+    "id": "cf-002",
+    "category": "describe",
+    "description": "Describe a specific function's configuration",
+    "query": "gcloud functions describe {{user.function_name}} --gen2 --region={{user.region}} --project={{env.CLOUDSDK_CORE_PROJECT}} --format=json",
+    "expected_fields": ["name", "state", "serviceConfig.uri", "buildConfig.runtime", "buildConfig.entryPoint", "serviceConfig.availableMemory", "serviceConfig.timeoutSeconds"],
+    "validation": "Response has all expected fields; state is ACTIVE"
+  },
+  {
+    "id": "cf-003",
+    "category": "deploy-http",
+    "description": "Deploy an HTTP-triggered function",
+    "query": "gcloud functions deploy {{user.function_name}} --gen2 --runtime={{user.runtime}} --trigger-http --entry-point={{user.entry_point}} --source={{user.source_dir}} --region={{user.region}} --project={{env.CLOUDSDK_CORE_PROJECT}} --format=json",
+    "expected_fields": ["name", "state", "serviceConfig.uri"],
+    "validation": "Function state transitions to ACTIVE; serviceConfig.uri is populated"
+  },
+  {
+    "id": "cf-004",
+    "category": "deploy-event",
+    "description": "Deploy an event-triggered function",
+    "query": "gcloud functions deploy {{user.function_name}} --gen2 --runtime={{user.runtime}} --trigger-event-filters={{user.event_filters}} --entry-point={{user.entry_point}} --source={{user.source_dir}} --region={{user.region}} --project={{env.CLOUDSDK_CORE_PROJECT}} --format=json",
+    "expected_fields": ["name", "state", "eventTrigger"],
+    "validation": "Function state is ACTIVE; eventTrigger is populated with correct event type"
+  },
+  {
+    "id": "cf-005",
+    "category": "update",
+    "description": "Update an existing function's configuration",
+    "query": "gcloud functions deploy {{user.function_name}} --gen2 --runtime={{user.runtime}} --entry-point={{user.entry_point}} --source={{user.source_dir}} --region={{user.region}} --project={{env.CLOUDSDK_CORE_PROJECT}} --memory={{user.memory}} --format=json",
+    "expected_fields": ["name", "state", "serviceConfig.availableMemory"],
+    "validation": "Memory updated to requested value; state is ACTIVE"
+  },
+  {
+    "id": "cf-006",
+    "category": "delete",
+    "description": "Delete a function",
+    "query": "gcloud functions delete {{user.function_name}} --gen2 --region={{user.region}} --project={{env.CLOUDSDK_CORE_PROJECT}} --format=json",
+    "expected_fields": [],
+    "validation": "Subsequent describe returns NOT_FOUND"
+  },
+  {
+    "id": "cf-007",
+    "category": "call",
+    "description": "Invoke an HTTP function",
+    "query": "gcloud functions call {{user.function_name}} --gen2 --region={{user.region}} --project={{env.CLOUDSDK_CORE_PROJECT}} --data='{\"test\": true}' --format=json",
+    "expected_fields": ["responseBody", "status"],
+    "validation": "Response contains responseBody (base64 encoded) and status code"
+  },
+  {
+    "id": "cf-008",
+    "category": "logs",
+    "description": "Read function logs",
+    "query": "gcloud functions logs read {{user.function_name}} --gen2 --region={{user.region}} --project={{env.CLOUDSDK_CORE_PROJECT}} --limit=50 --format=json",
+    "expected_fields": ["textPayload", "timestamp", "severity"],
+    "validation": "Response is an array of log entries with timestamp and severity"
+  },
+  {
+    "id": "cf-009",
+    "category": "logs-error",
+    "description": "Read error-level function logs",
+    "query": "gcloud functions logs read {{user.function_name}} --gen2 --region={{user.region}} --project={{env.CLOUDSDK_CORE_PROJECT}} --min-log-level=error --limit=50 --format=json",
+    "expected_fields": ["textPayload", "timestamp", "severity"],
+    "validation": "All entries have severity ERROR or higher"
+  },
+  {
+    "id": "cf-010",
+    "category": "list-gen1",
+    "description": "List gen1 (legacy) functions",
+    "query": "gcloud functions list --gen1 --region={{user.region}} --project={{env.CLOUDSDK_CORE_PROJECT}} --format=json",
+    "expected_fields": ["name", "status", "httpsTrigger.url", "runtime", "entryPoint"],
+    "validation": "Response uses gen1 schema (status instead of state, httpsTrigger instead of serviceConfig)"
+  },
+  {
+    "id": "cf-011",
+    "category": "runtimes",
+    "description": "List available runtimes",
+    "query": "gcloud functions runtimes list --format=json",
+    "expected_fields": ["name"],
+    "validation": "Response contains supported runtime versions (python312, nodejs20, go122, etc)"
+  },
+  {
+    "id": "cf-012",
+    "category": "iam",
+    "description": "Get function IAM policy",
+    "query": "gcloud functions get-iam-policy {{user.function_name}} --gen2 --region={{user.region}} --project={{env.CLOUDSDK_CORE_PROJECT}} --format=json",
+    "expected_fields": ["bindings"],
+    "validation": "Response contains bindings array with roles and members"
+  },
+  {
+    "id": "cf-013",
+    "category": "scaling",
+    "description": "Verify function scaling configuration",
+    "query": "gcloud functions describe {{user.function_name}} --gen2 --region={{user.region}} --project={{env.CLOUDSDK_CORE_PROJECT}} --format=json | jq '{max: .serviceConfig.maxInstanceCount, min: .serviceConfig.minInstanceCount, concurrency: .serviceConfig.maxInstanceRequestConcurrency, memory: .serviceConfig.availableMemory, timeout: .serviceConfig.timeoutSeconds}'",
+    "expected_fields": ["max", "min", "concurrency", "memory", "timeout"],
+    "validation": "All scaling fields match requested values"
+  },
+  {
+    "id": "cf-014",
+    "category": "secrets",
+    "description": "Verify function secrets configuration",
+    "query": "gcloud functions describe {{user.function_name}} --gen2 --region={{user.region}} --project={{env.CLOUDSDK_CORE_PROJECT}} --format=json | jq '.serviceConfig.secretEnvironmentVariables'",
+    "expected_fields": ["key", "secret", "version"],
+    "validation": "Secrets are mounted with correct key, secret name, and version"
+  },
+  {
+    "id": "cf-015",
+    "category": "vpc",
+    "description": "Verify function VPC connector configuration",
+    "query": "gcloud functions describe {{user.function_name}} --gen2 --region={{user.region}} --project={{env.CLOUDSDK_CORE_PROJECT}} --format=json | jq '{vpcConnector: .serviceConfig.vpcConnector, vpcEgress: .serviceConfig.vpcConnectorEgressSettings}'",
+    "expected_fields": ["vpcConnector", "vpcEgress"],
+    "validation": "VPC connector is configured with correct egress settings"
+  }
+]
