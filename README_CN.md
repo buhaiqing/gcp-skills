@@ -86,6 +86,8 @@ gcp-[product]-ops/
 | [`gcp-logging-ops`](gcp-logging-ops/SKILL.md) | Cloud Logging（日志存储桶、视图、接收器、指标、排除规则） | ✅ 已发布 |
 | [`gcp-kms-ops`](gcp-kms-ops/SKILL.md) | Cloud KMS（密钥环、加密密钥、密钥版本、加密/解密） | ✅ 已发布 |
 | [`gcp-memorystore-ops`](gcp-memorystore-ops/SKILL.md) | Memorystore for Redis（实例、扩容、导出/导入、故障转移） | ✅ 已发布 |
+| [`gcp-cloudbuild-ops`](gcp-cloudbuild-ops/SKILL.md) | Cloud Build（构建、触发器、私有工作池、诊断） | ✅ 已发布 |
+| [`gcp-billing-ops`](gcp-billing-ops/SKILL.md) | Cloud Billing（结算账号、预算、导出、项目关联、定价） | ✅ 已发布 |
 | `gcp-vpc-ops` | VPC（网络、子网、防火墙规则、VPN、Cloud NAT） | 开发中 |
 | `gcp-gke-ops` | Google Kubernetes Engine | 规划中 |
 | `gcp-cloudsql-ops` | Cloud SQL | 规划中 |
