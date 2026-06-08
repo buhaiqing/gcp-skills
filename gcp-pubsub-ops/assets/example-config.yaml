@@ -1,0 +1,79 @@
+x-common: &common
+  project: "my-gcp-project"
+
+dev:
+  <<: *common
+  topic: "my-project-dev-events"
+  subscription:
+    name: "my-project-dev-processor"
+    ack_deadline: 30
+    message_retention: "7d"
+    push_endpoint: ""
+    delivery: "pull"
+  labels:
+    env: dev
+    app: events
+
+staging:
+  <<: *common
+  topic: "my-project-staging-events"
+  subscription:
+    name: "my-project-staging-processor"
+    ack_deadline: 60
+    message_retention: "3d"
+    push_endpoint: "https://staging-api.example.com/pubsub"
+    delivery: "push"
+  labels:
+    env: staging
+    app: events
+
+prod:
+  <<: *common
+  topic: "my-project-prod-events"
+  subscription:
+    name: "my-project-prod-processor"
+    ack_deadline: 60
+    message_retention: "7d"
+    delivery: "pull"
+    ordering: true
+    exactly_once: false
+    expiration_period: "never"
+  dead_letter:
+    topic: "my-project-prod-events-dlq"
+    max_delivery_attempts: 5
+    subscription:
+      name: "my-project-prod-events-dlq-drain"
+      ack_deadline: 30
+      message_retention: "7d"
+  retry:
+    min_retry_delay: "10s"
+    max_retry_delay: "600s"
+  labels:
+    env: prod
+    app: events
+
+prod-compliant:
+  <<: *common
+  topic: "my-project-prod-audit"
+  subscription:
+    name: "my-project-prod-audit-consumer"
+    ack_deadline: 120
+    message_retention: "7d"
+    delivery: "pull"
+    exactly_once: true
+  dead_letter:
+    topic: "my-project-prod-audit-dlq"
+    max_delivery_attempts: 10
+  labels:
+    env: prod
+    app: audit
+    compliance: "true"
+  iam:
+    topic_bindings:
+      - role: "roles/pubsub.publisher"
+        members:
+          - "serviceAccount:producer@my-project.iam.gserviceaccount.com"
+    subscription_bindings:
+      - role: "roles/pubsub.subscriber"
+        members:
+          - "serviceAccount:consumer@my-project.iam.gserviceaccount.com"

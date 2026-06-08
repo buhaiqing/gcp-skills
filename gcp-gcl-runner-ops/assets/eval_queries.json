@@ -1,12 +1,17 @@
 [
-  { "query": "Run GCL on the DeleteInstance command for GCE", "should_trigger": true },
-  { "query": "Delegate GCL quality gate to gcp-gcl-runner-ops before deleting the Cloud SQL instance", "should_trigger": true },
-  { "query": "Need to run Generator-Critic-Loop on this gcloud command", "should_trigger": true },
-  { "query": "Validate the production change with GCL before executing", "should_trigger": true },
-  { "query": "Run GCL on gcp-gke-ops delete cluster command", "should_trigger": true },
-  { "query": "Describe the GCE instance in us-central1-a", "should_trigger": false },
-  { "query": "List all GKE clusters in my project", "should_trigger": false },
-  { "query": "What's the cost of my current GCP resources?", "should_trigger": false },
-  { "query": "Set up monitoring alert for instance", "should_trigger": false },
-  { "query": "Give me IAM permissions for this project", "should_trigger": false }
+  {"query": "Run GCL on the DeleteInstance command for GCE", "should_trigger": true, "expected_cmd_pattern": "gcl.*delete.*instance", "dry_run_supported": false},
+  {"query": "Delegate GCL quality gate to gcp-gcl-runner-ops before deleting the Cloud SQL instance", "should_trigger": true, "expected_cmd_pattern": "gcl", "dry_run_supported": false},
+  {"query": "Need to run Generator-Critic-Loop on this gcloud command", "should_trigger": true, "expected_cmd_pattern": "gcl", "dry_run_supported": false},
+  {"query": "Validate the production change with GCL before executing", "should_trigger": true, "expected_cmd_pattern": "gcl", "dry_run_supported": false},
+  {"query": "Run GCL on gcp-gke-ops delete cluster command", "should_trigger": true, "expected_cmd_pattern": "gcl.*delete.*cluster", "dry_run_supported": false},
+  {"query": "create a GKE cluster", "should_trigger": false},
+  {"query": "deploy to Cloud Run", "should_trigger": false},
+  {"query": "create a BigQuery dataset", "should_trigger": false},
+  {"query": "create a Cloud SQL instance", "should_trigger": false},
+  {"query": "set up a VPC network", "should_trigger": false},
+  {"query": "create a Pub/Sub topic", "should_trigger": false},
+  {"query": "set up Cloud Monitoring alerts", "should_trigger": false},
+  {"query": "configure a VPC firewall rule", "should_trigger": false},
+  {"query": "create an IAM service account", "should_trigger": false},
+  {"query": "create a Cloud Storage bucket", "should_trigger": false}
 ]
