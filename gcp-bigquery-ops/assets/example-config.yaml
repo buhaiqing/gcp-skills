@@ -1,0 +1,128 @@
+x-common: &common
+  project: "my-gcp-project"
+  location: "US"
+  dataset: "analytics"
+
+dev:
+  <<: *common
+  dataset_id: "my_project:analytics_dev"
+  labels:
+    env: dev
+    app: analytics
+  default_table_expiration_ms: 86400000
+
+staging:
+  <<: *common
+  dataset_id: "my_project:analytics_staging"
+  location: "US-CENTRAL1"
+  labels:
+    env: staging
+    app: analytics
+  default_table_expiration_ms: 604800000
+
+prod:
+  <<: *common
+  dataset_id: "my_project:analytics_prod"
+  location: "US"
+  labels:
+    env: prod
+    app: analytics
+  default_table_expiration_ms: 0
+  tables:
+    events:
+      schema:
+        - name: event_id
+          type: STRING
+          mode: REQUIRED
+        - name: user_id
+          type: STRING
+          mode: REQUIRED
+        - name: event_type
+          type: STRING
+          mode: REQUIRED
+        - name: timestamp
+          type: TIMESTAMP
+          mode: REQUIRED
+        - name: properties
+          type: JSON
+          mode: NULLABLE
+      partitioning:
+        field: timestamp
+        type: DAY
+        expiration_ms: 7776000000
+      clustering_fields:
+        - event_type
+        - user_id
+    users:
+      schema:
+        - name: user_id
+          type: STRING
+          mode: REQUIRED
+        - name: created_at
+          type: TIMESTAMP
+          mode: REQUIRED
+        - name: country
+          type: STRING
+          mode: NULLABLE
+      partitioning:
+        field: created_at
+        type: DAY
+      clustering_fields:
+        - country
+
+prod-with-iam:
+  <<: *common
+  dataset_id: "my_project:analytics_prod_iam"
+  location: "US"
+  iam:
+    bindings:
+      - role: "roles/bigquery.dataViewer"
+        members:
+          - "group:analysts@example.com"
+      - role: "roles/bigquery.dataEditor"
+        members:
+          - "serviceAccount:etl-sa@my-project.iam.gserviceaccount.com"
+      - role: "roles/bigquery.jobUser"
+        members:
+          - "group:data-engineers@example.com"
+
+load-config:
+  <<: *common
+  source_format: CSV
+  autodetect: true
+  write_disposition: WRITE_TRUNCATE
+  skip_leading_rows: 1
+  field_delimiter: ","
+  source_uri: "gs://my-bucket/data/events/*.csv"
+  table_id: "my_project:analytics.events"
+
+export-config:
+  <<: *common
+  destination_format: PARQUET
+  compression: GZIP
+  destination_uri: "gs://my-backup-bucket/export/events-*.parquet"
+  table_id: "my_project:analytics.events"
+
+materialized-view:
+  <<: *common
+  mv_id: "my_project:analytics.daily_events_summary"
+  query: |
+    SELECT
+      DATE(timestamp) AS event_date,
+      event_type,
+      COUNT(*) AS event_count,
+      COUNT(DISTINCT user_id) AS unique_users
+    FROM `my_project.analytics.events`
+    GROUP BY event_date, event_type
+  enable_refresh: true
+  refresh_interval_ms: 3600000
+
+routine:
+  <<: *common
+  dataset_id: "my_project:analytics"
+  routine_name: "calculate_roi"
+  routine_type: SCALAR_FUNCTION
+  language: SQL
+  definition_body: |
+    (revenue - cost) / NULLIF(cost, 0)
+  return_type: FLOAT64

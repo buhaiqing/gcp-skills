@@ -1,62 +1,22 @@
 [
-  {
-    "query": "deploy a container to Cloud Run",
-    "expected_skill": "gcp-cloudrun-ops",
-    "expected_operation": "create_service",
-    "keywords": ["Cloud Run", "deploy", "container", "serverless"]
-  },
-  {
-    "query": "list all Cloud Run services",
-    "expected_skill": "gcp-cloudrun-ops",
-    "expected_operation": "list_services",
-    "keywords": ["Cloud Run", "list", "services"]
-  },
-  {
-    "query": "split traffic between revisions in Cloud Run",
-    "expected_skill": "gcp-cloudrun-ops",
-    "expected_operation": "update_traffic",
-    "keywords": ["Cloud Run", "traffic", "split", "revisions"]
-  },
-  {
-    "query": "delete my Cloud Run service",
-    "expected_skill": "gcp-cloudrun-ops",
-    "expected_operation": "delete_service",
-    "keywords": ["Cloud Run", "delete", "service"]
-  },
-  {
-    "query": "mount secrets to Cloud Run service",
-    "expected_skill": "gcp-cloudrun-ops",
-    "expected_operation": "mount_secrets",
-    "keywords": ["Cloud Run", "secrets", "mount"]
-  },
-  {
-    "query": "configure VPC connector for Cloud Run",
-    "expected_skill": "gcp-cloudrun-ops",
-    "expected_operation": "configure_vpc_connector",
-    "keywords": ["Cloud Run", "VPC", "connector"]
-  },
-  {
-    "query": "rollback Cloud Run to previous revision",
-    "expected_skill": "gcp-cloudrun-ops",
-    "expected_operation": "update_traffic",
-    "keywords": ["Cloud Run", "rollback", "revision"]
-  },
-  {
-    "query": "check Cloud Run service status",
-    "expected_skill": "gcp-cloudrun-ops",
-    "expected_operation": "describe_service",
-    "keywords": ["Cloud Run", "status", "describe"]
-  },
-  {
-    "query": "list revisions of Cloud Run service",
-    "expected_skill": "gcp-cloudrun-ops",
-    "expected_operation": "list_revisions",
-    "keywords": ["Cloud Run", "revisions", "list"]
-  },
-  {
-    "query": "scale Cloud Run service to handle more traffic",
-    "expected_skill": "gcp-cloudrun-ops",
-    "expected_operation": "update_service",
-    "keywords": ["Cloud Run", "scale", "traffic", "max-instances"]
-  }
+  {"query": "deploy a container to Cloud Run", "should_trigger": true, "expected_cmd_pattern": "gcloud run deploy", "dry_run_supported": false},
+  {"query": "list all Cloud Run services", "should_trigger": true, "expected_cmd_pattern": "gcloud run services list", "dry_run_supported": false},
+  {"query": "split traffic between revisions in Cloud Run", "should_trigger": true, "expected_cmd_pattern": "gcloud run services update-traffic", "dry_run_supported": false},
+  {"query": "delete my Cloud Run service", "should_trigger": true, "expected_cmd_pattern": "gcloud run services delete", "dry_run_supported": false, "safety_check": true},
+  {"query": "mount secrets to Cloud Run service", "should_trigger": true, "expected_cmd_pattern": "gcloud run services update.*--set-secrets", "dry_run_supported": false},
+  {"query": "configure VPC connector for Cloud Run", "should_trigger": true, "expected_cmd_pattern": "gcloud run services update.*--vpc-connector", "dry_run_supported": false},
+  {"query": "rollback Cloud Run to previous revision", "should_trigger": true, "expected_cmd_pattern": "gcloud run services update-traffic", "dry_run_supported": false},
+  {"query": "check Cloud Run service status", "should_trigger": true, "expected_cmd_pattern": "gcloud run services describe", "dry_run_supported": false},
+  {"query": "list revisions of Cloud Run service", "should_trigger": true, "expected_cmd_pattern": "gcloud run revisions list", "dry_run_supported": false},
+  {"query": "scale Cloud Run service to handle more traffic", "should_trigger": true, "expected_cmd_pattern": "gcloud run services update.*--max-instances", "dry_run_supported": false},
+  {"query": "create a GKE cluster", "should_trigger": false},
+  {"query": "set up a VPC network", "should_trigger": false},
+  {"query": "create a BigQuery dataset", "should_trigger": false},
+  {"query": "create a Cloud SQL instance", "should_trigger": false},
+  {"query": "create a VM in GCE", "should_trigger": false},
+  {"query": "create a Pub/Sub topic", "should_trigger": false},
+  {"query": "create a Cloud Storage bucket", "should_trigger": false},
+  {"query": "set up Cloud Monitoring alerts", "should_trigger": false},
+  {"query": "configure a VPC firewall rule", "should_trigger": false},
+  {"query": "create an IAM service account", "should_trigger": false}
 ]
