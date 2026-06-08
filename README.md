@@ -86,6 +86,8 @@ gcp-[product]-ops/
 | [`gcp-logging-ops`](gcp-logging-ops/SKILL.md) | Cloud Logging (log buckets, views, sinks, metrics, exclusions) | ✅ Released |
 | [`gcp-kms-ops`](gcp-kms-ops/SKILL.md) | Cloud KMS (key rings, crypto keys, versions, encrypt/decrypt) | ✅ Released |
 | [`gcp-memorystore-ops`](gcp-memorystore-ops/SKILL.md) | Memorystore for Redis (instances, scaling, export/import, failover) | ✅ Released |
+| [`gcp-cloudbuild-ops`](gcp-cloudbuild-ops/SKILL.md) | Cloud Build (builds, triggers, private worker pools, diagnostics) | ✅ Released |
+| [`gcp-billing-ops`](gcp-billing-ops/SKILL.md) | Cloud Billing (billing accounts, budgets, exports, project links, pricing) | ✅ Released |
 | `gcp-vpc-ops` | VPC (networks, subnets, firewall rules, VPN, Cloud NAT) | In development |
 | `gcp-gke-ops` | Google Kubernetes Engine | Planned |
 | `gcp-cloudsql-ops` | Cloud SQL | Planned |

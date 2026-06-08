@@ -1,0 +1,191 @@
+{
+  "skill": "gcp-billing-ops",
+  "version": "1.0.0",
+  "description": "Trigger accuracy evaluation queries for gcp-billing-ops",
+  "queries": {
+    "should_trigger": [
+      {
+        "id": "T01",
+        "query": "List all my billing accounts",
+        "expected_trigger": true,
+        "reason": "Direct billing account listing request"
+      },
+      {
+        "id": "T02",
+        "query": "Show me the billing account for project my-prod-project",
+        "expected_trigger": true,
+        "reason": "Project billing info query"
+      },
+      {
+        "id": "T03",
+        "query": "Create a monthly budget of $5000 with alerts at 50% and 90%",
+        "expected_trigger": true,
+        "reason": "Budget creation with threshold rules"
+      },
+      {
+        "id": "T04",
+        "query": "What's my current cloud spending this month?",
+        "expected_trigger": true,
+        "reason": "Spend inquiry — billing domain"
+      },
+      {
+        "id": "T05",
+        "query": "Set up billing export to BigQuery for cost analysis",
+        "expected_trigger": true,
+        "reason": "Billing export configuration"
+      },
+      {
+        "id": "T06",
+        "query": "Link project my-new-app to billing account 01ABCD-EFGHIJ-KLMNOP",
+        "expected_trigger": true,
+        "reason": "Project billing link operation"
+      },
+      {
+        "id": "T07",
+        "query": "Delete the budget named 'dev-team-monthly'",
+        "expected_trigger": true,
+        "reason": "Budget deletion"
+      },
+      {
+        "id": "T08",
+        "query": "How much does a n2-standard-8 cost in us-central1?",
+        "expected_trigger": true,
+        "reason": "Pricing/SKU query"
+      },
+      {
+        "id": "T09",
+        "query": "Update my production budget threshold to alert at 80% instead of 90%",
+        "expected_trigger": true,
+        "reason": "Budget threshold update"
+      },
+      {
+        "id": "T10",
+        "query": "Why am I being charged for Cloud Storage?",
+        "expected_trigger": true,
+        "reason": "Billing cost investigation"
+      },
+      {
+        "id": "T11",
+        "query": "Enable billing export for detailed usage cost data",
+        "expected_trigger": true,
+        "reason": "Detailed billing export setup"
+      },
+      {
+        "id": "T12",
+        "query": "Unlink project test-env from its billing account",
+        "expected_trigger": true,
+        "reason": "Project unlink operation"
+      },
+      {
+        "id": "T13",
+        "query": "Show me all budgets for billing account 01ABCD-EFGHIJ-KLMNOP",
+        "expected_trigger": true,
+        "reason": "Budget listing"
+      },
+      {
+        "id": "T14",
+        "query": "What GCP services are available for billing?",
+        "expected_trigger": true,
+        "reason": "Service listing for pricing"
+      },
+      {
+        "id": "T15",
+        "query": "Check if my budget alert is configured correctly",
+        "expected_trigger": true,
+        "reason": "Budget diagnosis"
+      },
+      {
+        "id": "T16",
+        "query": "How do I stop getting charged for a project?",
+        "expected_trigger": true,
+        "reason": "Implies project unlink/disable billing"
+      },
+      {
+        "id": "T17",
+        "query": "I need to set up cost alerts for my team",
+        "expected_trigger": true,
+        "reason": "Budget alert setup"
+      },
+      {
+        "id": "T18",
+        "query": "Export my billing data to analyze costs",
+        "expected_trigger": true,
+        "reason": "Billing export request"
+      },
+      {
+        "id": "T19",
+        "query": "Show me the pricing for Cloud Run services",
+        "expected_trigger": true,
+        "reason": "Service-specific pricing query"
+      },
+      {
+        "id": "T20",
+        "query": "My budget alert didn't fire even though we exceeded the threshold",
+        "expected_trigger": true,
+        "reason": "Budget alert troubleshooting"
+      }
+    ],
+    "should_not_trigger": [
+      {
+        "id": "N01",
+        "query": "Create a new IAM role for billing access",
+        "expected_trigger": false,
+        "reason": "IAM role management → gcp-iam-ops"
+      },
+      {
+        "id": "N02",
+        "query": "Create a BigQuery dataset for data analytics",
+        "expected_trigger": false,
+        "reason": "BigQuery dataset admin → gcp-bigquery-ops"
+      },
+      {
+        "id": "N03",
+        "query": "Set up a Cloud Monitoring alert for high CPU usage",
+        "expected_trigger": false,
+        "reason": "Monitoring alert policy → gcp-monitoring-ops"
+      },
+      {
+        "id": "N04",
+        "query": "Create a Pub/Sub topic for event notifications",
+        "expected_trigger": false,
+        "reason": "Pub/Sub topic management → gcp-pubsub-ops"
+      },
+      {
+        "id": "N05",
+        "query": "Right-size my underutilized Compute Engine instances",
+        "expected_trigger": false,
+        "reason": "Resource optimization → FinOps advanced, not billing ops"
+      },
+      {
+        "id": "N06",
+        "query": "Grant user access to view billing data",
+        "expected_trigger": false,
+        "reason": "IAM policy management → gcp-iam-ops"
+      },
+      {
+        "id": "N07",
+        "query": "Create a Cloud Storage bucket for log archives",
+        "expected_trigger": false,
+        "reason": "Cloud Storage → gcp-gcs-ops"
+      },
+      {
+        "id": "N08",
+        "query": "Deploy a Cloud Function to process billing events",
+        "expected_trigger": false,
+        "reason": "Cloud Functions deployment → gcp-cloudfunctions-ops"
+      },
+      {
+        "id": "N09",
+        "query": "Audit who accessed the billing account last week",
+        "expected_trigger": false,
+        "reason": "Audit log query → gcp-logging-ops"
+      },
+      {
+        "id": "N10",
+        "query": "Create a VPC network for my project",
+        "expected_trigger": false,
+        "reason": "VPC networking → gcp-vpc-ops"
+      }
+    ]
+  }
+}
