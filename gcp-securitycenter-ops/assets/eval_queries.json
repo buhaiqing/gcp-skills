@@ -1,0 +1,182 @@
+[
+  {
+    "query": "Enable Security Command Center at organization 123456789012",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud scc settings enable",
+    "dry_run_supported": false
+  },
+  {
+    "query": "List all active Security Command Center findings in my organization",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud scc findings list",
+    "dry_run_supported": true
+  },
+  {
+    "query": "Show me critical severity findings from Security Command Center",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud scc findings list",
+    "dry_run_supported": true
+  },
+  {
+    "query": "Describe the finding with ID vuln-123 in source 567890123456",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud scc findings describe",
+    "dry_run_supported": true
+  },
+  {
+    "query": "Mute the finding vuln-123 in source 567890123456",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud scc findings update-mute",
+    "dry_run_supported": false
+  },
+  {
+    "query": "Mark this finding as inactive after confirming it's resolved",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud scc findings update-state",
+    "dry_run_supported": false
+  },
+  {
+    "query": "Create a mute config to suppress low-severity findings in the dev sandbox",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud scc mute-configs create",
+    "dry_run_supported": false
+  },
+  {
+    "query": "List all Security Command Center mute configs",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud scc mute-configs list",
+    "dry_run_supported": true
+  },
+  {
+    "query": "Delete the old mute config after confirmation",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud scc mute-configs delete",
+    "dry_run_supported": false
+  },
+  {
+    "query": "Create a notification config to route high-severity SCC findings to Pub/Sub",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud scc notifications create",
+    "dry_run_supported": false
+  },
+  {
+    "query": "List all SCC notification configs and their Pub/Sub topics",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud scc notifications list",
+    "dry_run_supported": true
+  },
+  {
+    "query": "Update the SCC notification config filter to include CRITICAL severity",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud scc notifications update",
+    "dry_run_supported": false
+  },
+  {
+    "query": "Delete the SCC notification config after confirmation",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud scc notifications delete",
+    "dry_run_supported": false
+  },
+  {
+    "query": "Set up a BigQuery continuous export for all active SCC findings",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud scc big-query-exports create",
+    "dry_run_supported": false
+  },
+  {
+    "query": "List Security Command Center BigQuery exports",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud scc big-query-exports list",
+    "dry_run_supported": true
+  },
+  {
+    "query": "Delete the SCC BigQuery export after confirmation",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud scc big-query-exports delete",
+    "dry_run_supported": false
+  },
+  {
+    "query": "Export Security Command Center findings to a CSV file",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud scc findings export",
+    "dry_run_supported": true
+  },
+  {
+    "query": "Get the Security Command Center organization settings",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud scc settings get",
+    "dry_run_supported": true
+  },
+  {
+    "query": "List Security Command Center sources in my organization",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud scc sources list",
+    "dry_run_supported": true
+  },
+  {
+    "query": "Find all findings with category OPEN_FIREWALL that are still active",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud scc findings list",
+    "dry_run_supported": true
+  },
+  {
+    "query": "Create a BigQuery dataset for SCC findings export",
+    "should_trigger": false,
+    "expected_cmd_pattern": "gcloud bigquery datasets create",
+    "dry_run_supported": false
+  },
+  {
+    "query": "Create a Pub/Sub topic for SCC notification routing",
+    "should_trigger": false,
+    "expected_cmd_pattern": "gcloud pubsub topics create",
+    "dry_run_supported": false
+  },
+  {
+    "query": "Grant SCC service account BigQuery editor access",
+    "should_trigger": false,
+    "expected_cmd_pattern": "gcloud projects add-iam-policy-binding",
+    "dry_run_supported": false
+  },
+  {
+    "query": "Create a Cloud Logging sink for SCC findings",
+    "should_trigger": false,
+    "expected_cmd_pattern": "gcloud logging sinks create",
+    "dry_run_supported": false
+  },
+  {
+    "query": "Create a Cloud Monitoring alert policy for SCC findings",
+    "should_trigger": false,
+    "expected_cmd_pattern": "gcloud monitoring policies create",
+    "dry_run_supported": false
+  },
+  {
+    "query": "Grant a service account the SCC Admin role at organization level",
+    "should_trigger": false,
+    "expected_cmd_pattern": "gcloud organizations add-iam-policy-binding",
+    "dry_run_supported": false
+  },
+  {
+    "query": "Create a VPC firewall rule to block suspicious traffic",
+    "should_trigger": false,
+    "expected_cmd_pattern": "gcloud compute firewall-rules create",
+    "dry_run_supported": false
+  },
+  {
+    "query": "Create a Cloud KMS key ring for security tooling",
+    "should_trigger": false,
+    "expected_cmd_pattern": "gcloud kms keyrings create",
+    "dry_run_supported": false
+  },
+  {
+    "query": "Create a Secret Manager secret for SOC webhook credentials",
+    "should_trigger": false,
+    "expected_cmd_pattern": "gcloud secrets create",
+    "dry_run_supported": false
+  },
+  {
+    "query": "List IAM policy bindings for the SCC service account",
+    "should_trigger": false,
+    "expected_cmd_pattern": "gcloud projects get-iam-policy",
+    "dry_run_supported": true
+  }
+]

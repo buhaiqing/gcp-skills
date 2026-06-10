@@ -1,0 +1,134 @@
+[
+  {
+    "query": "Submit this repo to Cloud Build with cloudbuild.yaml",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud builds submit",
+    "dry_run_supported": false
+  },
+  {
+    "query": "List failed Cloud Build jobs from today",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud builds list",
+    "dry_run_supported": true
+  },
+  {
+    "query": "Describe Cloud Build build id 1234 and show me why it failed",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud builds describe",
+    "dry_run_supported": true
+  },
+  {
+    "query": "Cancel the queued gcloud build 9876",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud builds cancel",
+    "dry_run_supported": false
+  },
+  {
+    "query": "Retry the failed Cloud Build for my API service",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud builds retry",
+    "dry_run_supported": false
+  },
+  {
+    "query": "Create a Cloud Build trigger for GitHub main branch",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud builds triggers create",
+    "dry_run_supported": false
+  },
+  {
+    "query": "Run Cloud Build trigger prod-api-main on branch main",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud builds triggers run",
+    "dry_run_supported": false
+  },
+  {
+    "query": "Delete an old Cloud Build trigger after confirmation",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud builds triggers delete",
+    "dry_run_supported": false
+  },
+  {
+    "query": "List Cloud Build private worker pools in us-central1",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud builds worker-pools list",
+    "dry_run_supported": true
+  },
+  {
+    "query": "Create a private worker pool for Cloud Build",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud builds worker-pools create",
+    "dry_run_supported": false
+  },
+  {
+    "query": "Diagnose why Cloud Build cannot push to Artifact Registry",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud builds log",
+    "dry_run_supported": true
+  },
+  {
+    "query": "Cloud Build trigger is not firing for GitHub PRs",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud builds triggers describe",
+    "dry_run_supported": true
+  },
+  {
+    "query": "Deploy my container to Cloud Run",
+    "should_trigger": false,
+    "expected_cmd_pattern": "gcloud run deploy",
+    "dry_run_supported": false
+  },
+  {
+    "query": "Create an Artifact Registry Docker repository",
+    "should_trigger": false,
+    "expected_cmd_pattern": "gcloud artifacts repositories create",
+    "dry_run_supported": false
+  },
+  {
+    "query": "Create a GKE cluster",
+    "should_trigger": false,
+    "expected_cmd_pattern": "gcloud container clusters create",
+    "dry_run_supported": false
+  },
+  {
+    "query": "Create a Cloud Logging sink",
+    "should_trigger": false,
+    "expected_cmd_pattern": "gcloud logging sinks create",
+    "dry_run_supported": false
+  },
+  {
+    "query": "Grant a service account project editor",
+    "should_trigger": false,
+    "expected_cmd_pattern": "gcloud projects add-iam-policy-binding",
+    "dry_run_supported": false
+  },
+  {
+    "query": "Create a Cloud SQL instance",
+    "should_trigger": false,
+    "expected_cmd_pattern": "gcloud sql instances create",
+    "dry_run_supported": false
+  },
+  {
+    "query": "Set up a VPC firewall rule for private builds",
+    "should_trigger": false,
+    "expected_cmd_pattern": "gcloud compute firewall-rules create",
+    "dry_run_supported": false
+  },
+  {
+    "query": "Create a Secret Manager secret for build credentials",
+    "should_trigger": false,
+    "expected_cmd_pattern": "gcloud secrets create",
+    "dry_run_supported": false
+  },
+  {
+    "query": "Check Cloud Build build logs for a specific build ID",
+    "should_trigger": false,
+    "expected_cmd_pattern": "gcloud logging read",
+    "dry_run_supported": true
+  },
+  {
+    "query": "Add IAM policy binding for a Cloud Build service account",
+    "should_trigger": false,
+    "expected_cmd_pattern": "gcloud projects add-iam-policy-binding",
+    "dry_run_supported": false
+  }
+]

@@ -1,0 +1,109 @@
+# Example configurations for Security Command Center operations
+# Uses YAML anchors (TE-5) to reduce duplication
+
+# Default parent patterns
+org_defaults: &org_defaults
+  parent: "organizations/123456789012"
+  filter: "state=\"ACTIVE\""
+  limit: 50
+
+folder_defaults: &folder_defaults
+  parent: "folders/987654321098"
+  filter: "state=\"ACTIVE\""
+  limit: 50
+
+# Finding filter templates
+finding_filters: &finding_filters
+  critical_active: "state=\"ACTIVE\" AND severity=\"CRITICAL\""
+  high_active: "state=\"ACTIVE\" AND severity=\"HIGH\""
+  medium_active: "state=\"ACTIVE\" AND severity=\"MEDIUM\""
+  low_active: "state=\"ACTIVE\" AND severity=\"LOW\""
+  all_active: "state=\"ACTIVE\""
+  muted: 'mute="MUTED"'
+  unmuted: 'mute="UNMUTED"'
+  container_threat: 'category="CONTAINER_THREAT" AND state="ACTIVE"'
+  open_firewall: 'category="OPEN_FIREWALL" AND state="ACTIVE"'
+  public_bucket: 'category="PUBLIC_BUCKET_acl" AND state="ACTIVE"'
+  vm_threat: 'category="VM_THREAT" AND state="ACTIVE"'
+  sql_threat: 'category="SQL_IAM" AND state="ACTIVE"'
+
+# SCC service agent reference
+scc_service_agent: &scc_service_agent
+  # Replace <project-number> with the numeric project number
+  email: "service-<project-number>@gcp-sa-securitycenter.iam.gserviceaccount.com"
+  roles:
+    - "roles/bigquery.dataEditor"  # Required for BigQuery exports
+    - "roles/pubsub.publisher"     # Required for notification configs
+
+# --- Example: Enable SCC at organization ---
+enable_scc_org:
+  <<: *org_defaults
+  operation: enable_scc
+
+# --- Example: List critical findings ---
+list_critical_findings:
+  <<: *org_defaults
+  filter: *critical_active
+  limit: 100
+
+# --- Example: Mute config for dev sandbox ---
+mute_config_dev:
+  <<: *org_defaults
+  mute_config_id: "mute-dev-sandbox-low"
+  description: "Mute low-severity findings in dev sandbox project"
+  filter: 'resource_name:"projects/dev-sandbox-123" AND severity="LOW"'
+  type: "DYNAMIC"
+
+# --- Example: Mute config for acceptable risk ---
+mute_config_acceptable:
+  <<: *org_defaults
+  mute_config_id: "mute-acceptable-risk"
+  description: "Mute known/accepted risk findings"
+  filter: 'category="OPEN_FIREWALL" AND resource_name:"projects/shared-vpc/subnetworks/default"'
+  type: "DYNAMIC"
+
+# --- Example: Notification config for SOC ---
+notification_config_soc:
+  <<: *org_defaults
+  notification_config_id: "notify-soc-critical"
+  description: "Route critical and high findings to SOC Pub/Sub topic"
+  pubsub_topic: "projects/my-project/topics/soc-findings"
+  filter: "state=\"ACTIVE\" AND (severity=\"CRITICAL\" OR severity=\"HIGH\")"
+
+# --- Example: Notification config for security team ---
+notification_config_sec:
+  <<: *org_defaults
+  notification_config_id: "notify-sec-all-active"
+  description: "Route all active findings to security team"
+  pubsub_topic: "projects/my-project/topics/security-team"
+  filter: "state=\"ACTIVE\""
+
+# --- Example: BigQuery export for audit ---
+bq_export_audit:
+  <<: *org_defaults
+  bigquery_export_id: "export-audit-active"
+  description: "Continuous export of all active findings to audit BigQuery dataset"
+  dataset: "projects/my-project/datasets/scc_audit"
+  filter: "state=\"ACTIVE\""
+
+# --- Example: BigQuery export for SOC ---
+bq_export_soc:
+  <<: *org_defaults
+  bigquery_export_id: "export-soc-high"
+  description: "High-severity findings export for SOC dashboard"
+  dataset: "projects/my-project/datasets/soc_findings"
+  filter: 'state="ACTIVE" AND (severity="CRITICAL" OR severity="HIGH")'
+
+# --- Example: Custom module enablement ---
+custom_module_enable:
+  <<: *org_defaults
+  custom_module_id: "custom-sql-scanner-v2"
+  enablement_state: "ENABLED"
+
+# --- Example: Resource value config ---
+resource_value_config_prod:
+  <<: *org_defaults
+  resource_value_config_id: "rvc-prod-critical"
+  resource_name: "//compute.googleapis.com/projects/prod-project/zones/us-central1-a/instances/web-server-01"
+  resource_value: "HIGH"
+  description: "Mark production web server as high-value resource"

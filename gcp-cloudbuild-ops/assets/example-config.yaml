@@ -1,0 +1,33 @@
+cloudbuild_defaults: &cloudbuild_defaults
+  project: &project "{{env.CLOUDSDK_CORE_PROJECT}}"
+  region: global
+  config_path: cloudbuild.yaml
+  substitutions: ""
+
+submit_build:
+  <<: *cloudbuild_defaults
+  source_dir: .
+  config_path: cloudbuild.yaml
+
+trigger_defaults: &trigger_defaults
+  <<: *cloudbuild_defaults
+  branch_pattern: "^main$"
+  service_account: "projects/{{env.CLOUDSDK_CORE_PROJECT}}/serviceAccounts/cloud-build-ci@{{env.CLOUDSDK_CORE_PROJECT}}.iam.gserviceaccount.com"
+
+prod_trigger:
+  <<: *trigger_defaults
+  name: prod-api-main
+  repo_name: api-service
+  config_path: cloudbuild-prod.yaml
+  substitutions: "_ENV=prod,_REGION=us-central1"
+
+worker_pool_defaults: &worker_pool_defaults
+  project: *project
+  region: us-central1
+  worker_pool: private-builders
+  worker_pool_config: worker-pool.yaml
+
+private_worker_pool:
+  <<: *worker_pool_defaults
+  machine_type: e2-standard-4
+  disk_size_gb: 100
