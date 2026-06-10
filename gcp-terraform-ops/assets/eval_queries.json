@@ -1,0 +1,194 @@
+[
+  {
+    "query": "run terraform init in the dev environment",
+    "should_trigger": true,
+    "expected_cmd_pattern": "terraform init",
+    "dry_run_supported": true
+  },
+  {
+    "query": "validate the staging terraform configuration",
+    "should_trigger": true,
+    "expected_cmd_pattern": "terraform validate",
+    "dry_run_supported": true
+  },
+  {
+    "query": "plan the GKE cluster changes in staging",
+    "should_trigger": true,
+    "expected_cmd_pattern": "terraform plan",
+    "dry_run_supported": true
+  },
+  {
+    "query": "apply the production network configuration",
+    "should_trigger": true,
+    "expected_cmd_pattern": "terraform apply",
+    "dry_run_supported": false
+  },
+  {
+    "query": "plan a destroy of the dev database instance",
+    "should_trigger": true,
+    "expected_cmd_pattern": "terraform plan -destroy",
+    "dry_run_supported": true
+  },
+  {
+    "query": "destroy the production Cloud SQL instance",
+    "should_trigger": true,
+    "expected_cmd_pattern": "terraform destroy",
+    "dry_run_supported": false
+  },
+  {
+    "query": "tear down the dev environment infrastructure",
+    "should_trigger": true,
+    "expected_cmd_pattern": "terraform destroy",
+    "dry_run_supported": false
+  },
+  {
+    "query": "import the existing GCS bucket into terraform state",
+    "should_trigger": true,
+    "expected_cmd_pattern": "terraform import",
+    "dry_run_supported": false
+  },
+  {
+    "query": "switch to the prod workspace",
+    "should_trigger": true,
+    "expected_cmd_pattern": "terraform workspace select",
+    "dry_run_supported": true
+  },
+  {
+    "query": "create a new workspace for feature-testing",
+    "should_trigger": true,
+    "expected_cmd_pattern": "terraform workspace new",
+    "dry_run_supported": false
+  },
+  {
+    "query": "list all resources in the staging state",
+    "should_trigger": true,
+    "expected_cmd_pattern": "terraform state list",
+    "dry_run_supported": true
+  },
+  {
+    "query": "show the current state of the prod environment",
+    "should_trigger": true,
+    "expected_cmd_pattern": "terraform show",
+    "dry_run_supported": true
+  },
+  {
+    "query": "pull the remote state for backup",
+    "should_trigger": true,
+    "expected_cmd_pattern": "terraform state pull",
+    "dry_run_supported": true
+  },
+  {
+    "query": "unlock the terraform state after a failed operation",
+    "should_trigger": true,
+    "expected_cmd_pattern": "terraform force-unlock",
+    "dry_run_supported": false
+  },
+  {
+    "query": "upgrade the terraform provider to the latest version",
+    "should_trigger": true,
+    "expected_cmd_pattern": "terraform init -upgrade",
+    "dry_run_supported": true
+  },
+  {
+    "query": "read the database connection string from terraform output",
+    "should_trigger": true,
+    "expected_cmd_pattern": "terraform output",
+    "dry_run_supported": true
+  },
+  {
+    "query": "check which resources will be created in the dev environment",
+    "should_trigger": true,
+    "expected_cmd_pattern": "terraform plan",
+    "dry_run_supported": true
+  },
+  {
+    "query": "apply terraform changes to the staging environment after reviewing the plan",
+    "should_trigger": true,
+    "expected_cmd_pattern": "terraform apply",
+    "dry_run_supported": false
+  },
+  {
+    "query": "list all terraform workspaces",
+    "should_trigger": true,
+    "expected_cmd_pattern": "terraform workspace list",
+    "dry_run_supported": true
+  },
+  {
+    "query": "rename a resource in terraform state from old_name to new_name",
+    "should_trigger": true,
+    "expected_cmd_pattern": "terraform state mv",
+    "dry_run_supported": false
+  },
+  {
+    "query": "remove a deleted resource from the terraform state",
+    "should_trigger": true,
+    "expected_cmd_pattern": "terraform state rm",
+    "dry_run_supported": false
+  },
+  {
+    "query": "plan the prod environment infrastructure changes",
+    "should_trigger": true,
+    "expected_cmd_pattern": "terraform plan",
+    "dry_run_supported": true
+  },
+  {
+    "query": "create a GKE cluster with gcloud",
+    "should_trigger": false,
+    "expected_cmd_pattern": "gcloud container clusters create",
+    "dry_run_supported": false
+  },
+  {
+    "query": "manage IAM roles with gcloud",
+    "should_trigger": false,
+    "expected_cmd_pattern": "gcloud projects add-iam-policy-binding",
+    "dry_run_supported": false
+  },
+  {
+    "query": "deploy to Cloud Run with gcloud run deploy",
+    "should_trigger": false,
+    "expected_cmd_pattern": "gcloud run deploy",
+    "dry_run_supported": false
+  },
+  {
+    "query": "create a Cloud SQL instance with gcloud sql",
+    "should_trigger": false,
+    "expected_cmd_pattern": "gcloud sql instances create",
+    "dry_run_supported": false
+  },
+  {
+    "query": "write a terraform .tf file for a new VPC network",
+    "should_trigger": false,
+    "expected_cmd_pattern": "cat > main.tf",
+    "dry_run_supported": false
+  },
+  {
+    "query": "author HCL configuration for Cloud Storage bucket",
+    "should_trigger": false,
+    "expected_cmd_pattern": "vim main.tf",
+    "dry_run_supported": false
+  },
+  {
+    "query": "edit the terraform tfvars file to add a password",
+    "should_trigger": false,
+    "expected_cmd_pattern": "echo password",
+    "dry_run_supported": false
+  },
+  {
+    "query": "create a Cloud Logging sink with gcloud",
+    "should_trigger": false,
+    "expected_cmd_pattern": "gcloud logging sinks create",
+    "dry_run_supported": false
+  },
+  {
+    "query": "manage Cloud Monitoring alert policies with gcloud",
+    "should_trigger": false,
+    "expected_cmd_pattern": "gcloud monitoring policies create",
+    "dry_run_supported": false
+  },
+  {
+    "query": "use Pulumi to manage GCP infrastructure",
+    "should_trigger": false,
+    "expected_cmd_pattern": "pulumi up",
+    "dry_run_supported": false
+  }
+]

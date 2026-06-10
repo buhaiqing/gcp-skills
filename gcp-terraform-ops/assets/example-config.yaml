@@ -1,0 +1,110 @@
+# Example configurations for Terraform operations
+# Uses YAML anchors (TE-5) to reduce duplication
+
+# Common Terraform version constraints
+terraform_versions: &terraform_versions
+  required_version: ">= 1.6.0, < 2.0.0"
+  provider_version: "~> 5.0"
+
+# GCP project defaults
+gcp_defaults: &gcp_defaults
+  project: &project "{{env.CLOUDSDK_CORE_PROJECT}}"
+  region: us-central1
+
+# Backend configuration template
+gcs_backend_defaults: &gcs_backend_defaults
+  backend_type: gcs
+  lock_table_region: us-central1
+
+# Dev environment backend
+dev_backend: &dev_backend
+  <<: *gcs_backend_defaults
+  bucket: tf-state-dev-{{user.project_id}}-terraform
+  prefix: environments/dev
+  lock_table: terraform-state-lock-dev
+
+# Staging environment backend
+staging_backend: &staging_backend
+  <<: *gcs_backend_defaults
+  bucket: tf-state-staging-{{user.project_id}}-terraform
+  prefix: environments/staging
+  lock_table: terraform-state-lock-staging
+
+# Prod environment backend
+prod_backend: &prod_backend
+  <<: *gcs_backend_defaults
+  bucket: tf-state-prod-{{user.project_id}}-terraform
+  prefix: environments/prod
+  lock_table: terraform-state-lock-prod
+
+# Terraform service account IAM
+terraform_sa: &terraform_sa
+  roles:
+    - roles/storage.objectAdmin  # GCS state backend
+    - roles/dynamodb.admin      # State lock table
+    - roles/compute.admin        # Compute resources
+    - roles/cloudsql.admin       # Cloud SQL resources
+
+# Plan output configuration
+plan_defaults: &plan_defaults
+  out_file: .tfplan
+  no_color: true
+
+# Apply safety gate configuration
+apply_safety: &apply_safety
+  requires_plan: true
+  show_summary: true
+  gcl_required: true
+
+# Destroy safety gate configuration
+destroy_safety: &destroy_safety
+  requires_state_backup: true
+  requires_destroy_plan: true
+  requires_exact_confirmation: true
+  gcl_required: true
+
+# Example: init in dev environment
+init_dev:
+  <<: *gcs_backend_defaults
+  environment: dev
+  backend: *dev_backend
+  terraform: *terraform_versions
+
+# Example: plan in staging environment
+plan_staging:
+  <<: *gcp_defaults
+  environment: staging
+  backend: *staging_backend
+  terraform: *terraform_versions
+  plan: *plan_defaults
+
+# Example: apply in prod environment (GCL required)
+apply_prod:
+  <<: *gcp_defaults
+  environment: prod
+  backend: *prod_backend
+  terraform: *terraform_versions
+  plan: *plan_defaults
+  safety: *apply_safety
+
+# Example: destroy in staging environment (GCL required)
+destroy_staging:
+  <<: *gcp_defaults
+  environment: staging
+  backend: *staging_backend
+  safety: *destroy_safety
+  backup_file: backup-staging-{timestamp}.json
+
+# Example: import a Cloud SQL instance
+import_sql:
+  resource_address: google_sql_database_instance.prod_db
+  resource_id: projects/{project}/instances/prod-postgres-{project}
+  environment: prod
+  backend: *prod_backend
+
+# Example: state mv
+state_mv:
+  old_address: google_compute_instance.old_instance
+  new_address: google_compute_instance.new_instance
+  environment: prod
+  backend: *prod_backend
