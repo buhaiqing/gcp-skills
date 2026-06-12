@@ -15,7 +15,7 @@ compatibility: >-
   Admin IAM role, network access to Google Cloud endpoints.
 metadata:
   author: gcp-skills
-  version: "1.1.0"
+  version: "1.2.0"
   last_updated: "2026-06-12"
   runtime: Harness AI Agent, Claude Code, Cursor, or compatible Agent runtimes
   go_version_minimum: "1.21"
@@ -258,6 +258,7 @@ gcloud compute networks list --project="{{env.CLOUDSDK_CORE_PROJECT}}" --format=
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 1.2.0 | 2026-06-12 | Added Create/Delete Route, Describe/List/Delete VPN Tunnels, Delete Cloud NAT, Delete VPC Peering; advanced docs (Shared VPC, Private Service Connect, AIOps, FinOps) |
 | 1.1.0 | 2026-06-12 | Added Describe/List operations, Delete Subnet safety gate, Smart Defaults, Python SDK fallback, credential masking table, See Also, self-healing install; removed duplicate Changelog |
 | 1.0.0 | 2026-06-07 | Initial VPC skill with networks, subnets, firewall rules, routes, VPN, NAT, peering |
 
@@ -670,42 +671,454 @@ gcloud compute routes describe "{{user.route_name}}" \
   --format="json"
 ```
 
-### Operation: Create VPN Tunnel (HA VPN)
+**JSON response structure:**
+```json
+{
+  "name": "route-name",
+  "network": "https://www.googleapis.com/compute/v1/projects/PROJECT_ID/global/networks/network-name",
+  "destRange": "10.0.0.0/24",
+  "nextHopGateway": "default-internet-gateway",
+  "nextHopVpnTunnel": "vpn-tunnel-link",
+  "nextHopInstance": "https://www.googleapis.com/compute/v1/projects/PROJECT_ID/zones/ZONE/instances/instance-name",
+  "nextHopIp": "10.1.0.2",
+  "priority": 1000,
+  "tags": ["tag-name"],
+  "nextHopNetwork": "network-link"
+}
+```
+
+### Operation: Create Route
+
+#### Smart Defaults
+
+| Parameter | Default | When to Override |
+|-----------|---------|------------------|
+| `--priority` | 1000 | Higher priority (lower number) wins |
+| `--next-hop-gateway` | none | Use `--next-hop-instance` for VM, `--next-hop-vpn-tunnel` for VPN |
+| `--destination-range` | `0.0.0.0/0` | Specific CIDR for more granular routing |
 
 #### Pre-flight Checks
 
 | Check | Method | Expected | On Failure |
 |-------|--------|----------|------------|
-| Cloud Router exists | `gcloud compute routers list --region="{{user.region}}"` | Router exists | Create router first |
-| Peer gateway IP | User-provided | Reachable IP | HALT; verify peer IP |
-| IKE version | Compatibility check | Same version both sides | HALT; align IKE version |
+| Next hop validity | `gcloud compute instances describe {{user.instance_name}} --format=json` | Not ERROR | HALT; instance doesn't exist |
+| destination-range | User provides valid CIDR (e.g., `10.0.0.0/24`) | CIDR notation | HALT; invalid CIDR |
+| Destination CIDR overlap | Check with existing subnets | No overlap with local subnet | WARING; potential routing issues |
+| Admin role check | `gcloud projects get-iam-policy` | Has role | HALT; insufficient permissions |
 
 #### Execution — CLI (`gcloud`)
 
+**Create route with default gateway:**
 ```bash
-# Create VPN gateway
-gcloud compute vpn-gateways create "{{user.vpn_name}}-gw" \
+gcloud compute routes create "{{user.route_name}}" \
+  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
+  --network "{{user.network_name}}" \
+  --destination-range="{{user.destination_range}}" \
+  --next-hop-gateway=default-internet-gateway \
+  --priority={{user.priority | default(1000)}} \
+  --format="json"
+```
+
+**Create route to VM instance:**
+```bash
+gcloud compute routes create "{{user.route_name}}" \
+  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
+  --network "{{user.network_name}}" \
+  --destination-range="{{user.destination_range}}" \
+  --next-hop-instance="{{user.zone}}/{{user.instance_name}}" \
+  --priority={{user.priority | default(1000)}} \
+  --tags={{user.tags | default('routes')}} \
+  --format="json"
+```
+
+**Create route to VPN tunnel:**
+```bash
+gcloud compute routes create "{{user.route_name}}" \
+  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
+  --network "{{user.network_name}}" \
+  --destination-range="{{user.destination_range}}" \
+  --next-hop-vpn-tunnel="{{user.vpn_tunnel_name}}" \
+  --priority={{user.priority | default(1000)}} \
+  --tags={{user.tags | default('routes')}} \
+  --format="json"
+```
+
+**Create route to specific IP:**
+```bash
+gcloud compute routes create "{{user.route_name}}" \
+  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
+  --network "{{user.network_name}}" \
+  --destination-range="{{user.destination_range}}" \
+  --next-hop-ip="{{user.next_hop_ip}}" \
+  --priority={{user.priority | default(1000)}} \
+  --format="json"
+```
+
+#### Execution — Python SDK (Primary Fallback)
+
+Full script at [references/api-sdk-usage.md](references/api-sdk-usage.md)
+
+```python
+# create_route.py — run: python3 create_route.py
+from google.cloud import compute_v1
+from google.cloud.compute_v1 import types
+import os
+
+project = os.environ["CLOUDSDK_CORE_PROJECT"]
+route_client = compute_v1.RoutesClient()
+
+route = types.Route()
+route.name = "{{user.route_name}}"
+route.destination_range = "{{user.destination_range}}"
+route.priority = {{user.priority | default(1000)}}
+route.network = f"https://www.googleapis.com/compute/v1/projects/{project}/global/networks/{{user.network_name}}"
+
+if "{{user.next_hop_gateway}}":
+    route.next_hop_gateway = "{{user.next_hop_gateway}}"
+elif "{{user.next_hop_instance}}":
+    route.next_hop_instance = f"https://www.googleapis.com/compute/v1/projects/{project}/zones/{{user.zone}}/{{user.instance_name}}"
+elif "{{user.next_hop_vpn_tunnel}}":
+    route.next_hop_vpn_tunnel = "{{user.vpn_tunnel_name}}"
+elif "{{user.next_hop_ip}}":
+    route.next_hop_ip = "{{user.next_hop_ip}}"
+else:
+    raise ValueError("Next hop gateway, instance, VPN tunnel, or IP must be provided")
+
+op = route_client.insert(project=project, route_resource=route)
+print(f"Route creation operation: {op.name}")
+
+# Poll for completion
+def wait_for_operation(operation):
+    while True:
+        op = operation.reload()
+        if op.error or op.status == "DONE":
+            break
+        time.sleep(5)
+
+wait_for_operation(op)
+print(f"Route {{route.name}} created successfully")
+```
+
+#### Post-execution Validation
+
+| Step | Command | Expected | On Failure |
+|------|---------|----------|------------|
+| Verify route exists | `gcloud compute routes describe {{user.route_name}} --format=json` | Route details returned | HALT; route not created |
+| Check route destination | `jq '{name, destination_range, next_hop}'` | Matches request | HALT; mismatch |
+| Verify route in network | `gcloud compute routes list --filter="network:{{user.network_name}} --format=json"` | Route in list | HALT; not bound to network |
+
+#### Failure Recovery
+
+| Error | Fix |
+|-------|-----|
+| `400 Bad Request - Invalid CIDR range` | Validate `--destination-range` format (e.g., `10.0.0.0/24`) |
+| `400 Bad Request - Destination CIDR overlaps with subnet` | Remove or update conflicting subnet; verify CIDR not used by existing subnets |
+| `400 Bad Request - Next hop not found` | Check VM instance exists: `gcloud compute instances describe {{user.instance_name}}` |
+| `403 Forbidden` | Verify IAM role `roles/compute.networkAdmin` exists |
+| `409 Conflict - Route already exists` | Use different `--name` or delete existing route first |
+
+### Operation: Delete Route
+
+#### Safety Gate: HIGH
+
+> **⛔ DELETE DANGER:** Deleting a route can break network connectivity. Routes may be auto-created by Google Cloud (e.g., default routes from internet gateways, subnets, routers). **NEVER delete auto-created routes unless you understand the impact.**
+
+#### Pre-flight Checks
+
+| Check | Method | Expected | On Failure |
+|-------|--------|----------|------------|
+| Route exists | `gcloud compute routes describe {{user.route_name}} --format=json` | Route details returned | HALT; route doesn't exist |
+| Route is user-created | Check `tags` or validate route is not Google-created | No "Google-managed" label OR user-provided tags | WARN; confirm deletion intent |
+| Verify no critical dependencies | Review route `nextHopGateway`, `nextHopInstance`, `nextHopVpnTunnel` | No VMs/VPN tunnels depend on this route | HALT; confirm no dependent resources |
+| Confirmation | User provides route name again | User confirms deletion | HALT; no confirmation |
+
+#### Execution — CLI (`gcloud`)
+
+**Delete route with confirmation:**
+```bash
+# Step 1: Confirm route exists and show details
+gcloud compute routes describe "{{user.route_name}}" \
+  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
+  --format="json" | \
+  jq '{name, destination_range, next_hop_gateway, next_hop_instance, next_hop_vpn_tunnel}'
+
+# Step 2: Delete route (user must confirm)
+gcloud compute routes delete "{{user.route_name}}" \
+  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
+  --quiet
+```
+
+**Delete route via Python SDK:**
+```python
+# delete_route.py — run: python3 delete_route.py
+from google.cloud import compute_v1
+
+project = os.environ["CLOUDSDK_CORE_PROJECT"]
+route_client = compute_v1.RoutesClient()
+
+# Step 1: Get route details
+route = route_client.get(
+    project=project,
+    route="{{user.route_name}}"
+)
+
+print(f"Route: {route.name}")
+print(f"Destination: {route.destination_range}")
+print(f"Next hop: {route.next_hop_gateway or route.next_hop_instance or route.next_hop_vpn_tunnel or route.next_hop_ip}")
+
+# Step 2: Delete (async operation)
+op = route_client.delete(
+    project=project,
+    route="{{user.route_name}}"
+)
+print(f"Deletion operation: {op.name}")
+
+# Step 3: Poll for completion
+def wait_for_operation(operation):
+    while True:
+        operation.reload()
+        if operation.error or operation.status == "DONE":
+            break
+        time.sleep(5)
+
+wait_for_operation(op)
+print(f"✅ Route {{route.name}} deleted successfully")
+```
+
+#### Post-execution Validation
+
+| Step | Command | Expected | On Failure |
+|------|---------|----------|------------|
+| Verify deletion | `gcloud compute routes describe {{user.route_name}} --format=json` | Returns NOT_FOUND | HALT; deletion failed |
+| Check pending operations | `gcloud compute operations list --filter="targetLink=~routes.*{{user.route_name}}" --format=json` | No pending operations | WARN; may still be deleting |
+
+#### Failure Recovery
+
+| Error | Fix |
+|-------|-----|
+| `404 Not Found - Route not found` | Route already deleted or wrong name |
+| `400 Bad Request - Route is in use` | Verify no VMs/bound to this route; disable VMs or update VM network interfaces first |
+| `403 Forbidden` | Verify IAM role `roles/compute.networkAdmin` |
+| `400 Bad Request - Route cannot be deleted` | Route is a dependency for VM network interfaces; disassociate from VMs first |
+
+### Operation: Describe / List VPN Tunnels
+
+**List VPN tunnels:**
+```bash
+gcloud compute vpn-tunnels list \
+  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
+  --region="{{user.region}}" \
+  --format="json"
+```
+
+**Filter by VPN gateway:**
+```bash
+gcloud compute vpn-tunnels list \
+  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
+  --region="{{user.region}}" \
+  --filter="vpnGateway:{{user.vpn_gateway_name}}" \
+  --format="json"
+```
+
+**Describe a specific VPN tunnel:**
+```bash
+gcloud compute vpn-tunnels describe "{{user.vpn_tunnel_name}}" \
+  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
+  --region="{{user.region}}" \
+  --format="json" | \
+  jq '{name, selfLink, targetVpnGateway, peerIp, ikeVersion, sharedSecret: (.sharedSecret | .[0:4] + "****"), status}'
+```
+
+**JSON response structure:**
+```json
+{
+  "name": "vpn-tunnel-name",
+  "selfLink": "https://www.googleapis.com/compute/v1/projects/PROJECT_ID/regions/REGION/operationLink",
+  "creationTimestamp": "2026-06-12T10:00:00Z",
+  "targetVpnGateway": "https://www.googleapis.com/compute/v1/projects/PROJECT_ID/regions/REGION/targetVpnGateways/gateway-name",
+  "peerIpAddress": "203.0.113.5",
+  "sharedSecret": "YjslA9wZk89/3xL3mQ==",
+  "ikeVersion": 2,
+  "router": "https://www.googleapis.com/compute/v1/projects/PROJECT_ID/regions/REGION/routers/router-name",
+  "status": "ESTABLISHED"
+}
+```
+
+### Operation: Create VPN Tunnel
+
+#### Safety Gate: MEDIUM
+
+> **⚠️ VPN CAUTION:** VPN tunnels establish encrypted connections between GCP and on-premises or peer VPCs. Configuration must be consistent on both sides to avoid connectivity failures.
+
+#### Pre-flight Checks
+
+| Check | Method | Expected | On Failure |
+|-------|--------|----------|------------|
+| Cloud Router exists | `gcloud compute routers list --region="{{user.region}}"` | Router exists | HALT; create router first |
+| Peer gateway IP | User provides reachable IP | Valid IPv4 | HALT; verify IP format |
+| IKE version compatibility | IKEv1 and IKEv2 must match on both sides | Same version | HALT; align with peer |
+| IAM role | SA has `roles/compute.networkAdmin` | Has role | HALT; insufficient permissions |
+
+#### Execution — CLI (`gcloud`)
+
+**Create VPN gateway:**
+```bash
+gcloud compute vpn-gateways create "{{user.vpn_gateway_name}}" \
   --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
   --region="{{user.region}}" \
   --network="{{user.network_name}}" \
   --format="json"
+```
 
-# Create VPN tunnel
-# SECURITY: Generate a random shared-secret instead of taking user input.
-# The secret is visible in process listing (`ps aux`) — mitigate by using
-# `gcloud` native input or rotating immediately after creation.
+**Create VPN tunnel:**
+```bash
+# SECURITY: Generate a secure shared secret
 SHARED_SECRET=$(openssl rand -base64 24)
+
 gcloud compute vpn-tunnels create "{{user.vpn_tunnel_name}}" \
   --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
   --region="{{user.region}}" \
-  --vpn-gateway="{{user.vpn_name}}-gw" \
-  --peer-address="{{user.peer_ip}}" \
-  --shared-secret="${SHARED_SECRET}" \
-  --ike-version=2 \
+  --vpn-gateway="{{user.vpn_gateway_name}}" \
+  --peer-address="{{user.peer_gateway_ip}}" \
+  --shared-secret="$SHARED_SECRET" \
+  --ike-version={{user.ike_version | default(2)}} \
   --router="{{user.router_name}}" \
   --format="json"
-echo "Shared secret (save this): ${SHARED_SECRET}"
+
+echo "======================================"
+echo "SHARED_SECRET: ${SHARED_SECRET}"
+echo "Save this now - cannot be recovered"
+echo "======================================"
 ```
+
+**Create dual VPN tunneled configuration (HA VPN):**
+```bash
+# Create second tunnel (failover)
+SHARED_SECRET_SECOND=$(openssl rand -base64 24)
+
+gcloud compute vpn-tunnels create "{{user.vpn_tunnel_name}}-secondary" \
+  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
+  --region="{{user.region}}" \
+  --vpn-gateway="{{user.vpn_gateway_name}}" \
+  --peer-address="{{user.peer_gateway_ip_secondary}}" \
+  --shared-secret="$SHARED_SECRET_SECOND" \
+  --ike-version={{user.ike_version | default(2)}} \
+  --router="{{user.router_name}}"
+```
+
+#### Post-execution Validation
+
+| Step | Command | Expected | On Failure |
+|------|---------|----------|------------|
+| Verify tunnel exists | `gcloud compute vpn-tunnels describe {{user.vpn_tunnel_name}}` | Tunnel details returned | HALT; not created |
+| Check tunnel status | `jq '.status'` | `ESTABLISHED` or `INITIATED` | WARN; may take time |
+| Verify shared secret | Compare saved secret with GCP output | Match | HALT; secret not saved |
+
+#### Failure Recovery
+
+| Error | Fix |
+|-------|-----|
+| `400 Bad Request - Peer IP unreachable` | Verify peer IP is reachable: `ping {{user.peer_gateway_ip}}` |
+| `400 Bad Request - IKE version mismatch` | Ensure both sides use same IKE version (1 or 2) |
+| `403 Forbidden` | Verify IAM role `roles/compute.networkAdmin` |
+| `409 Conflict - Tunnel already exists` | Use different tunnel name or delete existing tunnel |
+
+### Operation: Delete VPN Tunnel
+
+#### Safety Gate: HIGH
+
+> **⛔ DELETE DANGER:** Deleting a VPN tunnel helps connectivity, but peer side must also delete its tunnel to close the connection. This operation is not reversible.
+
+#### Pre-flight Checks
+
+| Check | Method | Expected | On Failure |
+|-------|--------|----------|------------|
+| Tunnel exists | `gcloud compute vpn-tunnels describe {{user.vpn_tunnel_name}} --region={{user.region}}` | Tunnel details returned | HALT; tunnel not found |
+| No active traffic/users | Review tunnel status and operations | Not BUSY | WARN; verify connectivity OK |
+| Peer configuration | Verify peer network has matching tunnel | Peer will also delete | Confirm peer action |
+| Confirmation | User explicitly confirms | User confirms deletion | HALT; no confirmation |
+
+#### Execution — CLI (`gcloud`)
+
+**Delete VPN tunnel:**
+```bash
+# Step 1: Show tunnel details before deletion
+gcloud compute vpn-tunnels describe "{{user.vpn_tunnel_name}}" \
+  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
+  --region="{{user.region}}" \
+  --format="json" | \
+  jq '{name, targetVpnGateway, peerIpAddress, status}'
+
+# Step 2: Confirm deletion
+# User must type "CONFIRM DELETE" to proceed
+read -p "Type 'CONFIRM DELETE' to proceed: " confirm
+
+if [ "$confirm" = "CONFIRM DELETE" ]; then
+  gcloud compute vpn-tunnels delete "{{user.vpn_tunnel_name}}" \
+    --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
+    --region="{{user.region}}" \
+    --quiet
+  echo "✅ VPN tunnel {{user.vpn_tunnel_name}} deleted"
+else
+  echo "❌ Deletion cancelled"
+fi
+```
+
+**Delete via Python SDK:**
+```python
+# delete_vpn_tunnel.py
+from google.cloud import compute_v1
+
+project = os.environ["CLOUDSDK_CORE_PROJECT"]
+zone_client = compute_v1.VpnTunnelsClient()
+
+# Step 1: Get tunnel details before deletion
+tunnel = zone_client.get(
+    project=project,
+    region="{{user.region}}",
+    vpn_tunnel="{{user.vpn_tunnel_name}}"
+)
+
+print(f"VPN Tunnel: {tunnel.name}")
+print(f"Target Gateway: {tunnel.target_vpn_gateway}")
+print(f"Peer IP: {tunnel.peer_ip_address}")
+print(f"Status: {tunnel.status}")
+
+# Step 2: Delete (async operation)
+op = zone_client.delete(
+    project=project,
+    region="{{user.region}}",
+    vpn_tunnel="{{user.vpn_tunnel_name}}"
+)
+print(f"Deletion operation: {op.name}")
+
+# Step 3: Poll for completion
+def wait_for_operation(operation):
+    while True:
+        operation.reload()
+        if operation.error or operation.status == "DONE":
+            break
+        time.sleep(5)
+
+wait_for_operation(op)
+print(f"✅ VPN tunnel {tunnel.name} deleted successfully")
+```
+
+#### Post-execution Validation
+
+| Step | Command | Expected | On Failure |
+|------|---------|----------|------------|
+| Verify deletion | `gcloud compute vpn-tunnels describe {{user.vpn_tunnel_name}} --region={{user.region}}` | Returns NOT_FOUND | HALT; deletion failed |
+| Check operations | `gcloud compute operations list --filter="targetLink=~vpn-tunnels.*{{user.vpn_tunnel_name}}"` | No pending deletion | WARN |
+
+#### Failure Recovery
+
+| Error | Fix |
+|-------|-----|
+| `404 Not Found - Tunnel not found` | Tunnel already deleted or wrong name/region |
+| `400 Bad Request - Tunnel in use` | Disassociate from VMs/routers first |
+| `403 Forbidden` | Verify IAM role `roles/compute.networkAdmin` |
+| `400 Bad Request - Tunnel connection faulted` | Check network connectivity, routing, VPN gateway status |
 
 ### Operation: Create Cloud NAT
 
@@ -726,6 +1139,118 @@ gcloud compute routers nats create "{{user.nat_gateway_name}}" \
   --auto-allocate-nat-external-ips \
   --format="json"
 ```
+
+### Operation: Delete Cloud NAT
+
+#### Safety Gate: MEDIUM
+
+> **⚠️ NAT CAUTION:** Deleting Cloud NAT may break internet connectivity for VMs that rely on it. Verify no VMs need NAT before proceeding.
+
+#### Pre-flight Checks
+
+| Check | Method | Expected | On Failure |
+|-------|--------|----------|------------|
+| NAT gateway exists | `gcloud compute routers nats list --region="{{user.region}}"` | NAT found | HALT; NAT doesn't exist |
+| VM dependency check | Review NAT targets | No VMs actively using NAT or user confirms | WARN before deletion |
+| Router existence | `gcloud compute routers describe {{user.router_name}}` | Router exists | HALT; router must exist |
+| Confirmation | User confirms deletion intent | User confirms | HALT; no confirmation |
+
+#### Execution — CLI (`gcloud`)
+
+**List NAT gateways to verify:**
+```bash
+gcloud compute routers nats list \
+  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
+  --region="{{user.region}}" \
+  --router="{{user.router_name}}" \
+  --format="table"
+```
+
+**Delete NAT gateway:**
+```bash
+# Step 1: Show NAT details before deletion
+gcloud compute routers nats describe "{{user.nat_name}}" \
+  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
+  --region="{{user.region}}" \
+  --router="{{user.router_name}}" \
+  --format="json" | \
+  jq '{name, natIpAllocateOption, sourceSubnetworkIpRangesToNat, naptAllSubnetIpRanges}'
+
+# Step 2: Delete NAT (async operation)
+gcloud compute routers nats delete "{{user.nat_name}}" \
+  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
+  --region="{{user.region}}" \
+  --router="{{user.router_name}}" \
+  --quiet
+
+echo "✅ Cloud NAT {{user.nat_name}} deletion initiated"
+echo "Monitor progress with: gcloud compute operations list"
+```
+
+**Delete via Python SDK:**
+```python
+# delete_nat_gateway.py
+from google.cloud import compute_v1
+
+project = os.environ["CLOUDSDK_CORE_PROJECT"]
+nats_client = compute_v1.RouterNatsClient()
+
+# List NATs to find target
+nat_list = nats_client.list(
+    project=project,
+    region="{{user.region}}",
+    router="{{user.router_name}}"
+)
+
+nat = None
+for item in nat_list:
+    if item.name == "{{user.nat_name}}":
+        nat = item
+        break
+
+if not nat:
+    raise ValueError(f"NAT gateway {{user.nat_name}} not found")
+
+print(f"NAT Gateway: {nat.name}")
+print(f"Distribution Mode: {nat.natIpAllocateOption}")
+print(f"Source Subnets: {[s.ip_range for s in nat.source_subnetwork_ip_ranges_to_nat]}")
+
+# Step 1: Delete NAT (async operation)
+op = nats_client.delete(
+    project=project,
+    region="{{user.region}}",
+    router="{{user.router_name}}",
+    nat="{{user.nat_name}}"
+)
+print(f"Deletion operation: {op.name}")
+
+# Step 2: Poll for completion
+def wait_for_operation(operation):
+    while True:
+        operation.reload()
+        if operation.error or operation.status == "DONE":
+            break
+        time.sleep(5)
+
+wait_for_operation(op)
+print(f"✅ Cloud NAT {nat.name} deleted successfully")
+```
+
+#### Post-execution Validation
+
+| Step | Command | Expected | On Failure |
+|------|---------|----------|------------|
+| Verify deletion | `gcloud compute routers nats describe {{user.nat_name}}` | Returns NOT_FOUND | HALT; deletion failed |
+| Check pending operations | `gcloud compute operations list --filter="targetLink=~nats.*{{user.nat_name}}"` | No pending deletions | WARN; monitor progress |
+
+#### Failure Recovery
+
+| Error | Fix |
+|-------|-----|
+| `404 Not Found - NAT not found` | NAT already deleted or wrong name/region |
+| `400 Bad Request - NAT is required for subnets` | Subnets have NAT: `gcloud compute routes list --filter="nextHopNat:"` |
+| `403 Forbidden` | Verify IAM role `roles/compute.networkAdmin` |
+| `400 Bad Request - Router not found` | Create router first: `gcloud compute routers create {{user.router_name}}` |
 
 ### Operation: Create VPC Peering
 
@@ -749,6 +1274,119 @@ gcloud compute networks peerings create "{{user.peering_name}}" \
   --import-custom-routes \
   --format="json"
 ```
+
+### Operation: Delete VPC Peering
+
+#### Safety Gate: MEDIUM
+
+> **⚠️ PEERING CAUTION:** Deleting VPC peering closes connectivity between VPCs. Both sides must also delete their peering connections. This may break cross-VPC network resources.
+
+#### Pre-flight Checks
+
+| Check | Method | Expected | On Failure |
+|-------|--------|----------|------------|
+| Peering exists | `gcloud compute networks peerings list --network="{{user.network_name}}"` | Peering found | HALT; not found |
+| Peering state | `jq '.state'` | `ACTIVE` or `CONNECTED` | Warn before deletion |
+| Cross-VPC dependencies | Review VMs/shared VPC services | No VMs using peering | WARN before deletion |
+| Confirmation | User explicitly confirms | User confirms | HALT; no confirmation |
+| Peer side action | Verify peer will also delete their peering | Peer action confirmed | HALT; peer not coordinated |
+
+#### Execution — CLI (`gcloud`)
+
+**List current peerings:**
+```bash
+gcloud compute networks peerings list \
+  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
+  --network="{{user.network_name}}" \
+  --format="json" | \
+  jq '.[] | {name, network: .networkEmail.split("/")[-1], peerNetwork: .peerNetworkEmail.split("/")[-1], state}'
+```
+
+**Delete VPC peering:**
+```bash
+# Step 1: Show peering details before deletion
+gcloud compute networks peerings describe "{{user.peering_name}}" \
+  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
+  --network="{{user.network_name}}" \
+  --format="json" | \
+  jq '{name, peerNetwork, state}'
+
+# Step 2: Confirm deletion
+# User must type "CONFIRM DELETE" to proceed
+read -p "Type 'CONFIRM DELETE' to proceed: " confirm
+
+if [ "$confirm" = "CONFIRM DELETE" ]; then
+  gcloud compute networks peerings delete "{{user.peering_name}}" \
+    --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
+    --network="{{user.network_name}}" \
+    --quiet
+
+  echo "✅ VPC peering {{user.peering_name}} deleted"
+  echo "⚠️ IMPORTANT: Also delete peering on the peer network:"
+  echo "   gcloud networks peerings delete {{user.peering_name}} \\"
+  echo "     --peer-project={{user.peer_project}} \\"
+  echo "     --peer-network={{user.peer_network}}"
+else
+  echo "❌ Deletion cancelled"
+fi
+```
+
+**Delete via Python SDK:**
+```python
+# delete_vpc_peering.py
+from google.cloud import compute_v1
+
+project = os.environ["CLOUDSDK_CORE_PROJECT"]
+network_name = "{{user.network_name}}"
+peering_name = "{{user.peering_name}}"
+peering_client = compute_v1.NetworksPeeringClient()
+
+# Step 1: Get peering details
+peering = peering_client.get(
+    project=project,
+    network=network_name,
+    peering=peering_name
+)
+
+print(f"VPC Peering: {peering.name}")
+print(f"Peer Network: {peering.peer_network_email.split("/")[-1]}")
+print(f"State: {peering.state}")
+
+# Step 2: Delete
+op = peering_client.delete(
+    project=project,
+    network=network_name,
+    peering=peering_name
+)
+print(f"Deletion operation: {op.name}")
+
+# Step 3: Poll for completion
+def wait_for_operation(operation):
+    while True:
+        operation.reload()
+        if operation.error or operation.status == "DONE":
+            break
+        time.sleep(5)
+
+wait_for_operation(op)
+print(f"✅ VPC peering {peering.name} deleted successfully")
+```
+
+#### Post-execution Validation
+
+| Step | Command | Expected | On Failure |
+|------|---------|----------|------------|
+| Verify deletion | `gcloud compute networks peerings describe {{user.peering_name}}` | Returns NOT_FOUND | HALT; deletion failed |
+| Check operations | `gcloud compute operations list --filter="targetLink=~peerings.*{{user.peering_name}}"` | No pending operations | WARN |
+
+#### Failure Recovery
+
+| Error | Fix |
+|-------|-----|
+| `404 Not Found - Peering not found` | Peering already deleted or wrong parameters |
+| `403 Forbidden` | Verify IAM role `roles/compute.networkAdmin` on both sides |
+| `400 Bad Request - Peering bound to resources` | Disassociate from VMs/shared VIPs first |
+| `400 Bad Request - Peering state: READY` | Peering not activated on peer side; wait for peer action |
 
 ## Prerequisites
 
