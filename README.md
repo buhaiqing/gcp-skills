@@ -88,12 +88,22 @@ gcp-[product]-ops/
 | [`gcp-memorystore-ops`](gcp-memorystore-ops/SKILL.md) | Memorystore for Redis (instances, scaling, export/import, failover) | ✅ Released |
 | [`gcp-cloudbuild-ops`](gcp-cloudbuild-ops/SKILL.md) | Cloud Build (builds, triggers, private worker pools, diagnostics) | ✅ Released |
 | [`gcp-billing-ops`](gcp-billing-ops/SKILL.md) | Cloud Billing (billing accounts, budgets, exports, project links, pricing) | ✅ Released |
-| `gcp-vpc-ops` | VPC (networks, subnets, firewall rules, VPN, Cloud NAT) | In development |
-| `gcp-gke-ops` | Google Kubernetes Engine | Planned |
-| `gcp-cloudsql-ops` | Cloud SQL | Planned |
-| `gcp-gcs-ops` | Cloud Storage | Planned |
-| `gcp-iam-ops` | IAM | Planned |
-| `gcp-dns-ops` | Cloud DNS | Planned |
+| [`gcp-vpc-ops`](gcp-vpc-ops/SKILL.md) | VPC (networks, subnets, firewall rules, VPN, Cloud NAT, peering) | ✅ Released |
+| [`gcp-gke-ops`](gcp-gke-ops/SKILL.md) | Google Kubernetes Engine (clusters, node pools, workloads, IAM) | ✅ Released |
+| [`gcp-cloudsql-ops`](gcp-cloudsql-ops/SKILL.md) | Cloud SQL (MySQL/PostgreSQL/SQL Server instances, backups) | ✅ Released |
+| [`gcp-gcs-ops`](gcp-gcs-ops/SKILL.md) | Cloud Storage (buckets, objects, lifecycle, IAM) | ✅ Released |
+| [`gcp-iam-ops`](gcp-iam-ops/SKILL.md) | Cloud IAM (roles, policies, service accounts, workload identity) | ✅ Released |
+| [`gcp-dns-ops`](gcp-dns-ops/SKILL.md) | Cloud DNS (zones, records, policies, health checks) | ✅ Released |
+| [`gcp-pubsub-ops`](gcp-pubsub-ops/SKILL.md) | Cloud Pub/Sub (topics, subscriptions, schemas, snapshots) | ✅ Released |
+| [`gcp-cloudrun-ops`](gcp-cloudrun-ops/SKILL.md) | Cloud Run (services, revisions, traffic splitting) | ✅ Released |
+| [`gcp-cloudfunctions-ops`](gcp-cloudfunctions-ops/SKILL.md) | Cloud Functions (functions, triggers, source repos) | ✅ Released |
+| [`gcp-monitoring-ops`](gcp-monitoring-ops/SKILL.md) | Cloud Monitoring (metrics, dashboards, alert policies) | ✅ Released |
+| [`gcp-bigquery-ops`](gcp-bigquery-ops/SKILL.md) | BigQuery (datasets, tables, queries, jobs) | ✅ Released |
+| [`gcp-secretmanager-ops`](gcp-secretmanager-ops/SKILL.md) | Secret Manager (secrets, versions, IAM) | ✅ Released |
+| [`gcp-cdn-ops`](gcp-cdn-ops/SKILL.md) | Cloud CDN (origins, cache policies, signed URLs) | ✅ Released |
+| [`gcp-securitycenter-ops`](gcp-securitycenter-ops/SKILL.md) | Security Command Center (findings, sources, mute rules) | ✅ Released |
+| [`gcp-gcl-runner-ops`](gcp-gcl-runner-ops/SKILL.md) | GCL Runner (cross-skill Generator-Critic-Loop execution) | ✅ Released |
+| [`gcp-terraform-ops`](gcp-terraform-ops/SKILL.md) | Terraform (init, plan, apply, destroy, state management) | ✅ Released |
 
 See [AGENTS.md Appendix A](AGENTS.md#appendix-a-gcp-product--directory-mapping-planned) for the full roadmap.
 
