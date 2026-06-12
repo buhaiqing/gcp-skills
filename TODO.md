@@ -250,13 +250,13 @@
 | See Also section | ✅ | v1.1.0 |
 | Self-review (R1+R2) passed | ✅ | v1.1.0 |
 | eval_queries.json complete | ✅ | 27 queries |
-| Delete Route operation | ⬜ | Planned |
-| Create Route operation | ⬜ | Planned |
-| Describe / List VPN Tunnels | ⬜ | Planned |
-| Delete VPN Tunnel operation | ⬜ | Planned |
-| Delete Cloud NAT operation | ⬜ | Planned |
-| Delete VPC Peering operation | ⬜ | Planned |
-| Shared VPC setup guide | ⬜ | references/advanced/ |
-| Private Service Connect setup | ⬜ | references/advanced/ |
-| AIOps anomaly detection | ⬜ | references/advanced/ |
-| FinOps cost optimization | ⬜ | references/advanced/ |
+| Delete Route operation | ✅ | v1.2.0 — Safety gate |
+| Create Route operation | ✅ | v1.2.0 |
+| Describe / List VPN Tunnels | ✅ | v1.2.0 |
+| Delete VPN Tunnel operation | ✅ | v1.2.0 — Safety gate |
+| Delete Cloud NAT operation | ✅ | v1.2.0 — Safety gate |
+| Delete VPC Peering operation | ✅ | v1.2.0 — Safety gate |
+| Shared VPC setup guide | ✅ | references/advanced/ |
+| Private Service Connect setup | ✅ | references/advanced/ |
+| AIOps anomaly detection | ✅ | references/advanced/ |
+| FinOps cost optimization | ✅ | references/advanced/ |
