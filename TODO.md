@@ -1,5 +1,230 @@
 # gcp-skills — TODO.md
 
+> All-skill TODO tracking. Update on every skill change.
+> See `AGENTS.md §11.1` for maintenance rules.
+
+---
+
+## gcp-bigquery-ops
+
+| Feature | Status | Notes |
+|---------|--------|-------|
+| Core operations (SKILL.md complete) | ✅ | v1.0.0 |
+| Self-review passed (R1+R2) | ✅ | |
+| eval_queries.json complete | ✅ | |
+
+---
+
+## gcp-billing-ops
+
+| Feature | Status | Notes |
+|---------|--------|-------|
+| Core operations (SKILL.md complete) | ✅ | v1.0.0 |
+| Self-review passed (R1+R2) | ✅ | |
+| eval_queries.json complete | ✅ | |
+
+---
+
+## gcp-cdn-ops
+
+| Feature | Status | Notes |
+|---------|--------|-------|
+| Core operations (SKILL.md complete) | ✅ | v1.0.0 |
+| Self-review passed (R1+R2) | ✅ | |
+| eval_queries.json complete | ✅ | |
+
+---
+
+## gcp-cloudbuild-ops
+
+| Feature | Status | Notes |
+|---------|--------|-------|
+| Core operations (SKILL.md complete) | ✅ | v1.0.0 |
+| Self-review passed (R1+R2) | ✅ | |
+| eval_queries.json complete | ✅ | |
+
+---
+
+## gcp-cloudfunctions-ops
+
+| Feature | Status | Notes |
+|---------|--------|-------|
+| Core operations (SKILL.md complete) | ✅ | v1.0.0 |
+| Self-review passed (R1+R2) | ✅ | |
+| eval_queries.json complete | ✅ | |
+
+---
+
+## gcp-cloudrun-ops
+
+| Feature | Status | Notes |
+|---------|--------|-------|
+| Core operations (SKILL.md complete) | ✅ | v1.0.0 |
+| Self-review passed (R1+R2) | ✅ | |
+| eval_queries.json complete | ✅ | |
+
+---
+
+## gcp-cloudsql-ops
+
+| Feature | Status | Notes |
+|---------|--------|-------|
+| Core operations (SKILL.md complete) | ✅ | v1.0.0 |
+| Self-review passed (R1+R2) | ✅ | |
+| eval_queries.json complete | ✅ | |
+
+---
+
+## gcp-dns-ops
+
+| Feature | Status | Notes |
+|---------|--------|-------|
+| Core operations (SKILL.md complete) | ✅ | v1.0.0 |
+| Self-review passed (R1+R2) | ✅ | |
+| eval_queries.json complete | ✅ | |
+
+---
+
+## gcp-gce-ops
+
+| Feature | Status | Notes |
+|---------|--------|-------|
+| Core operations (SKILL.md complete) | ✅ | v1.0.0 |
+| Self-review passed (R1+R2) | ✅ | |
+| eval_queries.json complete | ✅ | |
+
+---
+
+## gcp-gcl-runner-ops
+
+| Feature | Status | Notes |
+|---------|--------|-------|
+| Core operations (SKILL.md complete) | ✅ | v1.0.0 |
+| Self-review passed (R1+R2) | ✅ | |
+| eval_queries.json complete | ✅ | |
+
+---
+
+## gcp-gcs-ops
+
+| Feature | Status | Notes |
+|---------|--------|-------|
+| Core operations (SKILL.md complete) | ✅ | v1.0.0 |
+| Self-review passed (R1+R2) | ✅ | |
+| eval_queries.json complete | ✅ | |
+
+---
+
+## gcp-gke-ops
+
+| Feature | Status | Notes |
+|---------|--------|-------|
+| Core operations (SKILL.md complete) | ✅ | v1.0.0 |
+| Self-review passed (R1+R2) | ✅ | |
+| eval_queries.json complete | ✅ | |
+
+---
+
+## gcp-iam-ops
+
+| Feature | Status | Notes |
+|---------|--------|-------|
+| Core operations (SKILL.md complete) | ✅ | v1.0.0 |
+| Self-review passed (R1+R2) | ✅ | |
+| eval_queries.json complete | ✅ | |
+
+---
+
+## gcp-kms-ops
+
+| Feature | Status | Notes |
+|---------|--------|-------|
+| Core operations (SKILL.md complete) | ✅ | v1.0.0 |
+| Self-review passed (R1+R2) | ✅ | |
+| eval_queries.json complete | ✅ | |
+
+---
+
+## gcp-lb-ops
+
+| Feature | Status | Notes |
+|---------|--------|-------|
+| Core operations (SKILL.md complete) | ✅ | v1.0.0 |
+| Self-review passed (R1+R2) | ✅ | |
+| eval_queries.json complete | ✅ | |
+
+---
+
+## gcp-logging-ops
+
+| Feature | Status | Notes |
+|---------|--------|-------|
+| Core operations (SKILL.md complete) | ✅ | v1.0.0 |
+| Self-review passed (R1+R2) | ✅ | |
+| eval_queries.json complete | ✅ | |
+
+---
+
+## gcp-memorystore-ops
+
+| Feature | Status | Notes |
+|---------|--------|-------|
+| Core operations (SKILL.md complete) | ✅ | v1.0.0 |
+| Self-review passed (R1+R2) | ✅ | |
+| eval_queries.json complete | ✅ | |
+
+---
+
+## gcp-monitoring-ops
+
+| Feature | Status | Notes |
+|---------|--------|-------|
+| Core operations (SKILL.md complete) | ✅ | v1.0.0 |
+| Self-review passed (R1+R2) | ✅ | |
+| eval_queries.json complete | ✅ | |
+
+---
+
+## gcp-pubsub-ops
+
+| Feature | Status | Notes |
+|---------|--------|-------|
+| Core operations (SKILL.md complete) | ✅ | v1.0.0 |
+| Self-review passed (R1+R2) | ✅ | |
+| eval_queries.json complete | ✅ | |
+
+---
+
+## gcp-secretmanager-ops
+
+| Feature | Status | Notes |
+|---------|--------|-------|
+| Core operations (SKILL.md complete) | ✅ | v1.0.0 |
+| Self-review passed (R1+R2) | ✅ | |
+| eval_queries.json complete | ✅ | |
+
+---
+
+## gcp-securitycenter-ops
+
+| Feature | Status | Notes |
+|---------|--------|-------|
+| Core operations (SKILL.md complete) | ✅ | v1.0.0 |
+| Self-review passed (R1+R2) | ✅ | |
+| eval_queries.json complete | ✅ | |
+
+---
+
+## gcp-terraform-ops
+
+| Feature | Status | Notes |
+|---------|--------|-------|
+| Core operations (SKILL.md complete) | ✅ | v1.0.0 |
+| Self-review passed (R1+R2) | ✅ | |
+| eval_queries.json complete | ✅ | |
+
+---
+
 ## gcp-vpc-ops
 
 | Feature | Status | Notes |
@@ -23,6 +248,8 @@
 | Credential masking table | ✅ | v1.1.0 |
 | Self-healing gcloud install | ✅ | v1.1.0 |
 | See Also section | ✅ | v1.1.0 |
+| Self-review (R1+R2) passed | ✅ | v1.1.0 |
+| eval_queries.json complete | ✅ | 27 queries |
 | Delete Route operation | ⬜ | Planned |
 | Create Route operation | ⬜ | Planned |
 | Describe / List VPN Tunnels | ⬜ | Planned |
