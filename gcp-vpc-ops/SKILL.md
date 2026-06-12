@@ -15,8 +15,8 @@ compatibility: >-
   Admin IAM role, network access to Google Cloud endpoints.
 metadata:
   author: gcp-skills
-  version: "1.0.0"
-  last_updated: "2026-06-07"
+  version: "1.1.0"
+  last_updated: "2026-06-12"
   runtime: Harness AI Agent, Claude Code, Cursor, or compatible Agent runtimes
   go_version_minimum: "1.21"
   go_version_jit: "1.24+"
@@ -120,7 +120,16 @@ See [references/well-architected-assessment.md](references/well-architected-asse
 
 > **`{{env.*}}` MUST NOT** be collected from the user. **`{{user.*}}`** MUST be collected interactively when missing.
 
-> **Security Warning (Credential Masking — MANDATORY):** NEVER log, print, or expose service account key content, `GOOGLE_APPLICATION_CREDENTIALS` path content, or any credential field value. Verification MUST check existence only: `test -f "$GOOGLE_APPLICATION_CREDENTIALS" && echo "✅ SA key file exists"`.
+> **Security Warning (Credential Masking — MANDATORY):** NEVER log, print, or expose service account key content, `GOOGLE_APPLICATION_CREDENTIALS` path content, or any credential field value.
+
+| Context | What to Mask | Masking Method |
+|---------|-------------|----------------|
+| Console output | SA key content, access tokens, shared secrets | Replace with `****` |
+| Error messages | Credential paths, token values | Log existence only, not value |
+| Log files | All `GOOGLE_APPLICATION_CREDENTIALS` values | `test -f "$GOOGLE_APPLICATION_CREDENTIALS" && echo "✅ SA key file exists"` |
+| Verification | Token/credential values | Check existence: `gcloud auth print-access-token --quiet &>/dev/null && echo "✅ Auth OK"` |
+| JIT Go SDK | `config` structs, `fmt.Println(config)` | Prohibit such output — can leak credentials |
+| Debug/verbose | Full API responses with auth headers | Strip `Authorization: Bearer ...` before logging |
 
 ## API and Response Conventions (Agent-Readable)
 
@@ -249,6 +258,7 @@ gcloud compute networks list --project="{{env.CLOUDSDK_CORE_PROJECT}}" --format=
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 1.1.0 | 2026-06-12 | Added Describe/List operations, Delete Subnet safety gate, Smart Defaults, Python SDK fallback, credential masking table, See Also, self-healing install; removed duplicate Changelog |
 | 1.0.0 | 2026-06-07 | Initial VPC skill with networks, subnets, firewall rules, routes, VPN, NAT, peering |
 
 ## Execution Flows (Agent-Readable)
@@ -265,7 +275,31 @@ Every operation: **Pre-flight → Execute (gcloud and SDK/API) → Validate → 
 | Compute API | `gcloud services list --enabled --filter="config:compute.googleapis.com"` | enabled | HALT; run `gcloud services enable compute.googleapis.com` |
 | IAM role | `gcloud projects get-iam-policy "{{env.CLOUDSDK_CORE_PROJECT}}" --format="json" | jq '.bindings[] | select(.role=="roles/compute.networkAdmin")'` | Has role | Warn user; may fail on operations |
 
+### Operation: Describe / List VPC Networks
+
+**List all networks:**
+```bash
+gcloud compute networks list \
+  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
+  --format="json"
+```
+
+**Describe a specific network:**
+```bash
+gcloud compute networks describe "{{user.network_name}}" \
+  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
+  --format="json" | jq '{name, selfLink, autoCreateSubnetworks, routingConfig, subnetworks}'
+```
+
 ### Operation: Create VPC Network
+
+#### Smart Defaults
+
+| Parameter | Default | When to Override |
+|-----------|---------|------------------|
+| `--subnet-mode` | `custom` | Use `auto` only for prototyping/simple projects |
+| `--bgp-routing-mode` | `regional` | Use `global` for multi-region VPC peering |
+| `--mtu` | `1460` | Use `8896` for jumbo frames (compatibility required) |
 
 #### Pre-flight Checks
 
@@ -292,6 +326,30 @@ gcloud compute networks create "{{user.network_name}}" \
   --subnet-mode=custom \
   --bgp-routing-mode=global \
   --format="json"
+```
+
+#### Execution — Python SDK (Primary Fallback)
+
+Full script at [references/api-sdk-usage.md](references/api-sdk-usage.md)
+
+```python
+# create_network.py — run: python3 create_network.py
+from google.cloud import compute_v1
+from google.cloud.compute_v1 import types
+
+project = os.environ["CLOUDSDK_CORE_PROJECT"]
+client = compute_v1.NetworksClient()
+
+network = compute_v1.Network()
+network.name = "{{user.network_name}}"
+network.auto_create_subnetworks = False  # custom-mode
+network.routing_config = compute_v1.NetworkRoutingConfig()
+network.routing_config.routing_mode = "GLOBAL"
+
+op = client.insert(project=project, network_resource=network)
+# Wait for async operation
+op.result()  # blocks until done
+# $.selfLink -> network self-link
 ```
 
 #### Execution — JIT Go SDK (Secondary Fallback)
@@ -412,7 +470,70 @@ gcloud compute networks describe "{{user.network_name}}" \
 | `NOT_FOUND` / 404 | 0 | Report success | Network already deleted. |
 | `PERMISSION_DENIED` / 403 | 0 | HALT | `[ERROR] PERMISSION_DENIED: Missing compute.networks.delete permission.` |
 
+### Operation: Delete Subnet (Safety Gate)
+
+> **WARNING:** Deleting a subnet will disconnect all VMs and resources using it.
+
+#### Pre-flight (Safety Gate) — MANDATORY
+
+| Check | Method | Expected | On Failure |
+|-------|--------|----------|------------|
+| No VMs using subnet | `gcloud compute instances list --filter="networkInterfaces[].subnetwork:{{user.subnet_name}}" --format="json"` | Empty list | HALT — delete or migrate VMs first |
+| No GKE secondary ranges | `gcloud compute networks subnets describe "{{user.subnet_name}}" --region="{{user.region}}" --format="json" | jq '.secondaryIpRanges'` | Empty or user-acknowledged | Warn user; GKE cluster may be affected |
+| **User confirmation** | User must type the exact subnet name + region | Exact match | HALT — confirmation required |
+
+```text
+🔴 WARNING: This will irreversibly DELETE subnet "{{user.subnet_name}}" in region {{user.region}}.
+All VMs and resources using this subnet will lose connectivity.
+
+To proceed, type the subnet name: _______________
+```
+
+#### Execution — CLI (`gcloud`)
+
+```bash
+gcloud compute networks subnets delete "{{user.subnet_name}}" \
+  --region="{{user.region}}" \
+  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
+  --quiet
+```
+
+#### Failure Recovery
+
+| Error pattern | Max retries | Agent Action | UX Feedback |
+|---------------|-------------|--------------|-------------|
+| `RESOURCE_IN_USE` / 400 | 0 | HALT | `[ERROR] Subnet is in use by VMs. Delete or migrate VMs first.` |
+| `NOT_FOUND` / 404 | 0 | Report success | Subnet already deleted. |
+| `PERMISSION_DENIED` / 403 | 0 | HALT | `[ERROR] PERMISSION_DENIED: Missing compute.subnetworks.delete permission.` |
+
+### Operation: Describe / List Subnets
+
+**List all subnets in a network:**
+```bash
+gcloud compute networks subnets list \
+  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
+  --network="{{user.network_name}}" \
+  --format="json"
+```
+
+**Describe a specific subnet:**
+```bash
+gcloud compute networks subnets describe "{{user.subnet_name}}" \
+  --region="{{user.region}}" \
+  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
+  --format="json" | jq '{name, ipCidrRange, gatewayAddress, network, privateIpGoogleAccess, enableFlowLogs}'
+```
+
 ### Operation: Create Subnet
+
+#### Smart Defaults
+
+| Parameter | Default | When to Override |
+|-----------|---------|------------------|
+| `--range` | — (required) | Always specify; use /24 for small, /20 for large subnets |
+| `--private-ip-google-access` | enabled | Disable only for isolated networks |
+| `--enable-flow-logs` | enabled | Disable for cost savings on non-critical subnets |
+| `--flow-sampling` | `0.5` | Use `1.0` for security-critical, `0.1` for cost savings |
 
 #### Pre-flight Checks
 
@@ -633,8 +754,11 @@ gcloud compute networks peerings create "{{user.peering_name}}" \
 
 1. **Install gcloud CLI:**
    ```bash
-   curl https://sdk.cloud.google.com | bash
-   exec -l $SHELL
+   # Self-healing: probe first, install only if missing
+   if ! command -v gcloud &>/dev/null; then
+     curl https://sdk.cloud.google.com | bash
+     exec -l $SHELL
+   fi
    gcloud init
    ```
 
@@ -696,12 +820,6 @@ This skill uses the **Generator-Critic-Loop (GCL)** adversarial quality gate.
 **Rubric:** See [references/rubric.md](references/rubric.md)
 **Prompt templates:** See [references/prompt-templates.md](references/prompt-templates.md)
 
-### Changelog
-
-| Version | Date | Changes |
-|---------|------|---------|
-| 1.0.0 | 2026-06-07 | Initial GCL integration (required) |
-
 ## Token Efficiency Guidelines (P0 — 强制)
 
 ### TE-1: API Query > Static Tables
@@ -721,3 +839,14 @@ See [assets/example-config.yaml](assets/example-config.yaml) for YAML anchor pat
 
 ### TE-6: Eliminate cross-file duplicate flows
 SKILL.md has full execution flows; references do not repeat them.
+
+## See Also
+
+| Skill | Relationship |
+|-------|-------------|
+| [gcp-gce-ops](../gcp-gce-ops/SKILL.md) | VM network interface attachment |
+| [gcp-gke-ops](../gcp-gke-ops/SKILL.md) | GKE cluster networking |
+| [gcp-cloudsql-ops](../gcp-cloudsql-ops/SKILL.md) | Cloud SQL private IP / Private Services Access |
+| [gcp-lb-ops](../gcp-lb-ops/SKILL.md) | Internal/external load balancer subnet usage |
+| [gcp-dns-ops](../gcp-dns-ops/SKILL.md) | Private DNS zone association with VPC |
+| [gcp-iam-ops](../gcp-iam-ops/SKILL.md) | IAM roles for VPC operations |

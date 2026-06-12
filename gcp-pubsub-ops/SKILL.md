@@ -22,7 +22,7 @@ metadata:
   runtime: Harness AI Agent, Claude Code, Cursor, or compatible Agent runtimes
   go_version_minimum: "1.21"
   go_version_jit: "1.24+"
-  api_profile: "https://cloud.google.com/pubsub/docs/reference/rest"
+  api_profile: "https://pubsub.googleapis.com/$discovery/rest?version=v1"
   cli_applicability: "dual-path"
   cli_support_evidence: >-
     gcloud pubsub topics --help and gcloud pubsub subscriptions --help confirm

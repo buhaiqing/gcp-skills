@@ -19,7 +19,7 @@ metadata:
   runtime: Harness AI Agent, Claude Code, Cursor, or compatible Agent runtimes
   go_version_minimum: "1.21"
   go_version_jit: "1.24+"
-  api_profile: "https://container.googleapis.com/v1"
+  api_profile: "https://container.googleapis.com/$discovery/rest?version=v1alpha1"
   cli_applicability: "dual-path"
   cli_support_evidence: >-
     gcloud container --help confirms subcommands: clusters, node-pools,
