@@ -13,6 +13,8 @@
 | `INTERNAL` / 500 | Server-side error | Retry with backoff; then HALT |
 | `UNAVAILABLE` / 503 | Service temporarily unavailable | Retry with exponential backoff (max 3) |
 | `ABORTED` / 409 | Operation conflict | Wait for conflicting operation to finish |
+| `RATE_LIMIT_EXCEEDED` / 429 | API rate limit hit (distinct from quota) | Back off and retry; reduce request frequency |
+| `PRECONDITION_FAILED` / 412 | Resource state changed since last read | Re-read resource and retry with fresh fingerprint |
 
 ## Diagnostic Order (Connectivity Issues)
 

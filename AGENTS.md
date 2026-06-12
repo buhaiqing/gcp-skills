@@ -273,9 +273,21 @@ Additionally, every skill MUST include a **Well-Architected Framework** table (f
 
 | 编号 | 检查项 | 说明 | 要求 |
 |------|--------|------|------|
-| **F8** | TODO.md 同步 | 本次所有新增/修改的功能是否已在 `TODO.md` 中更新为 `✅` | 每次更新必须同步更新 TODO.md |
+| **F8** | TODO.md 同步 | 本次所有新增/修改的功能是否已在根目录 `TODO.md` 中更新为 `✅` | 每次更新必须同步更新根 TODO.md |
+| **F9** | 提示词示例充分性 | `assets/eval_queries.json` 覆盖所有操作类型，正面+反面示例充足，不足则补充 | 每次新增操作必须补充对应 eval query |
 
-> **F6（Token Efficiency）和 F8（TODO.md 同步）是强制通过项**，不通过不得提交。
+> **F6（Token Efficiency）、F8（TODO.md 同步）和 F9（提示词示例充分性）是强制通过项**，不通过不得提交。
+
+### 11.1 TODO.md 维护规范
+
+> **规则**: 所有 skill 的待办事项统一在项目根目录 `TODO.md` 中维护，各 skill 目录下不再保留独立 TODO.md。
+
+| 规范 | 说明 |
+|------|------|
+| **统一位置** | `TODO.md` 位于仓库根目录，按 skill 分节 (`## gcp-xxx-ops`) |
+| **同步更新** | 每次新增/修改功能，必须同步更新根 `TODO.md`：完成的标 `✅`，计划中标 `⬜` |
+| **禁止重复** | 各 skill 子目录下不保留独立 `TODO.md`，避免多处维护导致不一致 |
+| **F8 校验** | 自审 F8 检查项以根 `TODO.md` 为准 |
 
 Any issue found → fix one by one → all must pass before finishing.
 
@@ -287,6 +299,7 @@ Any issue found → fix one by one → all must pass before finishing.
 |----------|-------------|
 | `README.md` | Project overview, CLI setup, credential configuration |
 | `REQUIREMENTS.md` | Skill requirements, architecture, technical specs |
+| `TODO.md` | **All-skill TODO tracker** — unified tracking across all skills, synced on every update |
 | `gcp-skill-generator/SKILL.md` | **Meta Skill generator** — full workflow, P0/P1 checklist, Token Efficiency rules |
 | `gcp-skill-generator/references/governance-and-adversarial-review.md` | Governance & adversarial review — 24+ pre-merge security/resilience/UX scenarios |
 | `gcp-skill-generator/references/gcp-skill-template.md` | Canonical SKILL.md template |
@@ -315,7 +328,7 @@ Any issue found → fix one by one → all must pass before finishing.
 |------|---------------|--------|
 | **Generator (G)** | Execute the cloud operation | Modify rubric, self-score |
 | **Hallucination Detector (H)** | Pre-execution structural validity check | Execute API calls, mutate G's output |
-| **Critic (C)** | Independently audit G's output | Call `gcloud`/SDK, mutate resources |
+| **Critic (C)** | Independently audit G's output; verify factual accuracy and freshness | Call `gcloud`/SDK, mutate resources |
 | **Orchestrator (O)** | Loop control, termination decision | Execute or score |
 
 > **H role**: Added in GCL v1.5.0 (Phase 6). Catches LLM hallucinations in generated commands/JSON **before** execution.
@@ -330,6 +343,7 @@ Any issue found → fix one by one → all must pass before finishing.
 | **Idempotency** | Repeating the call has no side effects | — |
 | **Traceability** | Output is auditable (command, params, response) | — |
 | **Spec Compliance** | Complies with core-concepts.md constraints | — |
+| **Factual Accuracy** | Content is complete, up-to-date, and truthful; stale or inaccurate info corrected; uncertain items escalated to human review | Uncertain → HALT and request human review |
 
 ### Termination Conditions (first match wins)
 
@@ -351,6 +365,8 @@ Full 30+ skill table at [docs/gcl-spec.md §8 Per-Skill Defaults](docs/gcl-spec.
 | **optional** | 5 | Read-only audit / diagnostic |
 
 **Anti-Patterns (banned)**: Shared context G+C, subjective scoring, unbounded loop, Critic seeing user request, silently downgrading on Safety fail, trace not persisted, Critic mutating resources, trace leaking secrets.
+
+**Factual Accuracy Rule (mandatory for all skills):** The Critic MUST verify that generated content is complete, up-to-date, and truthful. If any stale, inaccurate, or unverifiable information is found, it MUST be corrected immediately. If the Critic cannot confidently verify the accuracy, it MUST HALT and escalate to human review rather than proceed with uncertain content.
 
 **Trace audit**: Every GCL run MUST persist a JSON trace to `./audit-results/gcl-trace-*.json` (gitignored).
 
