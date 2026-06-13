@@ -10,56 +10,16 @@ Every section here is high-signal: agents must follow these patterns or they wil
 
 ```
 gcp-skills/
-├── gcp-[product]-ops/                # One directory per GCP product
-│   ├── SKILL.md                      # What to do (triggers, pre-flight, variables, execution overview)
-│   ├── references/                   # How to do (detailed CLI/SDK scripts, troubleshooting, monitoring)
-│   │   ├── rubric.md                 # MANDATORY (per skill) when skill is GCL `required`/`recommended` — see §12.3
-│   │   └── prompt-templates.md       # MANDATORY (per skill) when skill is GCL `required`/`recommended` — see §12.7
-│   ├── assets/                       # Example configs, eval queries
-│   │   └── code-snippets/            # SDK-only skills: standalone `python3 run`-able scripts (Go as secondary)
-│   └── scripts/                      # (rare — only for complex multi-step operations)
-├── gcp-skill-generator/              # Meta-skill: generate new skills from GCP API specs / gcloud reference
-│   └── references/
-│       ├── gcl-rollout-spec.md       # §12.11 Phase 2 — how to generate GCL files for a new skill
-│       └── gcl-orchestrator-agent.md # §12.11 Phase 2 — pi-subagents agent wrapping gcl_runner.py
-├── gcp-gcl-runner-ops/               # §12.11 Phase 2 — cross-skill GCL runner (shared skill)
-│   └── scripts/
-│       ├── gcl_runner.py             # Python 3.10+ standalone CLI; zero external deps
-│       ├── gcl_runner_test.py        # unittest suite
-│       └── README.md                 # usage guide
-├── audit-results/                    # §12.6 — GCL trace storage (GITIGNORED; ephemeral)
-├── gcp-jit-setup.sh                  # JIT Python/Go SDK bootstrap (single script)
-├── REQUIREMENTS.md                   # Full requirements, architecture, technical specs
-├── .env.example                      # Template for GOOGLE_APPLICATION_CREDENTIALS / CLOUDSDK_AUTH vars
-├── docker-compose.yaml               # Docker sandbox profiles (dev/runtime/interactive)
-└── Dockerfile                        # Go 1.24 + Python 3.10 base image
+├── gcp-[product]-ops/          # One skill per GCP product (SKILL.md + references/ + assets/)
+├── gcp-skill-generator/        # Meta-skill: scaffold new skills
+├── gcp-gcl-runner-ops/         # Cross-skill GCL runner
+├── docs/                       # Lazy-loaded specs (GCL, logging, self-review, token strategy)
+├── AGENTS.md                   # This file — always-loaded agent guide
+├── TODO.md                     # All-skill TODO tracker (≤8000 tokens)
+└── REQUIREMENTS.md             # Full requirements, architecture
 ```
 
-**Canonical skill directory structure** (from `gcp-skill-generator`):
-
-```
-gcp-[product]-ops/
-├── SKILL.md
-├── references/
-│   ├── core-concepts.md                    # Architecture, limits, quotas, dependencies
-│   ├── api-sdk-usage.md                    # Operation map, request/response, pagination
-│   ├── gcloud-usage.md                     # `gcloud` CLI command map (omit for sdk-only)
-│   ├── troubleshooting.md                  # Error codes (≥10), diagnostics, recovery
-│   ├── integration.md                      # Go bootstrap, env vars, credential rules
-│   ├── monitoring.md                       # Cloud Monitoring metrics, dashboards, alerts (if applicable)
-│   ├── well-architected-assessment.md      # MANDATORY — five-pillar assessment (Google Cloud Architecture Framework)
-│   ├── idempotency-checklist.md            # If retries/automation required
-│   └── advanced/                           # Optional — lazy-loaded by Advanced Analytics section
-│       ├── aiops-*.md                      #   AIOps: anomaly detection, prediction, auto-remediation
-│       ├── finops-*.md                     #   FinOps: cost analysis, optimization
-│       └── sql-execution.md                #   Security-Sensitive: SQL file execution (requires user confirmation)
-├── assets/
-│   ├── example-config.yaml
-│   └── eval_queries.json                   # MANDATORY — trigger accuracy eval queries
-└── scripts/                                # Optional — only for complex multi-step operations
-```
-
-**`advanced/` linking rule**: Files in `advanced/` referencing sibling files in `references/` MUST use `../` relative paths (e.g. `[gcloud Usage](../gcloud-usage.md)`).
+**Canonical skill structure**: `SKILL.md` (what) + `references/` (how) + `assets/` (configs, eval queries). See `gcp-skill-generator/references/gcp-skill-template.md` for full template.
 
 ---
 
@@ -87,35 +47,7 @@ Full script at [references/gcloud-execution.md](references/gcloud-execution.md)
 
 ---
 
-## 3. Operation Design Pattern
-
-Every operation MUST include these sections (in order):
-
-### Pre-flight Checks
-```markdown
-| Check | Method | Expected | On Failure |
-|-------|--------|----------|------------|
-| {precondition} | {verification command} | {normal value} | HALT — {human action} |
-```
-
-### Variable Convention
-```markdown
-| Variable | Meaning | Source |
-|----------|---------|--------|
-| `{{user.xxx}}` | User input | Ask once, reuse |
-| `{{env.xxx}}` | Environment variable | NEVER ask user, HALT if missing |
-| `{{output.xxx}}` | Previous step output | Parse from API response |
-```
-
-### Execution → Post-execution Validation → Failure Recovery
-
-Every CLI script MUST include **structured diagnostic logs** (format at [Diagnostic Logging Standard](docs/diagnostic-logging-standard.md)).
-
-All remote scripts use `[HH:MM:SS] [PHASE] key=value` format with phases `DIAG`/`INSTALL`/`EXEC`/`RESULT`/`WARN`/`ERROR`/`SUMMARY`. Errors use `[ERROR] TYPE={category} FIX={action}`. Full spec at [docs/diagnostic-logging-standard.md](docs/diagnostic-logging-standard.md).
-
----
-
-## 4. GCP CLI & SDK Conventions
+## 3. GCP CLI & SDK Conventions
 
 | Component | Tool | Notes |
 |-----------|------|-------|
@@ -138,7 +70,7 @@ All remote scripts use `[HH:MM:SS] [PHASE] key=value` format with phases `DIAG`/
 
 ---
 
-## 5. Idempotent Provisioning Pattern
+## 4. Idempotent Provisioning Pattern
 
 For operations requiring tools on target machines, use the idempotent pattern:
 
@@ -156,7 +88,7 @@ Do not install unconditionally on every run. Log probe results with DIAG/RESULT 
 
 ---
 
-## 6. Cross-Skill Composition
+## 5. Cross-Skill Composition
 
 When a Skill depends on another Skill's capabilities (e.g. `gcp-gce-ops` needs `gcp-gke-ops` to describe workload identity):
 
@@ -171,7 +103,7 @@ gcloud compute ssh instance-name --zone=us-central1-a --command="..."
 
 ---
 
-## 7. Control Plane vs Data Plane
+## 6. Control Plane vs Data Plane
 
 | Plane | Capability | Channel | Example Operations |
 |-------|-----------|---------|-------------------|
@@ -188,7 +120,7 @@ For serverless products (Cloud Functions, Cloud Run), use **gcloud commands with
 
 ---
 
-## 8. Security Constraints
+## 7. Security Constraints
 
 - **Never output credentials**: Replace access tokens, `GOOGLE_APPLICATION_CREDENTIALS` values, and service account key content in logs with `****`. Python SDK auto-reads credentials from env var (safe). Go SDK scripts' `config` structs, `fmt.Println(config)`, and `log.Printf("%+v", ...)` can all leak credentials — prohibit such output.
 - **Pass passwords via environment variables**: Use `MYSQL_PWD` / `PGPASSWORD` environment variables instead of `-p<password>` to avoid exposure in `ps aux` or command history. For Cloud SQL, prefer Cloud SQL Auth Proxy or IAM database authentication.
@@ -198,7 +130,7 @@ For serverless products (Cloud Functions, Cloud Run), use **gcloud commands with
 
 ---
 
-## 9. Quick Reference — Developer Commands
+## 8. Quick Reference — Developer Commands
 
 ```bash
 # Markdown linting
@@ -226,7 +158,7 @@ gcloud auth application-default login
 
 ---
 
-## 10. Quality Gates
+## 9. Quality Gates
 
 Every Skill MUST pass these five quality gates:
 
@@ -238,7 +170,7 @@ Every Skill MUST pass these five quality gates:
 
 Additionally, every skill MUST include a **Well-Architected Framework** table (five pillars: Security, Stability, Cost, Efficiency, Performance — mapped to the Google Cloud Architecture Framework) and pass the **P0/P1 checklist** defined in `gcp-skill-generator/SKILL.md`.
 
-### 10.1 Token Efficiency Requirements (P0 — MANDATORY)
+### 9.1 Token Efficiency Requirements (P0 — MANDATORY)
 
 > Minimize token consumption per Skill while preserving agent executability. Full definitions at `gcp-skill-generator/SKILL.md` §Token Efficiency Requirements.
 
@@ -258,7 +190,7 @@ Additionally, every skill MUST include a **Well-Architected Framework** table (f
 
 ---
 
-## 11. Post-Update Self-Review (MANDATORY)
+## 10. Post-Update Self-Review (MANDATORY)
 
 > **Rule**: After every skill update, auto-run 2 rounds of self-review and fix all discovered issues.
 >
@@ -278,7 +210,7 @@ Additionally, every skill MUST include a **Well-Architected Framework** table (f
 
 > **F6（Token Efficiency）、F8（TODO.md 同步）和 F9（提示词示例充分性）是强制通过项**，不通过不得提交。
 
-### 11.1 TODO.md 维护规范
+### 10.1 TODO.md 维护规范
 
 > **规则**: 所有 skill 的待办事项统一在项目根目录 `TODO.md` 中维护，各 skill 目录下不再保留独立 TODO.md。
 
@@ -295,32 +227,15 @@ Any issue found → fix one by one → all must pass before finishing.
 
 ## Key References
 
-| Document | Description |
-|----------|-------------|
-| `README.md` | Project overview, CLI setup, credential configuration |
-| `REQUIREMENTS.md` | Skill requirements, architecture, technical specs |
-| `TODO.md` | **All-skill TODO tracker** — unified tracking across all skills, synced on every update |
-| `gcp-skill-generator/SKILL.md` | **Meta Skill generator** — full workflow, P0/P1 checklist, Token Efficiency rules |
-| `gcp-skill-generator/references/governance-and-adversarial-review.md` | Governance & adversarial review — 24+ pre-merge security/resilience/UX scenarios |
-| `gcp-skill-generator/references/gcp-skill-template.md` | Canonical SKILL.md template |
-| `gcp-skill-generator/references/aiops-best-practices.md` | Multi-round self-review & critical reflection for fault diagnosis |
-| `gcp-skill-generator/references/execution-environment.md` | CLI installation (`gcloud` SDK), Go JIT bootstrap, credential configuration |
-| `gcp-skill-generator/references/user-experience-spec.md` | UX compliance requirements for all skills |
-| [`docs/gcl-spec.md`](docs/gcl-spec.md) | **GCL full spec** — roles, rubric, loop flow, trace schema, prompt templates, anti-patterns, rollout roadmap, skill classification table |
-| [`docs/post-update-self-review.md`](docs/post-update-self-review.md) | **Post-update self-review spec** — check tables, verification scripts, dedup procedures |
-| [`docs/diagnostic-logging-standard.md`](docs/diagnostic-logging-standard.md) | **Diagnostic logging standard** — log format, phase prefixes, error types, exit codes |
-| [`docs/token-efficiency-strategy.md`](docs/token-efficiency-strategy.md) | **Token efficiency optimization strategy** — always-loaded vs lazy-loaded methodology, audit checklist, use cases |
-| `CLAUDE.md` | Entry point (content: `@AGENTS.md`) |
-
-> **When specs conflict, `gcp-skill-generator/SKILL.md` and its `references/` are the authoritative source.** AGENTS.md is a summary of these specs, not a replacement.
+> **Key References**: See the README for the full list of documents.
 
 ---
 
-## 12. Generator-Critic-Loop (GCL) — Adversarial Quality Gate
+## 11. Generator-Critic-Loop (GCL) — Adversarial Quality Gate
 
 > **Full spec**: [`docs/gcl-spec.md`](docs/gcl-spec.md)
 
-**Core concept**: Enforce a Generator ↔ Critic adversarial loop on every cloud operation, scored against a quantified rubric. Complements [Post-Update Self-Review](docs/post-update-self-review.md) — §11 reviews skill authoring quality, §12 reviews runtime execution quality.
+**Core concept**: Enforce a Generator ↔ Critic adversarial loop on every cloud operation, scored against a quantified rubric. Complements [Post-Update Self-Review](docs/post-update-self-review.md) — §10 reviews skill authoring quality, §11 reviews runtime execution quality.
 
 ### Roles
 
@@ -331,9 +246,6 @@ Any issue found → fix one by one → all must pass before finishing.
 | **Critic (C)** | Independently audit G's output; verify factual accuracy and freshness | Call `gcloud`/SDK, mutate resources |
 | **Orchestrator (O)** | Loop control, termination decision | Execute or score |
 
-> **H role**: Added in GCL v1.5.0 (Phase 6). Catches LLM hallucinations in generated commands/JSON **before** execution.
-> Full spec at [`docs/gcl-spec.md#14-hallucination-detection-layer-h`](docs/gcl-spec.md#14-hallucination-detection-layer-h).
-
 ### Rubric Dimensions (≥5)
 
 | Dimension | Meaning | When Safety=0 |
@@ -343,7 +255,7 @@ Any issue found → fix one by one → all must pass before finishing.
 | **Idempotency** | Repeating the call has no side effects | — |
 | **Traceability** | Output is auditable (command, params, response) | — |
 | **Spec Compliance** | Complies with core-concepts.md constraints | — |
-| **Factual Accuracy** | Content is complete, up-to-date, and truthful; stale or inaccurate info corrected; uncertain items escalated to human review | Uncertain → HALT and request human review |
+| **Factual Accuracy** | Content is complete, up-to-date, and truthful | Uncertain → HALT |
 
 ### Termination Conditions (first match wins)
 
@@ -352,11 +264,9 @@ Any issue found → fix one by one → all must pass before finishing.
 | **PASS** | All dimensions pass → return G's result |
 | **MAX_ITER** | Reached max_iter → return best-so-far + unresolved issues |
 | **SAFETY_FAIL** | Safety=0 → **ABORT**, no partial result |
-| **HALLUCINATION_ABORT** | H detected unresolved hallucinations → **ABORT**, return hallucination report (since v1.5.0) |
+| **HALLUCINATION_ABORT** | H detected unresolved hallucinations → **ABORT** |
 
 ### Skill Classification (GCL Level + max_iter)
-
-Full 30+ skill table at [docs/gcl-spec.md §8 Per-Skill Defaults](docs/gcl-spec.md#8-per-skill-defaults):
 
 | Level | max_iter | Key Risk |
 |-------|:--------:|----------|
@@ -374,32 +284,6 @@ Full 30+ skill table at [docs/gcl-spec.md §8 Per-Skill Defaults](docs/gcl-spec.
 
 ## Appendix A: GCP Product → Directory Mapping (Planned)
 
-| GCP Product | Directory | Operations |
-|-------------|-----------|------------|
-| Compute Engine | `gcp-gce-ops` | VM lifecycle, disks, snapshots, instance groups |
-| Google Kubernetes Engine | `gcp-gke-ops` | Cluster lifecycle, node pools, workloads, IAM |
-| Cloud SQL | `gcp-cloudsql-ops` | MySQL/PostgreSQL/SQL Server instances, backups |
-| Cloud Storage | `gcp-gcs-ops` | Buckets, objects, lifecycle policies, IAM |
-| Cloud Run | `gcp-cloudrun-ops` | Services, revisions, traffic splitting |
-| Cloud Functions | `gcp-cloudfunctions-ops` | Functions, triggers, source repos |
-| Cloud Build | `gcp-cloudbuild-ops` | Triggers, builds, artifacts |
-| Cloud Monitoring | `gcp-monitoring-ops` | Metrics, dashboards, alert policies |
-| Cloud Logging | `gcp-logging-ops` | Log buckets, views, log-based metrics |
-| Cloud IAM | `gcp-iam-ops` | Roles, policies, service accounts |
-| Cloud VPC | `gcp-vpc-ops` | Networks, subnets, firewall rules, VPN |
-| Cloud DNS | `gcp-dns-ops` | Zones, records, policies |
-| Cloud Load Balancing | `gcp-lb-ops` | Forwarding rules, backend services, health checks |
-| Cloud CDN | `gcp-cdn-ops` | Origins, cache policies |
-| Cloud Pub/Sub | `gcp-pubsub-ops` | Topics, subscriptions, schemas |
-| Cloud BigQuery | `gcp-bigquery-ops` | Datasets, tables, queries, jobs |
-| Cloud Spanner | `gcp-spanner-ops` | Instances, databases, backups |
-| Cloud Bigtable | `gcp-bigtable-ops` | Instances, clusters, tables |
-| Cloud Memorystore (Redis) | `gcp-memorystore-ops` | Redis/Memcached instances |
-| Cloud Filestore | `gcp-filestore-ops` | Fileshares, backups |
-| Cloud KMS | `gcp-kms-ops` | Key rings, keys, versions |
-| Cloud Secret Manager | `gcp-secretmanager-ops` | Secrets, versions, IAM |
-| Cloud Deployment Manager | `gcp-deployment-ops` | Deployments, templates |
-| Cloud Resource Manager | `gcp-resourcemanager-ops` | Projects, folders, organizations |
-| Cloud Billing | `gcp-billing-ops` | Budgets, exports, cost analysis |
+> **Full mapping**: [`docs/gcp-product-mapping.md`](docs/gcp-product-mapping.md)
 
-For each planned skill, a corresponding `gcp-[product]-ops/` directory should be created following the canonical structure above.
+See the full product-to-directory mapping in the docs directory.
