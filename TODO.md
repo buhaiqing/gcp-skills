@@ -9,8 +9,8 @@
 
 | Planned Feature | Status | Notes |
 |----------------|--------|-------|
-| AIOps anomaly detection | ⬜ | references/advanced/aiops-bigquery.md |
-| FinOps cost analysis | ⬜ | references/advanced/finops-bigquery.md |
+| AIOps anomaly detection | ✅ | references/advanced/aiops-bigquery-anomaly.md |
+| FinOps cost analysis | ✅ | references/advanced/finops-bigquery-cost.md |
 | SQL execution (security-sensitive) | ⬜ | references/advanced/sql-execution.md |
 | INFORMATION_SCHEMA reference | ⬜ | Detailed monitoring queries |
 | BI Engine optimization | ⬜ | Performance tuning guide |
@@ -21,8 +21,8 @@
 
 | Planned Feature | Status | Notes |
 |----------------|--------|-------|
-| AIOps spend anomaly detection | ⬜ | references/advanced/aiops-billing.md |
-| FinOps cost analysis deep-dive | ⬜ | references/advanced/finops-cost-analysis.md |
+| AIOps spend anomaly detection | ✅ | references/advanced/aiops-billing-anomaly.md |
+| FinOps cost analysis deep-dive | ✅ | references/advanced/finops-cost-analysis.md |
 | Committed use discount analysis | ⬜ | references/advanced/cud-analysis.md |
 | Budget automation with Terraform | ⬜ | google_billing_budget resource examples |
 | Multi-cloud cost comparison | ⬜ | Cross-cloud pricing analysis |
@@ -60,8 +60,8 @@ No planned items.
 
 | Planned Feature | Status | Notes |
 |----------------|--------|-------|
-| AIOps query insights anomaly detection | ⬜ | references/advanced/aiops-query-insights.md |
-| FinOps cost optimization | ⬜ | references/advanced/finops-cost-analysis.md |
+| AIOps query insights anomaly detection | ✅ | references/advanced/aiops-query-insights.md |
+| FinOps cost optimization | ✅ | references/advanced/finops-cost-analysis.md |
 | SQL execution (security-sensitive) | ⬜ | references/advanced/sql-execution.md |
 | PITR clone operation | ⬜ | |
 | Cross-region replica failover runbook | ⬜ | |
@@ -86,8 +86,8 @@ No planned items.
 
 | Planned Feature | Status | Notes |
 |----------------|--------|-------|
-| AIOps anomaly detection | ⬜ | references/advanced/aiops-gcs.md |
-| FinOps cost analysis | ⬜ | references/advanced/finops-gcs.md |
+| AIOps anomaly detection | ✅ | references/advanced/aiops-storage-anomaly.md |
+| FinOps cost analysis | ✅ | references/advanced/finops-storage-cost.md |
 | SQL execution (security-sensitive) | ⬜ | references/advanced/sql-execution.md |
 
 ---
@@ -107,8 +107,8 @@ No planned items.
 
 | Planned Feature | Status | Notes |
 |----------------|--------|-------|
-| AIOps anomaly detection | ⬜ | references/advanced/aiops-iam.md |
-| FinOps cost analysis | ⬜ | references/advanced/finops-iam.md |
+| AIOps anomaly detection | ✅ | references/advanced/aiops-iam-anomaly.md |
+| FinOps cost analysis | ✅ | references/advanced/finops-iam-cost.md |
 | Workload Identity Federation troubleshooting | ⬜ | references/advanced/wif-deep-dive.md |
 
 ---
@@ -147,8 +147,8 @@ No planned items.
 
 | Planned Feature | Status | Notes |
 |----------------|--------|-------|
-| AIOps anomaly detection | ⬜ | references/advanced/aiops-pubsub.md |
-| FinOps cost analysis | ⬜ | references/advanced/finops-pubsub.md |
+| AIOps anomaly detection | ✅ | references/advanced/aiops-pubsub-anomaly.md |
+| FinOps cost analysis | ✅ | references/advanced/finops-pubsub-cost.md |
 | Schema management operations | ⬜ | Schema CRUD and validation |
 | Streaming pull deep dive | ⬜ | Advanced consumer patterns |
 
