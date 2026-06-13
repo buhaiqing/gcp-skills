@@ -40,6 +40,7 @@ PASS = "✅"
 FAIL = "❌"
 WARN = "⚠️"
 
+
 # ── Helpers ───────────────────────────────────────────────────────────────────
 def run(cmd: str) -> tuple[str, str, int]:
     r = subprocess.run(cmd, shell=True, capture_output=True, text=True, cwd=SKILL_DIR)
@@ -96,6 +97,7 @@ def tier0():
     print("\n[0.2] SKILL.md frontmatter schema")
     try:
         import yaml
+
         text = SKILL_MD.read_text()
         frontmatter = {}
         in_yaml = False
@@ -119,19 +121,28 @@ def tier0():
         all_ok &= check("metadata.cli_applicability == dual-path", meta.get("cli_applicability") == "dual-path")
         all_ok &= check("metadata.go_version_minimum present", bool(meta.get("go_version_minimum")))
         env_list = meta.get("environment", [])
-        all_ok &= check("environment includes GOOGLE_APPLICATION_CREDENTIALS", "GOOGLE_APPLICATION_CREDENTIALS" in env_list)
+        all_ok &= check(
+            "environment includes GOOGLE_APPLICATION_CREDENTIALS", "GOOGLE_APPLICATION_CREDENTIALS" in env_list
+        )
         all_ok &= check("environment includes CLOUDSDK_CORE_PROJECT", "CLOUDSDK_CORE_PROJECT" in env_list)
         # Description length
         desc = frontmatter.get("description", "")
-        all_ok &= check(f"description length (should_trigger accuracy < 1024 chars)", len(desc) < 1024,
-                       f"length={len(desc)}")
+        all_ok &= check(
+            "description length (should_trigger accuracy < 1024 chars)", len(desc) < 1024, f"length={len(desc)}"
+        )
     except Exception as e:
-        all_ok &= check(f"YAML frontmatter parse", False, str(e))
+        all_ok &= check("YAML frontmatter parse", False, str(e))
 
     # 0.3 Five Core Standards table
     print("\n[0.3] Five Core Standards table")
     skill_text = SKILL_MD.read_text()
-    standards = ["Clear Boundaries", "Structured I/O", "Explicit Actionable", "Complete Failure", "Single Responsibility"]
+    standards = [
+        "Clear Boundaries",
+        "Structured I/O",
+        "Explicit Actionable",
+        "Complete Failure",
+        "Single Responsibility",
+    ]
     for std in standards:
         all_ok &= check(f"has '{std}'", std in skill_text)
 
@@ -145,7 +156,9 @@ def tier0():
     print("\n[0.5] Trigger & Scope")
     all_ok &= check("SHOULD Use This Skill When present", "### SHOULD Use This Skill When" in skill_text)
     all_ok &= check("SHOULD NOT Use This Skill When present", "### SHOULD NOT Use This Skill When" in skill_text)
-    all_ok &= check("Delegation Rules present", "### Delegation Rules" in skill_text or "Delegation Rules" in skill_text)
+    all_ok &= check(
+        "Delegation Rules present", "### Delegation Rules" in skill_text or "Delegation Rules" in skill_text
+    )
 
     # 0.6 Variable convention correctness
     print("\n[0.6] Variable convention correctness")
@@ -161,14 +174,14 @@ def tier0():
     print("\n[0.7] eval_queries.json schema")
     try:
         eq = json.loads((ASSETS_DIR / "eval_queries.json").read_text())
-        all_ok &= check(f"total entries >= 22", len(eq) >= 22)
-        all_ok &= check(f"should_trigger >= 12", sum(1 for x in eq if x.get("should_trigger")) >= 12)
-        all_ok &= check(f"should_not_trigger >= 10", sum(1 for x in eq if not x.get("should_trigger")) >= 10)
+        all_ok &= check("total entries >= 22", len(eq) >= 22)
+        all_ok &= check("should_trigger >= 12", sum(1 for x in eq if x.get("should_trigger")) >= 12)
+        all_ok &= check("should_not_trigger >= 10", sum(1 for x in eq if not x.get("should_trigger")) >= 10)
         for q in eq:
             all_ok &= check(f"  query field: '{q['query'][:50]}'", "query" in q and bool(q["query"]))
-            all_ok &= check(f"  should_trigger field", "should_trigger" in q)
-            all_ok &= check(f"  expected_cmd_pattern field", "expected_cmd_pattern" in q)
-            all_ok &= check(f"  dry_run_supported field", "dry_run_supported" in q)
+            all_ok &= check("  should_trigger field", "should_trigger" in q)
+            all_ok &= check("  expected_cmd_pattern field", "expected_cmd_pattern" in q)
+            all_ok &= check("  dry_run_supported field", "dry_run_supported" in q)
     except Exception as e:
         all_ok &= check("eval_queries.json parse", False, str(e))
 
@@ -176,7 +189,7 @@ def tier0():
     print("\n[0.8] Troubleshooting error table")
     try:
         ts_text = (REF_DIR / "troubleshooting.md").read_text()
-        rows = [l for l in ts_text.splitlines() if l.startswith("|") and l.count("|") >= 3]
+        rows = [line for line in ts_text.splitlines() if line.startswith("|") and line.count("|") >= 3]
         # Header row doesn't count
         error_rows = [r for r in rows if r.strip() not in ("|", "") and not r.startswith("| Code / Symptom")]
         all_ok &= check(f"error rows >= 15 (found {len(error_rows)})", len(error_rows) >= 15)
@@ -186,8 +199,11 @@ def tier0():
         if header_rows:
             header_pipes = header_rows[0].count("|")
             # Accept 3 or 4 pipes — both represent a 3-column table in markdown
-            all_ok &= check(f"3-column format (header has {header_pipes} pipes, expected 3-4)", 3 <= header_pipes <= 4,
-                           f"header: {header_rows[0][:80]}")
+            all_ok &= check(
+                f"3-column format (header has {header_pipes} pipes, expected 3-4)",
+                3 <= header_pipes <= 4,
+                f"header: {header_rows[0][:80]}",
+            )
         else:
             all_ok &= check("3-column format (Error | Cause | Action)", False, "header row not found")
     except Exception as e:
@@ -196,8 +212,8 @@ def tier0():
     # 0.9 YAML anchors (TE-5)
     print("\n[0.9] YAML anchors in example-config.yaml (TE-5)")
     yaml_text = (ASSETS_DIR / "example-config.yaml").read_text()
-    anchors = re.findall(r'&[a-z_]+', yaml_text)
-    refs = re.findall(r'<<: \*[a-z_]+', yaml_text)
+    anchors = re.findall(r"&[a-z_]+", yaml_text)
+    refs = re.findall(r"<<: \*[a-z_]+", yaml_text)
     all_ok &= check(f"yaml anchors present (>= 2, found {len(anchors)})", len(anchors) >= 2)
     all_ok &= check(f"yaml anchor refs present (>= 2, found {len(refs)})", len(refs) >= 2)
 
@@ -208,8 +224,10 @@ def tier0():
     for dim in required_dims:
         all_ok &= check(f"rubric has dimension '{dim}'", dim in rubric_text)
     all_ok &= check("Safety Fail Conditions present", "Safety Fail Conditions" in rubric_text)
-    all_ok &= check("Per-Destructive-Operation Safety Sub-Rules present",
-                   "Per-Destructive-Operation Safety Sub-Rules" in rubric_text)
+    all_ok &= check(
+        "Per-Destructive-Operation Safety Sub-Rules present",
+        "Per-Destructive-Operation Safety Sub-Rules" in rubric_text,
+    )
     all_ok &= check("Detection Regexes present", "Detection Regexes" in rubric_text)
     all_ok &= check("Scoring Guide present", "Scoring Guide" in rubric_text)
     all_ok &= check("gcl_max_iter: 2", "gcl_max_iter: 2" in rubric_text or "max_iter: 2" in rubric_text)
@@ -233,7 +251,7 @@ def tier0():
     broken = []
     for md in SKILL_DIR.rglob("*.md"):
         text = md.read_text()
-        for match in re.finditer(r'\[([^\]]+)\]\(([^\)]+)\)', text):
+        for match in re.finditer(r"\[([^\]]+)\]\(([^\)]+)\)", text):
             href = match.group(2)
             # Skip external links
             if href.startswith("http") or href.startswith("mailto"):
@@ -272,19 +290,25 @@ def tier0():
         text = md.read_text()
         lines = text.splitlines()
         for i, line in enumerate(lines):
-            if '[VERIFY' in line:
+            if "[VERIFY" in line:
                 continue
-            if re.search(r'\b(quota|limit)\b', line, re.IGNORECASE):
-                if re.search(r'\d{4,}', line) and not re.search(r'\[VERIFY.*?\]', line):
-                    te1_violations.append(f"{md.name}:{i+1}: potential hardcoded quota")
-    all_ok &= check("TE-1: no hardcoded quota numbers (except [VERIFY])", len(te1_violations) == 0,
-                    f"{len(te1_violations)} violations" if te1_violations else "")
+            if re.search(r"\b(quota|limit)\b", line, re.IGNORECASE):
+                if re.search(r"\d{4,}", line) and not re.search(r"\[VERIFY.*?\]", line):
+                    te1_violations.append(f"{md.name}:{i + 1}: potential hardcoded quota")
+    all_ok &= check(
+        "TE-1: no hardcoded quota numbers (except [VERIFY])",
+        len(te1_violations) == 0,
+        f"{len(te1_violations)} violations" if te1_violations else "",
+    )
 
     # TE-3: error tables compact (3 columns max)
-    ts_rows = [l for l in ts_text.splitlines() if l.startswith("|") and l.count("|") >= 4]
-    all_ok &= check(f"TE-3: troubleshooting table <= 4 columns (found {max([l.count('|') for l in ts_rows]) if ts_rows else 0})",
-                   all(l.count("|") <= 4 for l in ts_rows) or len(ts_rows) == 0,
-                   "some rows have >4 columns" if not all(l.count("|") <= 4 for l in ts_rows) else "")
+    ts_rows = [line for line in ts_text.splitlines() if line.startswith("|") and line.count("|") >= 4]
+    max_pipes = max([line.count("|") for line in ts_rows]) if ts_rows else 0
+    all_ok &= check(
+        f"TE-3: troubleshooting table <= 4 columns (found {max_pipes})",
+        all(line.count("|") <= 4 for line in ts_rows) or len(ts_rows) == 0,
+        "some rows have >4 columns" if not all(line.count("|") <= 4 for line in ts_rows) else "",
+    )
 
     # TE-8: reference depth <= 2 layers
     deepest = 0
@@ -299,20 +323,25 @@ def tier0():
     skill_full = SKILL_MD.read_text()
     # No credential printing — be specific to avoid false positives on commands
     cred_patterns = [
-        (r'cat\s+\$?GOOGLE_APPLICATION_CREDENTIALS', "reading credential file directly"),
-        (r'fmt\.Println\(.*config\)', "fmt.Println of config struct"),
+        (r"cat\s+\$?GOOGLE_APPLICATION_CREDENTIALS", "reading credential file directly"),
+        (r"fmt\.Println\(.*config\)", "fmt.Println of config struct"),
         (r'log\.Printf\("%\+v".*config', "log.Printf of config struct"),
-        (r'print\([^)]*access_token[^)]*\)', "printing access token value"),
+        (r"print\([^)]*access_token[^)]*\)", "printing access token value"),
     ]
     cred_violations = []
     for pat, reason in cred_patterns:
         if re.search(pat, skill_full, re.IGNORECASE):
             cred_violations.append(f"{pat} ({reason})")
-    all_ok &= check("No credential printing in SKILL.md", len(cred_violations) == 0,
-                    f"violations: {cred_violations}" if cred_violations else "")
+    all_ok &= check(
+        "No credential printing in SKILL.md",
+        len(cred_violations) == 0,
+        f"violations: {cred_violations}" if cred_violations else "",
+    )
     # Delete operations have confirmation requirement
-    all_ok &= check("Delete ops have confirmation in execution-flows.md",
-                   "{{user.confirm_delete}}" in (REF_DIR / "execution-flows.md").read_text())
+    all_ok &= check(
+        "Delete ops have confirmation in execution-flows.md",
+        "{{user.confirm_delete}}" in (REF_DIR / "execution-flows.md").read_text(),
+    )
 
     # 0.16 Well-Architected Assessment completeness
     print("\n[0.16] Well-Architected Assessment completeness")
@@ -327,9 +356,11 @@ def tier0():
     all_ok &= check("TODO.md has Initial Release Checklist", "Initial Release Checklist" in todo_text)
     # Only check Initial Release Checklist — Future Enhancements are intentionally unchecked
     check_items = re.findall(r"- \[ \] (.+)", todo_text.split("## Future Enhancements")[0])
-    all_ok &= check(f"Initial Release Checklist items complete ({len(check_items)} unchecked — should be 0)",
-                    len(check_items) == 0,
-                    f"{len(check_items)} unchecked items in Initial Release Checklist" if check_items else "")
+    all_ok &= check(
+        f"Initial Release Checklist items complete ({len(check_items)} unchecked — should be 0)",
+        len(check_items) == 0,
+        f"{len(check_items)} unchecked items in Initial Release Checklist" if check_items else "",
+    )
 
     # 0.18 Pre-flight checks in execution-flows.md
     print("\n[0.18] Execution-flows.md Pre-flight coverage")
@@ -354,8 +385,14 @@ def tier0():
     # 0.19 Idempotency checklist coverage
     print("\n[0.19] Idempotency checklist coverage")
     idem_text = (REF_DIR / "idempotency-checklist.md").read_text()
-    resources = ["Findings", "Mute Configs", "Notification Configs", "BigQuery Exports",
-                 "Custom Modules", "Resource Value Configs"]
+    resources = [
+        "Findings",
+        "Mute Configs",
+        "Notification Configs",
+        "BigQuery Exports",
+        "Custom Modules",
+        "Resource Value Configs",
+    ]
     for res in resources:
         all_ok &= check(f"Idempotency has '{res}'", res in idem_text)
 
@@ -370,11 +407,11 @@ def tier1():
     all_ok = True
 
     ORG_ID = os.environ.get("GCP_ORG_ID", "")
-    PROJECT = os.environ.get("CLOUDSDK_CORE_PROJECT", os.environ.get("GCP_PROJECT", ""))
+    # PROJECT is used later in tier1() but not here — skip for now
 
     if not ORG_ID:
         print(f"  {WARN} GCP_ORG_ID not set — skipping Tier 1 tests")
-        print(f"     Set: export GCP_ORG_ID=123456789012")
+        print("     Set: export GCP_ORG_ID=123456789012")
         return True  # Not a failure, just skip
 
     # 1.1 Pre-conditions
@@ -383,7 +420,10 @@ def tier1():
     out, err, rc = run("gcloud version")
     all_ok &= check("gcloud available", rc == 0, err)
 
-    out, err, rc = run(f"gcloud services list --enabled --filter='config.name=securitycenter.googleapis.com' --format=value(config.name)")
+    svc_filter = "--filter=config.name=securitycenter.googleapis.com"
+    svc_format = "--format=value(config.name)"
+    cmd = f"gcloud services list --enabled {svc_filter} {svc_format}"
+    out, err, rc = run(cmd)
     all_ok &= check("SCC API enabled", "securitycenter.googleapis.com" in out, err)
 
     out, err, rc = run("gcloud auth print-access-token >/dev/null 2>&1")
@@ -471,10 +511,10 @@ def tier1():
             # Quick SDK test
             out, err, rc = run(
                 f'python3 -c "from google.cloud import securitycenter_v2; '
-                f'c = securitycenter_v2.SecurityCenterClient(); '
+                f"c = securitycenter_v2.SecurityCenterClient(); "
                 f'p = f\\"organizations/{ORG_ID}/sources/-\\"; '
-                f'r = securitycenter_v2.ListFindingsRequest(parent=p, page_size=1); '
-                f'results = list(c.list_findings(request=r)); '
+                f"r = securitycenter_v2.ListFindingsRequest(parent=p, page_size=1); "
+                f"results = list(c.list_findings(request=r)); "
                 f'print(f\\"found={{len(results)}}\\")"'
             )
             all_ok &= check("SDK list_findings() works", "found=" in out, err)
@@ -517,14 +557,14 @@ def eval_queries_tests():
     print("\n[eq-3] expected_cmd_pattern validity")
     for q in eq:
         pattern = q.get("expected_cmd_pattern", "")
-        all_ok &= check(f"  '{q['query'][:50]}' -> cmd_pattern",
-                       bool(pattern) and " " in pattern and pattern.startswith("gcloud"),
-                       f"pattern='{pattern}'")
+        all_ok &= check(
+            f"  '{q['query'][:50]}' -> cmd_pattern",
+            bool(pattern) and " " in pattern and pattern.startswith("gcloud"),
+            f"pattern='{pattern}'",
+        )
 
     # 4. should_not_trigger queries target adjacent skills
     print("\n[eq-4] should_not_trigger coverage (delegation targets)")
-    adjacent = ["gcp-iam-ops", "gcp-logging-ops", "gcp-monitoring-ops", "gcp-pubsub-ops",
-                "gcp-bigquery-ops", "gcp-gcs-ops", "gcp-vpc-ops", "gcp-iam-ops"]
     delegation_patterns = [
         "gcloud projects add-iam-policy-binding",
         "gcloud logging sinks create",
@@ -538,16 +578,19 @@ def eval_queries_tests():
     not_trigger_patterns = [q.get("expected_cmd_pattern", "") for q in not_trigger]
     for pat in delegation_patterns:
         found = any(pat in p for p in not_trigger_patterns)
-        all_ok &= check(f"delegation target: '{pat[:40]}'", found,
-                       "not covered by should_not_trigger" if not found else "")
+        all_ok &= check(
+            f"delegation target: '{pat[:40]}'", found, "not covered by should_not_trigger" if not found else ""
+        )
 
     # 5. dry_run_supported consistency
     print("\n[eq-5] dry_run_supported consistency")
     for q in eq:
         if "delete" in q.get("expected_cmd_pattern", "").lower():
-            all_ok &= check(f"delete op has dry_run_supported=false: '{q['query'][:50]}'",
-                           q.get("dry_run_supported") == False,
-                           f"dry_run={q.get('dry_run_supported')}")
+            all_ok &= check(
+                f"delete op has dry_run_supported=false: '{q['query'][:50]}'",
+                not q.get("dry_run_supported"),
+                f"dry_run={q.get('dry_run_supported')}",
+            )
 
     # 6. eval_queries covers all 12 SCC operations
     print("\n[eq-6] 12 operations coverage")
@@ -597,20 +640,29 @@ def gcl_compliance():
 
     # 2. Safety fail conditions
     print("\n[gcl-2] Safety fail conditions")
-    all_ok &= check("Safety score = 0 → abort", "Safety score is `0`" in rubric_text or "Safety score is 0" in rubric_text)
-    all_ok &= check("delete without confirmation", "delete" in rubric_text.lower() and "confirmation" in rubric_text.lower())
+    safety_check = "Safety score is `0`" in rubric_text
+    safety_check = safety_check or "Safety score is 0" in rubric_text
+    all_ok &= check("Safety score = 0 → abort", safety_check)
+    del_check = "delete" in rubric_text.lower()
+    del_check = del_check and "confirmation" in rubric_text.lower()
+    all_ok &= check("delete without confirmation", del_check)
 
     # 3. Per-destructive operation safety sub-rules
     print("\n[gcl-3] Per-destructive safety sub-rules")
-    ops = ["Delete Mute Config", "Delete Notification Config", "Delete BigQuery Export",
-           "Update Finding State", "Enable SCC"]
+    ops = [
+        "Delete Mute Config",
+        "Delete Notification Config",
+        "Delete BigQuery Export",
+        "Update Finding State",
+        "Enable SCC",
+    ]
     for op in ops:
         all_ok &= check(f"safety sub-rule for '{op}'", op in rubric_text)
 
     # 4. Detection regexes
     print("\n[gcl-4] Detection regexes")
     all_ok &= check("detection regexes present", "Detection Regexes" in rubric_text)
-    regex_blocks = re.findall(r'```text\n(.*?)```', rubric_text, re.DOTALL)
+    regex_blocks = re.findall(r"```text\n(.*?)```", rubric_text, re.DOTALL)
     all_ok &= check("at least one regex block", len(regex_blocks) >= 1)
 
     # 5. Scoring guide
@@ -628,8 +680,12 @@ def gcl_compliance():
 
     # 7. Critic template
     print("\n[gcl-7] Critic template")
-    all_ok &= check("Critic does not see user request", "{{user.request}}" not in pt_text or "Critic MUST NOT see" in pt_text)
-    all_ok &= check("Critic uses read-only verification", "read-only" in pt_text.lower() or "read only" in pt_text.lower())
+    critic_check = "{{user.request}}" not in pt_text
+    critic_check = critic_check or "Critic MUST NOT see" in pt_text
+    all_ok &= check("Critic does not see user request", critic_check)
+    ro_check = "read-only" in pt_text.lower()
+    ro_check = ro_check or "read only" in pt_text.lower()
+    all_ok &= check("Critic uses read-only verification", ro_check)
 
     # 8. Hallucination Detector
     print("\n[gcl-8] Hallucination Detector (v1.5.0+)")
@@ -644,8 +700,7 @@ def gcl_compliance():
 # ─────────────────────────────────────────────────────────────────────────────
 def main():
     parser = argparse.ArgumentParser(description="gcp-securitycenter-ops test suite")
-    parser.add_argument("--tier", choices=["0", "1"], default=None,
-                        help="Run specific tier: 0=static, 1=integration")
+    parser.add_argument("--tier", choices=["0", "1"], default=None, help="Run specific tier: 0=static, 1=integration")
     parser.add_argument("--eval-q", action="store_true", help="Run eval_queries trigger accuracy tests")
     parser.add_argument("--gcl", action="store_true", help="Run GCL rubric compliance tests")
     parser.add_argument("--all", action="store_true", help="Run all tests (default)")

@@ -270,22 +270,11 @@ gcloud logging tail \
 > - `google.cloud.logging_v2.ConfigClientV2` (low-level gapic) — full control for bucket and view operations
 > Both are from the same `google-cloud-logging` package; choose the level that matches your operation.
 
-```python
-# list_log_entries.py
-import os
-from google.cloud import logging
-client = logging.Client(project=os.environ["CLOUDSDK_CORE_PROJECT"])
-filter_str = "severity>=ERROR"
-entries = client.list_entries(filter_=filter_str, page_size=50)
-for entry in entries:
-    print(f"[{entry.timestamp}] {entry.log_name}: {entry.payload}")
-```
+Full script at [assets/code-snippets/list_log_entries.py](assets/code-snippets/list_log_entries.py)
 
-Execute:
-```bash
-pip install --quiet --user google-cloud-logging
-python3 list_log_entries.py
-```
+Key steps:
+1. Create client: `logging.Client(project=...)`
+2. List entries: `client.list_entries(filter_=..., page_size=...)`
 
 #### Execution — JIT Go SDK (Secondary Fallback)
 
@@ -389,19 +378,12 @@ gcloud logging buckets create "{{user.log_bucket_name}}" \
 
 #### Execution — Python SDK (Primary Fallback)
 
-```python
-# create_log_bucket.py
-import os
-from google.cloud import logging_v2
-client = logging_v2.ConfigClientV2()
-parent = f"projects/{os.environ['CLOUDSDK_CORE_PROJECT']}/locations/{os.environ.get('LOGGING_LOCATION', 'global')}"
-bucket = logging_v2.LogBucket(
-    retention_days=30, description="Log bucket created by gcp-skills")
-request = logging_v2.CreateBucketRequest(
-    parent=parent, bucket_id="{{user.log_bucket_name}}", bucket=bucket)
-response = client.create_bucket(request=request)
-print(f"Created bucket: {response.name}")
-```
+Full script at [assets/code-snippets/create_log_bucket.py](assets/code-snippets/create_log_bucket.py)
+
+Key steps:
+1. Create client: `logging_v2.ConfigClientV2()`
+2. Configure bucket: `logging_v2.LogBucket(retention_days=..., description=...)`
+3. Create: `client.create_bucket(request=...)`
 
 #### Post-execution Validation
 
@@ -533,16 +515,12 @@ gcloud logging buckets delete "{{user.log_bucket_name}}" \
 
 #### Execution — Python SDK (Primary Fallback)
 
-```python
-# delete_log_bucket.py
-import os
-from google.cloud import logging_v2
-client = logging_v2.ConfigClientV2()
-name = f"projects/{os.environ['CLOUDSDK_CORE_PROJECT']}/locations/{os.environ.get('LOGGING_LOCATION','global')}/buckets/{{user.log_bucket_name}}"
-request = logging_v2.DeleteBucketRequest(name=name)
-client.delete_bucket(request=request)
-print(f"Deleted bucket: {{user.log_bucket_name}}")
-```
+Full script at [assets/code-snippets/delete_log_bucket.py](assets/code-snippets/delete_log_bucket.py)
+
+Key steps:
+1. Create client: `logging_v2.ConfigClientV2()`
+2. Build resource name: `projects/{project}/locations/{location}/buckets/{name}`
+3. Delete: `client.delete_bucket(request=...)`
 
 #### Post-execution Validation
 
@@ -589,19 +567,12 @@ gcloud logging sinks create "{{user.sink_name}}" \
 
 #### Execution — Python SDK (Primary Fallback)
 
-```python
-# create_sink.py
-import os
-from google.cloud import logging
-client = logging.Client(project=os.environ["CLOUDSDK_CORE_PROJECT"])
-sink = client.sink(
-    "{{user.sink_name}}",
-    filter_="{{user.filter_query}}",
-    destination="bigquery.googleapis.com/projects/{}/datasets/{{user.destination_id}}".format(
-        os.environ["CLOUDSDK_CORE_PROJECT"]))
-sink.create()
-print(f"Created sink: {sink.name}, writerIdentity: {sink.writer_identity}")
-```
+Full script at [assets/code-snippets/create_sink.py](assets/code-snippets/create_sink.py)
+
+Key steps:
+1. Create client: `logging.Client(project=...)`
+2. Create sink config: `client.sink(name, filter_=..., destination=...)`
+3. Create: `sink.create()`
 
 #### Post-execution Validation
 
@@ -688,18 +659,12 @@ gcloud logging metrics create "{{user.metric_name}}" \
 
 #### Execution — Python SDK (Primary Fallback)
 
-```python
-# create_metric.py
-import os
-from google.cloud import logging
-client = logging.Client(project=os.environ["CLOUDSDK_CORE_PROJECT"])
-metric = client.metric(
-    "{{user.metric_name}}",
-    filter_="{{user.filter_query}}",
-    description="{{user.description}}")
-metric.create()
-print(f"Created metric: {metric.name}")
-```
+Full script at [assets/code-snippets/create_metric.py](assets/code-snippets/create_metric.py)
+
+Key steps:
+1. Create client: `logging.Client(project=...)`
+2. Create metric config: `client.metric(name, filter_=..., description=...)`
+3. Create: `metric.create()`
 
 #### Post-execution Validation
 

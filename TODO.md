@@ -82,6 +82,7 @@
 | Core operations (SKILL.md complete) | ✅ | v1.0.0 |
 | Self-review passed (R1+R2) | ✅ | |
 | eval_queries.json complete | ✅ | |
+| SKILL.md token optimization | ✅ | v1.1.0 — extracted 9 Python + 1 Go SDK snippets to `assets/code-snippets/` (saved 151 lines) |
 
 ---
 
@@ -162,6 +163,7 @@
 | Core operations (SKILL.md complete) | ✅ | v1.0.0 |
 | Self-review passed (R1+R2) | ✅ | |
 | eval_queries.json complete | ✅ | |
+| SKILL.md token optimization | ✅ | v1.1.0 — extracted 5 SDK snippets to `assets/code-snippets/` (saved 35 lines) |
 
 ---
 
@@ -260,3 +262,40 @@
 | Private Service Connect setup | ✅ | references/advanced/ |
 | AIOps anomaly detection | ✅ | references/advanced/ |
 | FinOps cost optimization | ✅ | references/advanced/ |
+| SKILL.md token optimization | ✅ | v1.3.0 — extracted 7 SDK snippets to `assets/code-snippets/` (saved 227 lines) |
+
+---
+
+## gcp-gce-ops
+
+| Feature | Status | Notes |
+|---------|--------|-------|
+| Core operations (SKILL.md complete) | ✅ | v1.0.0 |
+| Self-review passed (R1+R2) | ✅ | |
+| eval_queries.json complete | ✅ | |
+| SKILL.md token optimization | ✅ | v1.1.0 — extracted SDK snippets to `assets/code-snippets/` (saved 108 lines) |
+| code-snippets/ directory | ✅ | v1.1.0 — 4 files (create/describe/delete instance + Go create) |
+
+---
+
+## gcp-skill-generator
+
+| Feature | Status | Notes |
+|---------|--------|-------|
+| Quality gates (markdownlint + ruff) | ✅ | v3.0.0 — fixed all lint errors |
+| `.markdownlint.json` config | ✅ | v1.0.0 — disabled non-critical rules |
+| `execution-environment.md` optimization | ✅ | v3.0.0 — extracted `jit-sdk-setup.md`, fixed duplicates |
+| `docker-gcloud-setup.md` extraction | ✅ | v1.0.0 — extracted from `execution-environment.md` |
+| `jit-sdk-setup.md` creation | ✅ | v1.0.0 — JIT Python/Go SDK setup |
+| Self-review passed (R1+R2) | ✅ | |
+
+---
+
+## gcp-filestore-ops
+
+| Feature | Status | Notes |
+|---------|--------|-------|
+| Core operations (SKILL.md complete) | ✅ | v1.0.0 |
+| Self-review passed (R1+R2) | ✅ | |
+| eval_queries.json complete | ✅ | 30 queries (17 positive, 10 negative) |
+| Token optimization (SKILL.md) | ✅ | v1.1.0 — moved operational best practices to `references/operational-best-practices.md` |

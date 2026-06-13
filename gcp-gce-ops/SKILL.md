@@ -302,116 +302,21 @@ apt-get update' \
 
 #### Execution — Python SDK (Primary Fallback)
 
-```python
-# create_instance.py (generated dynamically in /tmp/gcp-sdk-workspace)
-# REST: POST /v1/projects/{project}/zones/{zone}/instances
-import os
-from google.cloud import compute_v1
+Full script at [assets/code-snippets/create_instance.py](assets/code-snippets/create_instance.py)
 
-project = os.environ["CLOUDSDK_CORE_PROJECT"]
-zone = os.environ.get("CLOUDSDK_COMPUTE_ZONE", "us-central1-a")
-instance_name = os.environ.get("GCE_INSTANCE_NAME", "my-instance")
-
-client = compute_v1.InstancesClient()
-
-# Configure boot disk
-boot_disk = compute_v1.AttachedDisk()
-boot_disk.boot = True
-disk_config = compute_v1.AttachedDiskInitializeParams()
-disk_config.source_image = "projects/debian-cloud/global/images/family/debian-12"
-disk_config.disk_size_gb = 20
-disk_config.disk_type = f"projects/{project}/zones/{zone}/diskTypes/pd-balanced"
-boot_disk.initialize_params = disk_config
-
-# Configure network
-network_interface = compute_v1.NetworkInterface()
-network_interface.name = "default"
-
-# Configure instance
-instance = compute_v1.Instance()
-instance.name = instance_name
-instance.machine_type = f"projects/{project}/zones/{zone}/machineTypes/n2-standard-2"
-instance.disks = [boot_disk]
-instance.network_interfaces = [network_interface]
-
-request = compute_v1.InsertInstanceRequest(
-    project=project, zone=zone, instance_resource=instance)
-operation = client.insert(request=request)
-operation.result(timeout=300)
-print(f"Created instance: {instance_name}")
-```
-
-Execute:
-```bash
-pip install --quiet --user google-cloud-compute
-python3 create_instance.py
-```
+Key steps:
+1. Create client: `compute_v1.InstancesClient()`
+2. Configure instance: `compute_v1.Instance(...)`
+3. Insert: `client.insert(request=...)`
 
 #### Execution — JIT Go SDK (Secondary Fallback)
 
-```go
-// main.go (generated dynamically in /tmp/gcp-sdk-workspace)
-package main
+Full script at [assets/code-snippets/create_instance.go](assets/code-snippets/create_instance.go)
 
-import (
-    "context"
-    "fmt"
-    "log"
-    "os"
-    
-    compute "cloud.google.com/go/compute/apiv1"
-    "cloud.google.com/go/compute/apiv1/computepb"
-    "google.golang.org/api/option"
-)
-
-func main() {
-    ctx := context.Background()
-    project := os.Getenv("CLOUDSDK_CORE_PROJECT")
-    zone := os.Getenv("CLOUDSDK_COMPUTE_ZONE")
-    if zone == "" { zone = "us-central1-a" }
-    
-    client, err := compute.NewInstancesRESTClient(ctx,
-        option.WithCredentialsFile(os.Getenv("GOOGLE_APPLICATION_CREDENTIALS")))
-    if err != nil {
-        log.Fatalf("NewInstancesRESTClient: %v", err)
-    }
-    defer client.Close()
-    
-    req := &computepb.InsertInstanceRequest{
-        Project: project,
-        Zone:    zone,
-        InstanceResource: &computepb.Instance{
-            Name: protoPtr("my-instance"),
-            MachineType: protoPtr(fmt.Sprintf("projects/%s/zones/%s/machineTypes/n2-standard-2", project, zone)),
-            Disks: []*computepb.AttachedDisk{{
-                Boot: protoBool(true),
-                InitializeParams: &computepb.AttachedDiskInitializeParams{
-                    SourceImage: protoPtr("projects/debian-cloud/global/images/family/debian-12"),
-                    DiskSizeGb:  protoInt64(20),
-                    DiskType:    protoPtr(fmt.Sprintf("projects/%s/zones/%s/diskTypes/pd-balanced", project, zone)),
-                },
-            }},
-            NetworkInterfaces: []*computepb.NetworkInterface{{
-                Name: protoPtr("default"),
-            }},
-        },
-    }
-    
-    op, err := client.Insert(ctx, req)
-    if err != nil { log.Fatalf("Insert: %v", err) }
-    if err := op.Wait(ctx); err != nil { log.Fatalf("Wait: %v", err) }
-    fmt.Println("Created instance: my-instance")
-}
-
-func protoPtr(s string) *string { return &s }
-func protoBool(b bool) *bool { return &b }
-func protoInt64(i int64) *int64 { return &i }
-```
-
-Execute:
-```bash
-cd /tmp/gcp-sdk-workspace && go mod init sdk-script && go mod tidy && go run ./main.go
-```
+Key steps:
+1. Create client: `compute.NewInstancesRESTClient(ctx, ...)`
+2. Configure instance: `computepb.InsertInstanceRequest{...}`
+3. Insert: `client.Insert(ctx, req)`
 
 #### Post-execution Validation
 
@@ -491,16 +396,11 @@ gcloud compute instances describe "{{user.instance_name}}" \
 
 #### Execution — Python SDK (Primary Fallback)
 
-```python
-# describe_instance.py
-import os
-from google.cloud import compute_v1
-client = compute_v1.InstancesClient()
-instance = client.get(project=os.environ["CLOUDSDK_CORE_PROJECT"],
-    zone=os.environ.get("CLOUDSDK_COMPUTE_ZONE","us-central1-a"),
-    instance="my-instance")
-print(f"Name: {instance.name}, Status: {instance.status}, Machine: {instance.machine_type}")
-```
+Full script at [assets/code-snippets/describe_instance.py](assets/code-snippets/describe_instance.py)
+
+Key steps:
+1. Create client: `compute_v1.InstancesClient()`
+2. Get instance: `client.get(project=..., zone=..., instance=...)`
 
 #### Present to User
 
@@ -630,19 +530,11 @@ gcloud compute instances delete "{{user.instance_name}}" \
 
 #### Execution — Python SDK
 
-```python
-# delete_instance.py
-import os
-from google.cloud import compute_v1
-client = compute_v1.InstancesClient()
-request = compute_v1.DeleteInstanceRequest(
-    project=os.environ["CLOUDSDK_CORE_PROJECT"],
-    zone=os.environ.get("CLOUDSDK_COMPUTE_ZONE","us-central1-a"),
-    instance="{{user.instance_name}}")
-operation = client.delete(request=request)
-operation.result(timeout=300)
-print(f"Deleted instance: {{user.instance_name}}")
-```
+Full script at [assets/code-snippets/delete_instance.py](assets/code-snippets/delete_instance.py)
+
+Key steps:
+1. Create client: `compute_v1.InstancesClient()`
+2. Delete: `client.delete(request=compute_v1.DeleteInstanceRequest(...))`
 
 **Never use `--quiet` to bypass this safety gate.**
 

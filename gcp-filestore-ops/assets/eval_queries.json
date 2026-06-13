@@ -1,0 +1,144 @@
+[
+  {
+    "query": "create a Filestore instance in us-central1-a",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud filestore instances create",
+    "dry_run_supported": false
+  },
+  {
+    "query": "set up Cloud Filestore for NFS sharing",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud filestore instances create",
+    "dry_run_supported": false
+  },
+  {
+    "query": "创建 Filestore 实例",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud filestore instances create",
+    "dry_run_supported": false
+  },
+  {
+    "query": "describe my Filestore instance",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud filestore instances describe",
+    "dry_run_supported": false
+  },
+  {
+    "query": "list all Filestore instances in my project",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud filestore instances list",
+    "dry_run_supported": false
+  },
+  {
+    "query": "update Filestore instance capacity to 2TB",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud filestore instances update",
+    "dry_run_supported": false
+  },
+  {
+    "query": "delete Filestore instance my-filestore",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud filestore instances delete",
+    "dry_run_supported": false
+  },
+  {
+    "query": "create a backup of my Filestore instance",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud filestore backups create",
+    "dry_run_supported": false
+  },
+  {
+    "query": "list all backups for Filestore instance",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud filestore backups list",
+    "dry_run_supported": false
+  },
+  {
+    "query": "delete old backup from Filestore",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud filestore backups delete",
+    "dry_run_supported": false
+  },
+  {
+    "query": "create a snapshot of Filestore instance",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud filestore instances snapshots create",
+    "dry_run_supported": false
+  },
+  {
+    "query": "list Filestore snapshots",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud filestore instances snapshots list",
+    "dry_run_supported": false
+  },
+  {
+    "query": "delete snapshot from Filestore",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud filestore instances snapshots delete",
+    "dry_run_supported": false
+  },
+  {
+    "query": "restore Filestore instance from backup",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud filestore instances restore",
+    "dry_run_supported": false
+  },
+  {
+    "query": "get NFS mount command for Filestore",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud filestore instances describe",
+    "dry_run_supported": false
+  },
+  {
+    "query": "Filestore instance won't mount, help me debug",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud filestore instances describe",
+    "dry_run_supported": false
+  },
+  {
+    "query": "how much does Filestore cost?",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud filestore",
+    "dry_run_supported": false
+  },
+  {
+    "query": "create a GKE cluster",
+    "should_trigger": false
+  },
+  {
+    "query": "deploy to Cloud Run",
+    "should_trigger": false
+  },
+  {
+    "query": "create a BigQuery dataset",
+    "should_trigger": false
+  },
+  {
+    "query": "set up Cloud SQL database",
+    "should_trigger": false
+  },
+  {
+    "query": "configure VPC network",
+    "should_trigger": false
+  },
+  {
+    "query": "create IAM policy binding",
+    "should_trigger": false
+  },
+  {
+    "query": "upload files to Cloud Storage",
+    "should_trigger": false
+  },
+  {
+    "query": "set up Redis cache with Memorystore",
+    "should_trigger": false
+  },
+  {
+    "query": "create a Compute Engine VM",
+    "should_trigger": false
+  },
+  {
+    "query": "configure Cloud DNS zone",
+    "should_trigger": false
+  }
+]
