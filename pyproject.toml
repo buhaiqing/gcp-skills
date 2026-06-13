@@ -22,7 +22,7 @@ dev = [
 ]
 
 [tool.pytest.ini_options]
-testpaths = ["gcp-gcl-runner-ops/scripts"]
+testpaths = ["gcp-gcl-runner-ops/scripts", "gcp-securitycenter-ops/assets/code-snippets", "gcp-terraform-ops/assets/code-snippets"]
 python_files = ["test_*.py"]
 addopts = "-v --tb=short --strict-markers"
 

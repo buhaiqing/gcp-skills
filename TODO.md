@@ -7,295 +7,200 @@
 
 ## gcp-bigquery-ops
 
-| Feature | Status | Notes |
-|---------|--------|-------|
-| Core operations (SKILL.md complete) | ✅ | v1.0.0 |
-| Self-review passed (R1+R2) | ✅ | |
-| eval_queries.json complete | ✅ | |
+| Planned Feature | Status | Notes |
+|----------------|--------|-------|
+| AIOps anomaly detection | ⬜ | references/advanced/aiops-bigquery.md |
+| FinOps cost analysis | ⬜ | references/advanced/finops-bigquery.md |
+| SQL execution (security-sensitive) | ⬜ | references/advanced/sql-execution.md |
+| INFORMATION_SCHEMA reference | ⬜ | Detailed monitoring queries |
+| BI Engine optimization | ⬜ | Performance tuning guide |
 
 ---
 
 ## gcp-billing-ops
 
-| Feature | Status | Notes |
-|---------|--------|-------|
-| Core operations (SKILL.md complete) | ✅ | v1.0.0 |
-| Self-review passed (R1+R2) | ✅ | |
-| eval_queries.json complete | ✅ | |
+| Planned Feature | Status | Notes |
+|----------------|--------|-------|
+| AIOps spend anomaly detection | ⬜ | references/advanced/aiops-billing.md |
+| FinOps cost analysis deep-dive | ⬜ | references/advanced/finops-cost-analysis.md |
+| Committed use discount analysis | ⬜ | references/advanced/cud-analysis.md |
+| Budget automation with Terraform | ⬜ | google_billing_budget resource examples |
+| Multi-cloud cost comparison | ⬜ | Cross-cloud pricing analysis |
 
 ---
 
 ## gcp-cdn-ops
 
-| Feature | Status | Notes |
-|---------|--------|-------|
-| Core operations (SKILL.md complete) | ✅ | v1.0.0 |
-| Self-review passed (R1+R2) | ✅ | |
-| eval_queries.json complete | ✅ | |
+No planned items.
 
 ---
 
 ## gcp-cloudbuild-ops
 
-| Feature | Status | Notes |
-|---------|--------|-------|
-| Core operations (SKILL.md complete) | ✅ | v1.0.0 |
-| Self-review passed (R1+R2) | ✅ | |
-| eval_queries.json complete | ✅ | |
+| Planned Feature | Status | Notes |
+|----------------|--------|-------|
+| Advanced FinOps/AIOps references | ⬜ | references/advanced/ |
+| Standalone SDK code snippets | ⬜ | If skill becomes SDK-primary |
 
 ---
 
 ## gcp-cloudfunctions-ops
 
-| Feature | Status | Notes |
-|---------|--------|-------|
-| Core operations (SKILL.md complete) | ✅ | v1.0.0 |
-| Self-review passed (R1+R2) | ✅ | |
-| eval_queries.json complete | ✅ | |
+No planned items.
 
 ---
 
 ## gcp-cloudrun-ops
 
-| Feature | Status | Notes |
-|---------|--------|-------|
-| Core operations (SKILL.md complete) | ✅ | v1.0.0 |
-| Self-review passed (R1+R2) | ✅ | |
-| eval_queries.json complete | ✅ | |
+No planned items.
 
 ---
 
 ## gcp-cloudsql-ops
 
-| Feature | Status | Notes |
-|---------|--------|-------|
-| Core operations (SKILL.md complete) | ✅ | v1.0.0 |
-| Self-review passed (R1+R2) | ✅ | |
-| eval_queries.json complete | ✅ | |
+| Planned Feature | Status | Notes |
+|----------------|--------|-------|
+| AIOps query insights anomaly detection | ⬜ | references/advanced/aiops-query-insights.md |
+| FinOps cost optimization | ⬜ | references/advanced/finops-cost-analysis.md |
+| SQL execution (security-sensitive) | ⬜ | references/advanced/sql-execution.md |
+| PITR clone operation | ⬜ | |
+| Cross-region replica failover runbook | ⬜ | |
+| Rotate server CA operation | ⬜ | |
+| Reschedule maintenance operation | ⬜ | |
 
 ---
 
 ## gcp-dns-ops
 
-| Feature | Status | Notes |
-|---------|--------|-------|
-| Core operations (SKILL.md complete) | ✅ | v1.0.0 |
-| Self-review passed (R1+R2) | ✅ | |
-| eval_queries.json complete | ✅ | |
-| SKILL.md token optimization | ✅ | v1.1.0 — extracted 9 Python + 1 Go SDK snippets to `assets/code-snippets/` (saved 151 lines) |
-
----
-
-## gcp-gce-ops
-
-| Feature | Status | Notes |
-|---------|--------|-------|
-| Core operations (SKILL.md complete) | ✅ | v1.0.0 |
-| Self-review passed (R1+R2) | ✅ | |
-| eval_queries.json complete | ✅ | |
+No planned items.
 
 ---
 
 ## gcp-gcl-runner-ops
 
-| Feature | Status | Notes |
-|---------|--------|-------|
-| Core operations (SKILL.md complete) | ✅ | v1.0.0 |
-| Self-review passed (R1+R2) | ✅ | |
-| eval_queries.json complete | ✅ | |
+No planned items.
 
 ---
 
 ## gcp-gcs-ops
 
-| Feature | Status | Notes |
-|---------|--------|-------|
-| Core operations (SKILL.md complete) | ✅ | v1.0.0 |
-| Self-review passed (R1+R2) | ✅ | |
-| eval_queries.json complete | ✅ | |
+| Planned Feature | Status | Notes |
+|----------------|--------|-------|
+| AIOps anomaly detection | ⬜ | references/advanced/aiops-gcs.md |
+| FinOps cost analysis | ⬜ | references/advanced/finops-gcs.md |
+| SQL execution (security-sensitive) | ⬜ | references/advanced/sql-execution.md |
 
 ---
 
 ## gcp-gke-ops
 
-| Feature | Status | Notes |
-|---------|--------|-------|
-| Core operations (SKILL.md complete) | ✅ | v1.0.0 |
-| Self-review passed (R1+R2) | ✅ | |
-| eval_queries.json complete | ✅ | |
+| Planned Feature | Status | Notes |
+|----------------|--------|-------|
+| Backup for GKE execution flow | ⬜ | |
+| Advanced monitoring AIOps | ⬜ | references/advanced/ |
+| Workload Identity Federation deep-dive | ⬜ | references/advanced/ |
+| Private cluster setup guide | ⬜ | |
 
 ---
 
 ## gcp-iam-ops
 
-| Feature | Status | Notes |
-|---------|--------|-------|
-| Core operations (SKILL.md complete) | ✅ | v1.0.0 |
-| Self-review passed (R1+R2) | ✅ | |
-| eval_queries.json complete | ✅ | |
+| Planned Feature | Status | Notes |
+|----------------|--------|-------|
+| AIOps anomaly detection | ⬜ | references/advanced/aiops-iam.md |
+| FinOps cost analysis | ⬜ | references/advanced/finops-iam.md |
+| Workload Identity Federation troubleshooting | ⬜ | references/advanced/wif-deep-dive.md |
 
 ---
 
 ## gcp-kms-ops
 
-| Feature | Status | Notes |
-|---------|--------|-------|
-| Core operations (SKILL.md complete) | ✅ | v1.0.0 |
-| Self-review passed (R1+R2) | ✅ | |
-| eval_queries.json complete | ✅ | |
+No planned items.
 
 ---
 
 ## gcp-lb-ops
 
-| Feature | Status | Notes |
-|---------|--------|-------|
-| Core operations (SKILL.md complete) | ✅ | v1.0.0 |
-| Self-review passed (R1+R2) | ✅ | |
-| eval_queries.json complete | ✅ | |
+No planned items.
 
 ---
 
 ## gcp-logging-ops
 
-| Feature | Status | Notes |
-|---------|--------|-------|
-| Core operations (SKILL.md complete) | ✅ | v1.0.0 |
-| Self-review passed (R1+R2) | ✅ | |
-| eval_queries.json complete | ✅ | |
-| SKILL.md token optimization | ✅ | v1.1.0 — extracted 5 SDK snippets to `assets/code-snippets/` (saved 35 lines) |
+No planned items.
 
 ---
 
 ## gcp-memorystore-ops
 
-| Feature | Status | Notes |
-|---------|--------|-------|
-| Core operations (SKILL.md complete) | ✅ | v1.0.0 |
-| Self-review passed (R1+R2) | ✅ | |
-| eval_queries.json complete | ✅ | |
+No planned items.
 
 ---
 
 ## gcp-monitoring-ops
 
-| Feature | Status | Notes |
-|---------|--------|-------|
-| Core operations (SKILL.md complete) | ✅ | v1.0.0 |
-| Self-review passed (R1+R2) | ✅ | |
-| eval_queries.json complete | ✅ | |
+No planned items.
 
 ---
 
 ## gcp-pubsub-ops
 
-| Feature | Status | Notes |
-|---------|--------|-------|
-| Core operations (SKILL.md complete) | ✅ | v1.0.0 |
-| Self-review passed (R1+R2) | ✅ | |
-| eval_queries.json complete | ✅ | |
+| Planned Feature | Status | Notes |
+|----------------|--------|-------|
+| AIOps anomaly detection | ⬜ | references/advanced/aiops-pubsub.md |
+| FinOps cost analysis | ⬜ | references/advanced/finops-pubsub.md |
+| Schema management operations | ⬜ | Schema CRUD and validation |
+| Streaming pull deep dive | ⬜ | Advanced consumer patterns |
 
 ---
 
 ## gcp-secretmanager-ops
 
-| Feature | Status | Notes |
-|---------|--------|-------|
-| Core operations (SKILL.md complete) | ✅ | v1.0.0 |
-| Self-review passed (R1+R2) | ✅ | |
-| eval_queries.json complete | ✅ | |
+No planned items.
 
 ---
 
 ## gcp-securitycenter-ops
 
-| Feature | Status | Notes |
-|---------|--------|-------|
-| Core operations (SKILL.md complete) | ✅ | v1.0.0 |
-| Self-review passed (R1+R2) | ✅ | |
-| eval_queries.json complete | ✅ | |
+| Planned Feature | Status | Notes |
+|----------------|--------|-------|
+| Advanced FinOps/AIOps references | ⬜ | references/advanced/ |
+| Event Threat Detection deep-dive | ⬜ | Premium tier operations |
+| SCC Enterprise tier specifics | ⬜ | Attack path simulation, Chronicle integration |
+| SDK-only operations with code snippets | ⬜ | assets/code-snippets/ |
 
 ---
 
 ## gcp-terraform-ops
 
-| Feature | Status | Notes |
-|---------|--------|-------|
-| Core operations (SKILL.md complete) | ✅ | v1.0.0 |
-| Self-review passed (R1+R2) | ✅ | |
-| eval_queries.json complete | ✅ | |
+| Planned Feature | Status | Notes |
+|----------------|--------|-------|
+| FinOps cost estimation from plan output | ⬜ | references/advanced/ |
+| Standalone validation scripts for CI/CD | ⬜ | assets/code-snippets/ |
+| terraform import for more GCP resource types | ⬜ | Cloud SQL, GKE, GCS, BigQuery |
+| Workspace-based team collaboration | ⬜ | If requested |
+| Provider version upgrade runbook | ⬜ | terraform init -upgrade + state migration |
 
 ---
 
 ## gcp-vpc-ops
 
-| Feature | Status | Notes |
-|---------|--------|-------|
-| Create VPC Network (auto/custom) | ✅ | v1.0.0 |
-| Describe / List VPC Networks | ✅ | v1.1.0 |
-| Delete VPC Network | ✅ | v1.0.0 — Safety gate |
-| Create Subnet | ✅ | v1.0.0 |
-| Describe / List Subnets | ✅ | v1.1.0 |
-| Delete Subnet | ✅ | v1.1.0 — Safety gate |
-| Create Firewall Rule | ✅ | v1.0.0 |
-| Update Firewall Rule | ✅ | v1.0.0 |
-| Delete Firewall Rule | ✅ | v1.0.0 — Safety gate |
-| List / Describe Routes | ✅ | v1.0.0 |
-| Create VPN Tunnel (HA VPN) | ✅ | v1.0.0 |
-| Create Cloud NAT | ✅ | v1.0.0 |
-| Create VPC Peering | ✅ | v1.0.0 |
-| Enable / Disable VPC Flow Logs | ✅ | v1.0.0 |
-| Smart Defaults for Create ops | ✅ | v1.1.0 |
-| Python SDK fallback | ✅ | v1.1.0 — Create Network |
-| Credential masking table | ✅ | v1.1.0 |
-| Self-healing gcloud install | ✅ | v1.1.0 |
-| See Also section | ✅ | v1.1.0 |
-| Self-review (R1+R2) passed | ✅ | v1.1.0 |
-| eval_queries.json complete | ✅ | 27 queries |
-| Delete Route operation | ✅ | v1.2.0 — Safety gate |
-| Create Route operation | ✅ | v1.2.0 |
-| Describe / List VPN Tunnels | ✅ | v1.2.0 |
-| Delete VPN Tunnel operation | ✅ | v1.2.0 — Safety gate |
-| Delete Cloud NAT operation | ✅ | v1.2.0 — Safety gate |
-| Delete VPC Peering operation | ✅ | v1.2.0 — Safety gate |
-| Shared VPC setup guide | ✅ | references/advanced/ |
-| Private Service Connect setup | ✅ | references/advanced/ |
-| AIOps anomaly detection | ✅ | references/advanced/ |
-| FinOps cost optimization | ✅ | references/advanced/ |
-| SKILL.md token optimization | ✅ | v1.3.0 — extracted 7 SDK snippets to `assets/code-snippets/` (saved 227 lines) |
+No planned items.
 
 ---
 
 ## gcp-gce-ops
 
-| Feature | Status | Notes |
-|---------|--------|-------|
-| Core operations (SKILL.md complete) | ✅ | v1.0.0 |
-| Self-review passed (R1+R2) | ✅ | |
-| eval_queries.json complete | ✅ | |
-| SKILL.md token optimization | ✅ | v1.1.0 — extracted SDK snippets to `assets/code-snippets/` (saved 108 lines) |
-| code-snippets/ directory | ✅ | v1.1.0 — 4 files (create/describe/delete instance + Go create) |
+No planned items.
 
 ---
 
 ## gcp-skill-generator
 
-| Feature | Status | Notes |
-|---------|--------|-------|
-| Quality gates (markdownlint + ruff) | ✅ | v3.0.0 — fixed all lint errors |
-| `.markdownlint.json` config | ✅ | v1.0.0 — disabled non-critical rules |
-| `execution-environment.md` optimization | ✅ | v3.0.0 — extracted `jit-sdk-setup.md`, fixed duplicates |
-| `docker-gcloud-setup.md` extraction | ✅ | v1.0.0 — extracted from `execution-environment.md` |
-| `jit-sdk-setup.md` creation | ✅ | v1.0.0 — JIT Python/Go SDK setup |
-| Self-review passed (R1+R2) | ✅ | |
+No planned items.
 
 ---
 
 ## gcp-filestore-ops
 
-| Feature | Status | Notes |
-|---------|--------|-------|
-| Core operations (SKILL.md complete) | ✅ | v1.0.0 |
-| Self-review passed (R1+R2) | ✅ | |
-| eval_queries.json complete | ✅ | 30 queries (17 positive, 10 negative) |
-| Token optimization (SKILL.md) | ✅ | v1.1.0 — moved operational best practices to `references/operational-best-practices.md` |
+No planned items.

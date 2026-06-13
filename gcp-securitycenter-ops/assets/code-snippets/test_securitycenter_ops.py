@@ -86,7 +86,6 @@ def tier0():
         REF_DIR / "prompt-templates.md",
         ASSETS_DIR / "example-config.yaml",
         ASSETS_DIR / "eval_queries.json",
-        SKILL_DIR / "TODO.md",
     }
     found = list(SKILL_DIR.rglob("*"))
     found_files = {f for f in found if f.is_file()}
@@ -349,18 +348,6 @@ def tier0():
     for pillar in ["Security", "Stability", "Cost", "Efficiency", "Performance"]:
         all_ok &= check(f"WA has pillar '{pillar}'", pillar in wa_text)
     all_ok &= check("WA has Pillar Summary table", "Pillar Summary" in wa_text)
-
-    # 0.17 TODO.md present and complete
-    print("\n[0.17] TODO.md completeness")
-    todo_text = (SKILL_DIR / "TODO.md").read_text()
-    all_ok &= check("TODO.md has Initial Release Checklist", "Initial Release Checklist" in todo_text)
-    # Only check Initial Release Checklist — Future Enhancements are intentionally unchecked
-    check_items = re.findall(r"- \[ \] (.+)", todo_text.split("## Future Enhancements")[0])
-    all_ok &= check(
-        f"Initial Release Checklist items complete ({len(check_items)} unchecked — should be 0)",
-        len(check_items) == 0,
-        f"{len(check_items)} unchecked items in Initial Release Checklist" if check_items else "",
-    )
 
     # 0.18 Pre-flight checks in execution-flows.md
     print("\n[0.18] Execution-flows.md Pre-flight coverage")
