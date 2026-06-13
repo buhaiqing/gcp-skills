@@ -331,77 +331,21 @@ gcloud compute networks create "{{user.network_name}}" \
 
 #### Execution — Python SDK (Primary Fallback)
 
-Full script at [references/api-sdk-usage.md](references/api-sdk-usage.md)
+Full script at [assets/code-snippets/create_network.py](assets/code-snippets/create_network.py)
 
-```python
-# create_network.py — run: python3 create_network.py
-from google.cloud import compute_v1
-from google.cloud.compute_v1 import types
-
-project = os.environ["CLOUDSDK_CORE_PROJECT"]
-client = compute_v1.NetworksClient()
-
-network = compute_v1.Network()
-network.name = "{{user.network_name}}"
-network.auto_create_subnetworks = False  # custom-mode
-network.routing_config = compute_v1.NetworkRoutingConfig()
-network.routing_config.routing_mode = "GLOBAL"
-
-op = client.insert(project=project, network_resource=network)
-# Wait for async operation
-op.result()  # blocks until done
-# $.selfLink -> network self-link
-```
+Key steps:
+1. Create client: `compute_v1.NetworksClient()`
+2. Configure network: `compute_v1.Network(name=..., auto_create_subnetworks=False)`
+3. Insert: `client.insert(project=..., network_resource=...)`
 
 #### Execution — JIT Go SDK (Secondary Fallback)
 
-```go
-// create_network.go
-package main
+Full script at [assets/code-snippets/create_network.go](assets/code-snippets/create_network.go)
 
-import (
-	"context"
-	"fmt"
-	"os"
-
-	compute "cloud.google.com/go/compute/apiv1"
-	"cloud.google.com/go/compute/apiv1/computepb"
-	"google.golang.org/api/option"
-	"google.golang.org/protobuf/proto"
-)
-
-func main() {
-	ctx := context.Background()
-	client, err := compute.NewNetworksRESTClient(ctx,
-		option.WithCredentialsFile(os.Getenv("GOOGLE_APPLICATION_CREDENTIALS")))
-	if err != nil {
-		panic(err)
-	}
-	defer client.Close()
-
-	project := os.Getenv("CLOUDSDK_CORE_PROJECT")
-	req := &computepb.InsertNetworkRequest{
-		Project: project,
-		NetworkResource: &computepb.Network{
-			Name:                  proto.String("{{user.network_name}}"),
-			AutoCreateSubnetworks: proto.Bool(false), // custom-mode
-			RoutingConfig: &computepb.NetworkRoutingConfig{
-				RoutingMode: proto.String("GLOBAL"),
-			},
-		},
-	}
-	op, err := client.Insert(ctx, req)
-	if err != nil {
-		panic(err)
-	}
-	// Wait for operation
-	if err := op.Wait(ctx); err != nil {
-		panic(err)
-	}
-	// $.selfLink -> network self-link
-	fmt.Printf("Created: %s\n", op.Proto().GetTargetLink())
-}
-```
+Key steps:
+1. Create client: `compute.NewNetworksRESTClient(ctx, ...)`
+2. Configure network: `computepb.InsertNetworkRequest{...}`
+3. Insert: `client.Insert(ctx, req)`
 
 #### Post-execution Validation
 
@@ -756,48 +700,12 @@ gcloud compute routes create "{{user.route_name}}" \
 
 #### Execution — Python SDK (Primary Fallback)
 
-Full script at [references/api-sdk-usage.md](references/api-sdk-usage.md)
+Full script at [assets/code-snippets/create_route.py](assets/code-snippets/create_route.py)
 
-```python
-# create_route.py — run: python3 create_route.py
-from google.cloud import compute_v1
-from google.cloud.compute_v1 import types
-import os
-
-project = os.environ["CLOUDSDK_CORE_PROJECT"]
-route_client = compute_v1.RoutesClient()
-
-route = types.Route()
-route.name = "{{user.route_name}}"
-route.destination_range = "{{user.destination_range}}"
-route.priority = {{user.priority | default(1000)}}
-route.network = f"https://www.googleapis.com/compute/v1/projects/{project}/global/networks/{{user.network_name}}"
-
-if "{{user.next_hop_gateway}}":
-    route.next_hop_gateway = "{{user.next_hop_gateway}}"
-elif "{{user.next_hop_instance}}":
-    route.next_hop_instance = f"https://www.googleapis.com/compute/v1/projects/{project}/zones/{{user.zone}}/{{user.instance_name}}"
-elif "{{user.next_hop_vpn_tunnel}}":
-    route.next_hop_vpn_tunnel = "{{user.vpn_tunnel_name}}"
-elif "{{user.next_hop_ip}}":
-    route.next_hop_ip = "{{user.next_hop_ip}}"
-else:
-    raise ValueError("Next hop gateway, instance, VPN tunnel, or IP must be provided")
-
-op = route_client.insert(project=project, route_resource=route)
-print(f"Route creation operation: {op.name}")
-
-# Poll for completion
-def wait_for_operation(operation):
-    while True:
-        op = operation.reload()
-        if op.error or op.status == "DONE":
-            break
-        time.sleep(5)
-
-wait_for_operation(op)
-print(f"Route {{route.name}} created successfully")
-```
+Key steps:
+1. Create client: `compute_v1.RoutesClient()`
+2. Configure route: `types.Route(name=..., destination_range=..., priority=..., network=...)`
+3. Insert: `route_client.insert(project=..., route_resource=...)`
 
 #### Post-execution Validation
 
@@ -849,41 +757,12 @@ gcloud compute routes delete "{{user.route_name}}" \
 ```
 
 **Delete route via Python SDK:**
-```python
-# delete_route.py — run: python3 delete_route.py
-from google.cloud import compute_v1
 
-project = os.environ["CLOUDSDK_CORE_PROJECT"]
-route_client = compute_v1.RoutesClient()
+Full script at [assets/code-snippets/delete_route.py](assets/code-snippets/delete_route.py)
 
-# Step 1: Get route details
-route = route_client.get(
-    project=project,
-    route="{{user.route_name}}"
-)
-
-print(f"Route: {route.name}")
-print(f"Destination: {route.destination_range}")
-print(f"Next hop: {route.next_hop_gateway or route.next_hop_instance or route.next_hop_vpn_tunnel or route.next_hop_ip}")
-
-# Step 2: Delete (async operation)
-op = route_client.delete(
-    project=project,
-    route="{{user.route_name}}"
-)
-print(f"Deletion operation: {op.name}")
-
-# Step 3: Poll for completion
-def wait_for_operation(operation):
-    while True:
-        operation.reload()
-        if operation.error or operation.status == "DONE":
-            break
-        time.sleep(5)
-
-wait_for_operation(op)
-print(f"✅ Route {{route.name}} deleted successfully")
-```
+Key steps:
+1. Get route details: `route_client.get(project=..., route=...)`
+2. Delete: `route_client.delete(project=..., route=...)`
 
 #### Post-execution Validation
 
@@ -1065,44 +944,12 @@ fi
 ```
 
 **Delete via Python SDK:**
-```python
-# delete_vpn_tunnel.py
-from google.cloud import compute_v1
 
-project = os.environ["CLOUDSDK_CORE_PROJECT"]
-zone_client = compute_v1.VpnTunnelsClient()
+Full script at [assets/code-snippets/delete_vpn_tunnel.py](assets/code-snippets/delete_vpn_tunnel.py)
 
-# Step 1: Get tunnel details before deletion
-tunnel = zone_client.get(
-    project=project,
-    region="{{user.region}}",
-    vpn_tunnel="{{user.vpn_tunnel_name}}"
-)
-
-print(f"VPN Tunnel: {tunnel.name}")
-print(f"Target Gateway: {tunnel.target_vpn_gateway}")
-print(f"Peer IP: {tunnel.peer_ip_address}")
-print(f"Status: {tunnel.status}")
-
-# Step 2: Delete (async operation)
-op = zone_client.delete(
-    project=project,
-    region="{{user.region}}",
-    vpn_tunnel="{{user.vpn_tunnel_name}}"
-)
-print(f"Deletion operation: {op.name}")
-
-# Step 3: Poll for completion
-def wait_for_operation(operation):
-    while True:
-        operation.reload()
-        if operation.error or operation.status == "DONE":
-            break
-        time.sleep(5)
-
-wait_for_operation(op)
-print(f"✅ VPN tunnel {tunnel.name} deleted successfully")
-```
+Key steps:
+1. Get tunnel: `tunnel_client.get(project=..., region=..., vpn_tunnel=...)`
+2. Delete: `tunnel_client.delete(project=..., region=..., vpn_tunnel=...)`
 
 #### Post-execution Validation
 
@@ -1188,53 +1035,12 @@ echo "Monitor progress with: gcloud compute operations list"
 ```
 
 **Delete via Python SDK:**
-```python
-# delete_nat_gateway.py
-from google.cloud import compute_v1
 
-project = os.environ["CLOUDSDK_CORE_PROJECT"]
-nats_client = compute_v1.RouterNatsClient()
+Full script at [assets/code-snippets/delete_nat_gateway.py](assets/code-snippets/delete_nat_gateway.py)
 
-# List NATs to find target
-nat_list = nats_client.list(
-    project=project,
-    region="{{user.region}}",
-    router="{{user.router_name}}"
-)
-
-nat = None
-for item in nat_list:
-    if item.name == "{{user.nat_name}}":
-        nat = item
-        break
-
-if not nat:
-    raise ValueError(f"NAT gateway {{user.nat_name}} not found")
-
-print(f"NAT Gateway: {nat.name}")
-print(f"Distribution Mode: {nat.natIpAllocateOption}")
-print(f"Source Subnets: {[s.ip_range for s in nat.source_subnetwork_ip_ranges_to_nat]}")
-
-# Step 1: Delete NAT (async operation)
-op = nats_client.delete(
-    project=project,
-    region="{{user.region}}",
-    router="{{user.router_name}}",
-    nat="{{user.nat_name}}"
-)
-print(f"Deletion operation: {op.name}")
-
-# Step 2: Poll for completion
-def wait_for_operation(operation):
-    while True:
-        operation.reload()
-        if operation.error or operation.status == "DONE":
-            break
-        time.sleep(5)
-
-wait_for_operation(op)
-print(f"✅ Cloud NAT {nat.name} deleted successfully")
-```
+Key steps:
+1. Find NAT: `nats_client.list(project=..., region=..., router=...)`
+2. Delete: `nats_client.delete(project=..., region=..., router=..., nat=...)`
 
 #### Post-execution Validation
 
@@ -1332,45 +1138,12 @@ fi
 ```
 
 **Delete via Python SDK:**
-```python
-# delete_vpc_peering.py
-from google.cloud import compute_v1
 
-project = os.environ["CLOUDSDK_CORE_PROJECT"]
-network_name = "{{user.network_name}}"
-peering_name = "{{user.peering_name}}"
-peering_client = compute_v1.NetworksPeeringClient()
+Full script at [assets/code-snippets/delete_vpc_peering.py](assets/code-snippets/delete_vpc_peering.py)
 
-# Step 1: Get peering details
-peering = peering_client.get(
-    project=project,
-    network=network_name,
-    peering=peering_name
-)
-
-print(f"VPC Peering: {peering.name}")
-print(f"Peer Network: {peering.peer_network_email.split("/")[-1]}")
-print(f"State: {peering.state}")
-
-# Step 2: Delete
-op = peering_client.delete(
-    project=project,
-    network=network_name,
-    peering=peering_name
-)
-print(f"Deletion operation: {op.name}")
-
-# Step 3: Poll for completion
-def wait_for_operation(operation):
-    while True:
-        operation.reload()
-        if operation.error or operation.status == "DONE":
-            break
-        time.sleep(5)
-
-wait_for_operation(op)
-print(f"✅ VPC peering {peering.name} deleted successfully")
-```
+Key steps:
+1. Get peering: `peering_client.get(project=..., network=..., peering=...)`
+2. Delete: `peering_client.delete(project=..., network=..., peering=...)`
 
 #### Post-execution Validation
 
@@ -1437,16 +1210,6 @@ print(f"✅ VPC peering {peering.name} deleted successfully")
 - [Enhanced Self-Healing Framework](../gcp-skill-generator/references/enhanced-self-healing-framework.md)
 - [CLI Behavioral Reference](../gcp-skill-generator/references/cli-behavior.md)
 
-## Operational Best Practices
-
-- **Hierarchical firewall:** Use hierarchical firewall policies (at folder/organization level) for consistent rules across projects
-- **Shared VPC:** Use Shared VPC for multi-project isolation with centralized network administration
-- **Subnet CIDR planning:** Allocate /16 for network, /20-24 per subnet; leave room for expansion
-- **VPC Flow Logs:** Enable for critical subnets; sample rate 1:1 for security, 1:10 for cost savings
-- **Private Google Access:** Enable on subnets for VM-to-Google-API traffic without external IP
-- **Cloud NAT:** Use Cloud NAT for private VM internet access; avoid public IPs on VMs when possible
-- **Peering:** Never peer networks with overlapping CIDRs; use export/import custom routes selectively
-
 ## Quality Gate (GCL)
 
 This skill uses the **Generator-Critic-Loop (GCL)** adversarial quality gate.
@@ -1457,6 +1220,7 @@ This skill uses the **Generator-Critic-Loop (GCL)** adversarial quality gate.
 
 **Rubric:** See [references/rubric.md](references/rubric.md)
 **Prompt templates:** See [references/prompt-templates.md](references/prompt-templates.md)
+**Best Practices:** See [references/advanced/operational-best-practices.md](references/advanced/operational-best-practices.md)
 
 ## Token Efficiency Guidelines (P0 — 强制)
 

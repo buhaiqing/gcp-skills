@@ -25,14 +25,14 @@ from datetime import UTC, datetime
 # ── Constants ──────────────────────────────────────────────────────────────
 
 TRACE_DIR = os.environ.get(
-    "GCL_TRACE_DIR",
-    os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "..", "audit-results")
+    "GCL_TRACE_DIR", os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "..", "audit-results")
 )
 
 DEFAULT_MAX_ITER = 2
 SAFETY_THRESHOLD = 0.5
 
 # ── Rubric parsing ─────────────────────────────────────────────────────────
+
 
 def load_rubric(skill_name: str, rubric_path: str = None) -> dict:
     """Load and parse the rubric.md file for a given skill."""
@@ -89,11 +89,13 @@ def _extract_dimensions(content: str) -> list:
         if in_table and line.startswith("|"):
             parts = [p.strip() for p in line.split("|")[1:-1]]
             if len(parts) >= 3:
-                dims.append({
-                    "name": parts[0],
-                    "meaning": parts[1],
-                    "safety_zero": "ABORT" in parts[2] if len(parts) > 2 else "",
-                })
+                dims.append(
+                    {
+                        "name": parts[0],
+                        "meaning": parts[1],
+                        "safety_zero": "ABORT" in parts[2] if len(parts) > 2 else "",
+                    }
+                )
         elif in_table and not line.startswith("|") and not line.startswith("---"):
             break
     return dims or [
@@ -110,7 +112,7 @@ def _extract_regexes(content: str) -> list:
     regexes = []
     for line in content.split("\n"):
         # Match lines like `- \`...\` → DESTRUCTIVE`
-        m = re.search(r'`([^`]+)`\s*[→-]+\s*(\S+)', line)
+        m = re.search(r"`([^`]+)`\s*[→-]+\s*(\S+)", line)
         if m:
             regexes.append({"pattern": m.group(1), "risk": m.group(2)})
     return regexes
@@ -119,9 +121,9 @@ def _extract_regexes(content: str) -> list:
 # ── Secret sanitization ────────────────────────────────────────────────────
 
 SECRET_PATTERNS = [
-    (r'GOOGLE_APPLICATION_CREDENTIALS=[^\s]+', 'GOOGLE_APPLICATION_CREDENTIALS=<masked>'),
-    (r'--key-file[= ][^\s]+', '--key-file=<masked>'),
-    (r'private_key["\']?\s*[:=]\s*["\']?-----BEGIN', 'private_key=<masked>'),
+    (r"GOOGLE_APPLICATION_CREDENTIALS=[^\s]+", "GOOGLE_APPLICATION_CREDENTIALS=<masked>"),
+    (r"--key-file[= ][^\s]+", "--key-file=<masked>"),
+    (r'private_key["\']?\s*[:=]\s*["\']?-----BEGIN', "private_key=<masked>"),
 ]
 
 
@@ -138,12 +140,13 @@ def has_inline_secret(command: str) -> bool:
     if "-----BEGIN" in command:
         return True
     # Access token as literal
-    if re.search(r'ya29\.\w+', command):
+    if re.search(r"ya29\.\w+", command):
         return True
     return False
 
 
 # ── Generator ──────────────────────────────────────────────────────────────
+
 
 def generate(command: str, dry_run: bool = False, timeout: int = 300) -> dict:
     """Execute the command and capture output."""
@@ -184,6 +187,7 @@ def generate(command: str, dry_run: bool = False, timeout: int = 300) -> dict:
 
 
 # ── Critic ─────────────────────────────────────────────────────────────────
+
 
 def critique(op: str, gen_trace: dict, rubric: dict) -> dict:
     """Re-classify the generator output using rubric's regex hot-spots."""
@@ -227,6 +231,7 @@ def critique(op: str, gen_trace: dict, rubric: dict) -> dict:
 
 # ── Termination decision ───────────────────────────────────────────────────
 
+
 def decide(iteration: int, critique_result: dict, rubric: dict, max_iter: int) -> str:
     """Apply termination rules. Returns: PASS | MAX_ITER | SAFETY_FAIL."""
     if critique_result["safety"] == 0.0:
@@ -239,6 +244,7 @@ def decide(iteration: int, critique_result: dict, rubric: dict, max_iter: int) -
 
 
 # ── Trace persistence ─────────────────────────────────────────────────────
+
 
 def persist_trace(trace: dict, output_dir: str = None) -> str:
     """Persist the GCL trace to a JSON file."""
@@ -257,6 +263,7 @@ def persist_trace(trace: dict, output_dir: str = None) -> str:
 
 
 # ── Main loop ──────────────────────────────────────────────────────────────
+
 
 def main():
     parser = argparse.ArgumentParser(description="GCL Runner")

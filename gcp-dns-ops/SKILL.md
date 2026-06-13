@@ -251,89 +251,21 @@ gcloud dns managed-zones create "{{user.zone_name}}" \
 
 #### Execution — Python SDK (Fallback)
 
-```python
-# create_zone.py
-import os
-from google.cloud import dns_v1
+Full script at [assets/code-snippets/create_zone.py](assets/code-snippets/create_zone.py)
 
-project = os.environ["CLOUDSDK_CORE_PROJECT"]
-client = dns_v1.ManagedZonesClient()
-
-zone = dns_v1.ManagedZone(
-    name="{{user.zone_name}}",
-    dns_name="{{user.dns_name}}",
-    description="{{user.description}}",
-    visibility=dns_v1.ManagedZone.Visibility.{{user.visibility:-PUBLIC}},
-)
-
-if zone.visibility == dns_v1.ManagedZone.Visibility.PRIVATE:
-    zone.private_visibility_config = dns_v1.ManagedZone.PrivateVisibilityConfig(
-        networks=[dns_v1.ManagedZone.PrivateVisibilityConfig.Network(
-            network_url=f"https://www.googleapis.com/compute/v1/projects/{project}/global/networks/{{user.network}}"
-        )]
-    )
-
-parent = f"projects/{project}"
-created = client.create_managed_zone(parent=parent, managed_zone=zone)
-print(f"Zone created: {created.name}")
-print(f"Name servers: {created.name_servers}")
-```
-
-Execute:
-```bash
-pip install --quiet --user google-cloud-dns
-python3 create_zone.py
-```
+Key steps:
+1. Create client: `dns_v1.ManagedZonesClient()`
+2. Configure zone: `dns_v1.ManagedZone(name=..., dns_name=..., description=..., visibility=...)`
+3. Create: `client.create_managed_zone(parent=..., managed_zone=...)`
 
 #### Execution — JIT Go SDK (Secondary Fallback)
 
-```go
-// main.go
-package main
+Full script at [assets/code-snippets/create_zone.go](assets/code-snippets/create_zone.go)
 
-import (
-    "context"
-    "fmt"
-    "log"
-    "os"
-
-    "google.golang.org/api/option"
-    dns "google.golang.org/api/dns/v1"
-)
-
-func main() {
-    ctx := context.Background()
-    svc, err := dns.NewService(ctx, option.WithCredentialsFile(os.Getenv("GOOGLE_APPLICATION_CREDENTIALS")))
-    if err != nil {
-        log.Fatalf("Failed to create DNS service: %v", err)
-    }
-
-    project := os.Getenv("CLOUDSDK_CORE_PROJECT")
-    zone := &dns.ManagedZone{
-        Name:        "{{user.zone_name}}",
-        DnsName:     "{{user.dns_name}}",
-        Description: "{{user.description}}",
-        Visibility:  "{{user.visibility:-public}}",
-    }
-
-    created, err := svc.ManagedZones.Create(project, zone).Do()
-    if err != nil {
-        log.Fatalf("Failed to create zone: %v", err)
-    }
-
-    fmt.Printf("Zone created: %s\n", created.Name)
-    fmt.Printf("Name servers: %v\n", created.NameServers)
-}
-```
-
-Execute:
-```bash
-cd /tmp/gcp-sdk-workspace
-go mod init sdk-script
-go get google.golang.org/api/dns/v1
-go get google.golang.org/api/option
-go run ./main.go
-```
+Key steps:
+1. Create service: `dns.NewService(ctx, ...)`
+2. Configure zone: `dns.ManagedZone{Name: ..., DnsName: ..., Description: ...}`
+3. Create: `svc.ManagedZones.Create(project, zone).Do()`
 
 #### Post-execution Validation
 
@@ -374,20 +306,11 @@ gcloud dns managed-zones describe "{{user.zone_name}}" \
 
 #### Execution — Python SDK
 
-```python
-# describe_zone.py
-import os
-from google.cloud import dns_v1
+Full script at [assets/code-snippets/describe_zone.py](assets/code-snippets/describe_zone.py)
 
-project = os.environ["CLOUDSDK_CORE_PROJECT"]
-client = dns_v1.ManagedZonesClient()
-zone_name = "{{user.zone_name}}"
-
-name = f"projects/{project}/managedZones/{zone_name}"
-zone = client.get_managed_zone(name=name)
-print(f"Zone: {zone.name}, DNS: {zone.dns_name}, Visibility: {zone.visibility}")
-print(f"Name servers: {zone.name_servers}")
-```
+Key steps:
+1. Create client: `dns_v1.ManagedZonesClient()`
+2. Get zone: `client.get_managed_zone(name=...)`
 
 #### Present to User
 
@@ -418,18 +341,11 @@ gcloud dns managed-zones list \
 
 #### Execution — Python SDK
 
-```python
-# list_zones.py
-import os
-from google.cloud import dns_v1
+Full script at [assets/code-snippets/list_zones.py](assets/code-snippets/list_zones.py)
 
-project = os.environ["CLOUDSDK_CORE_PROJECT"]
-client = dns_v1.ManagedZonesClient()
-parent = f"projects/{project}"
-
-for zone in client.list_managed_zones(parent=parent):
-    print(f"Zone: {zone.name}, DNS: {zone.dns_name}, Visibility: {zone.visibility}")
-```
+Key steps:
+1. Create client: `dns_v1.ManagedZonesClient()`
+2. List: `client.list_managed_zones(parent=...)`
 
 ### Operation: Update Managed Zone
 
@@ -451,20 +367,11 @@ gcloud dns managed-zones update "{{user.zone_name}}" \
 
 #### Execution — Python SDK
 
-```python
-# update_zone.py
-import os
-from google.cloud import dns_v1
+Full script at [assets/code-snippets/update_zone.py](assets/code-snippets/update_zone.py)
 
-project = os.environ["CLOUDSDK_CORE_PROJECT"]
-client = dns_v1.ManagedZonesClient()
-zone_name = "{{user.zone_name}}"
-
-zone = dns_v1.ManagedZone(name=zone_name, description="{{user.description}}")
-name = f"projects/{project}/managedZones/{zone_name}"
-updated = client.update_managed_zone(name=name, managed_zone=zone)
-print(f"Zone updated: {updated.name}")
-```
+Key steps:
+1. Create client: `dns_v1.ManagedZonesClient()`
+2. Update: `client.update_managed_zone(name=..., managed_zone=...)`
 
 ### Operation: Delete Managed Zone
 
@@ -489,19 +396,11 @@ gcloud dns managed-zones delete "{{user.zone_name}}" \
 
 #### Execution — Python SDK
 
-```python
-# delete_zone.py
-import os
-from google.cloud import dns_v1
+Full script at [assets/code-snippets/delete_zone.py](assets/code-snippets/delete_zone.py)
 
-project = os.environ["CLOUDSDK_CORE_PROJECT"]
-client = dns_v1.ManagedZonesClient()
-zone_name = "{{user.zone_name}}"
-
-name = f"projects/{project}/managedZones/{zone_name}"
-client.delete_managed_zone(name=name)
-print(f"Zone deleted: {zone_name}")
-```
+Key steps:
+1. Create client: `dns_v1.ManagedZonesClient()`
+2. Delete: `client.delete_managed_zone(name=...)`
 
 #### Post-execution Validation
 
@@ -553,29 +452,12 @@ gcloud dns record-sets transaction execute \
 
 #### Execution — Python SDK
 
-```python
-# create_record.py
-import os
-from google.cloud import dns_v1
+Full script at [assets/code-snippets/create_record.py](assets/code-snippets/create_record.py)
 
-project = os.environ["CLOUDSDK_CORE_PROJECT"]
-client = dns_v1.ChangesClient()
-
-zone_name = "{{user.zone_name}}"
-zone_path = f"projects/{project}/managedZones/{zone_name}"
-
-# List existing records for the same name+type to build additions
-rrset = dns_v1.ResourceRecordSet(
-    name="{{user.record_name}}",
-    type="{{user.record_type}}",
-    ttl={{user.ttl:-300}},
-    rrdatas=["{{user.record_data}}"],
-)
-
-change = dns_v1.Change(additions=[rrset])
-change = client.create_change(managed_zone=zone_path, change=change)
-print(f"Change ID: {change.id}, Status: {change.status}")
-```
+Key steps:
+1. Create client: `dns_v1.ChangesClient()`
+2. Configure record: `dns_v1.ResourceRecordSet(name=..., type=..., ttl=..., rrdatas=...)`
+3. Create change: `client.create_change(managed_zone=..., change=...)`
 
 #### Post-execution Validation
 
@@ -625,21 +507,11 @@ gcloud dns record-sets list \
 
 #### Execution — Python SDK
 
-```python
-# list_records.py
-import os
-from google.cloud import dns_v1
+Full script at [assets/code-snippets/list_records.py](assets/code-snippets/list_records.py)
 
-project = os.environ["CLOUDSDK_CORE_PROJECT"]
-client = dns_v1.ResourceRecordSetsClient()
-zone_name = "{{user.zone_name}}"
-
-parent = f"projects/{project}/managedZones/{zone_name}"
-for rrset in client.list_resource_record_sets(parent=parent):
-    print(f"Name: {rrset.name}, Type: {rrset.type}, TTL: {rrset.ttl}")
-    for rd in rrset.rrdatas:
-        print(f"  Data: {rd}")
-```
+Key steps:
+1. Create client: `dns_v1.ResourceRecordSetsClient()`
+2. List: `client.list_resource_record_sets(parent=...)`
 
 ### Operation: Describe Record-Set
 
@@ -703,27 +575,12 @@ gcloud dns record-sets transaction execute \
 
 #### Execution — Python SDK
 
-```python
-# delete_record.py
-import os
-from google.cloud import dns_v1
+Full script at [assets/code-snippets/delete_record.py](assets/code-snippets/delete_record.py)
 
-project = os.environ["CLOUDSDK_CORE_PROJECT"]
-client = dns_v1.ChangesClient()
-zone_name = "{{user.zone_name}}"
-zone_path = f"projects/{project}/managedZones/{zone_name}"
-
-rrset = dns_v1.ResourceRecordSet(
-    name="{{user.record_name}}",
-    type="{{user.record_type}}",
-    ttl={{user.ttl:-300}},
-    rrdatas=["{{user.record_data}}"],
-)
-
-change = dns_v1.Change(deletions=[rrset])
-change = client.create_change(managed_zone=zone_path, change=change)
-print(f"Change ID: {change.id}, Status: {change.status}")
-```
+Key steps:
+1. Create client: `dns_v1.ChangesClient()`
+2. Configure record to delete: `dns_v1.ResourceRecordSet(name=..., type=..., rrdatas=...)`
+3. Create change: `client.create_change(managed_zone=..., change=...)`
 
 #### Post-execution Validation
 
@@ -756,19 +613,11 @@ gcloud dns managed-zone operations list \
 
 #### Execution — Python SDK
 
-```python
-# list_operations.py
-import os
-from google.cloud import dns_v1
+Full script at [assets/code-snippets/list_operations.py](assets/code-snippets/list_operations.py)
 
-project = os.environ["CLOUDSDK_CORE_PROJECT"]
-client = dns_v1.ManagedZoneOperationsClient()
-zone_name = "{{user.zone_name}}"
-
-parent = f"projects/{project}/managedZones/{zone_name}"
-for op in client.list_managed_zone_operations(parent=parent):
-    print(f"Op: {op.id}, Status: {op.status}, Started: {op.start_time}")
-```
+Key steps:
+1. Create client: `dns_v1.ManagedZoneOperationsClient()`
+2. List: `client.list_managed_zone_operations(parent=...)`
 
 ### Operation: List DNS Policies
 
