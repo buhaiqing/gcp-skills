@@ -96,10 +96,10 @@ No planned items.
 
 | Planned Feature | Status | Notes |
 |----------------|--------|-------|
-| Backup for GKE execution flow | ⬜ | |
-| Advanced monitoring AIOps | ⬜ | references/advanced/ |
-| Workload Identity Federation deep-dive | ⬜ | references/advanced/ |
-| Private cluster setup guide | ⬜ | |
+| Backup for GKE execution flow | ✅ | references/advanced/backup-gke-flow.md |
+| Advanced monitoring AIOps | ✅ | references/advanced/aiops-gke-anomaly.md |
+| Workload Identity Federation deep-dive | ✅ | references/advanced/workload-identity-deep-dive.md |
+| Private cluster setup guide | ✅ | references/advanced/private-cluster-setup.md |
 
 ---
 
@@ -164,10 +164,10 @@ No planned items.
 
 | Planned Feature | Status | Notes |
 |----------------|--------|-------|
-| Advanced FinOps/AIOps references | ⬜ | references/advanced/ |
-| Event Threat Detection deep-dive | ⬜ | Premium tier operations |
-| SCC Enterprise tier specifics | ⬜ | Attack path simulation, Chronicle integration |
-| SDK-only operations with code snippets | ⬜ | assets/code-snippets/ |
+| Advanced FinOps/AIOps references | ✅ | references/advanced/aiops-scc-anomaly.md |
+| Event Threat Detection deep-dive | ✅ | references/advanced/event-threat-detection.md |
+| SCC Enterprise tier specifics | ✅ | references/advanced/scc-enterprise.md |
+| SDK-only operations with code snippets | ✅ | references/advanced/sdk-operations.md |
 
 ---
 
