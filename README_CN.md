@@ -88,12 +88,23 @@ gcp-[product]-ops/
 | [`gcp-memorystore-ops`](gcp-memorystore-ops/SKILL.md) | Memorystore for Redis（实例、扩容、导出/导入、故障转移） | ✅ 已发布 |
 | [`gcp-cloudbuild-ops`](gcp-cloudbuild-ops/SKILL.md) | Cloud Build（构建、触发器、私有工作池、诊断） | ✅ 已发布 |
 | [`gcp-billing-ops`](gcp-billing-ops/SKILL.md) | Cloud Billing（结算账号、预算、导出、项目关联、定价） | ✅ 已发布 |
-| `gcp-vpc-ops` | VPC（网络、子网、防火墙规则、VPN、Cloud NAT） | 开发中 |
-| `gcp-gke-ops` | Google Kubernetes Engine | 规划中 |
-| `gcp-cloudsql-ops` | Cloud SQL | 规划中 |
-| `gcp-gcs-ops` | Cloud Storage | 规划中 |
-| `gcp-iam-ops` | IAM | 规划中 |
-| `gcp-dns-ops` | Cloud DNS | 规划中 |
+| [`gcp-vpc-ops`](gcp-vpc-ops/SKILL.md) | VPC（网络、子网、防火墙规则、VPN、Cloud NAT、对等连接） | ✅ 已发布 |
+| [`gcp-gke-ops`](gcp-gke-ops/SKILL.md) | Google Kubernetes Engine（集群、节点池、工作负载、IAM） | ✅ 已发布 |
+| [`gcp-cloudsql-ops`](gcp-cloudsql-ops/SKILL.md) | Cloud SQL（MySQL/PostgreSQL/SQL Server 实例、备份） | ✅ 已发布 |
+| [`gcp-gcs-ops`](gcp-gcs-ops/SKILL.md) | Cloud Storage（存储桶、对象、生命周期、IAM） | ✅ 已发布 |
+| [`gcp-iam-ops`](gcp-iam-ops/SKILL.md) | Cloud IAM（角色、策略、服务账号、工作负载身份） | ✅ 已发布 |
+| [`gcp-dns-ops`](gcp-dns-ops/SKILL.md) | Cloud DNS（区域、记录、策略、健康检查） | ✅ 已发布 |
+| [`gcp-pubsub-ops`](gcp-pubsub-ops/SKILL.md) | Cloud Pub/Sub（主题、订阅、架构、快照） | ✅ 已发布 |
+| [`gcp-cloudrun-ops`](gcp-cloudrun-ops/SKILL.md) | Cloud Run（服务、修订版、流量分配） | ✅ 已发布 |
+| [`gcp-cloudfunctions-ops`](gcp-cloudfunctions-ops/SKILL.md) | Cloud Functions（函数、触发器、源代码仓库） | ✅ 已发布 |
+| [`gcp-monitoring-ops`](gcp-monitoring-ops/SKILL.md) | Cloud Monitoring（指标、仪表板、告警策略） | ✅ 已发布 |
+| [`gcp-bigquery-ops`](gcp-bigquery-ops/SKILL.md) | BigQuery（数据集、表、查询、作业） | ✅ 已发布 |
+| [`gcp-secretmanager-ops`](gcp-secretmanager-ops/SKILL.md) | Secret Manager（密钥、版本、IAM） | ✅ 已发布 |
+| [`gcp-cdn-ops`](gcp-cdn-ops/SKILL.md) | Cloud CDN（源站、缓存策略、签名 URL） | ✅ 已发布 |
+| [`gcp-securitycenter-ops`](gcp-securitycenter-ops/SKILL.md) | Security Command Center（发现、来源、静音规则） | ✅ 已发布 |
+| [`gcp-filestore-ops`](gcp-filestore-ops/SKILL.md) | Cloud Filestore（实例、文件共享、备份、快照、NFS） | ✅ 已发布 |
+| [`gcp-gcl-runner-ops`](gcp-gcl-runner-ops/SKILL.md) | GCL Runner（跨技能 Generator-Critic-Loop 执行） | ✅ 已发布 |
+| [`gcp-terraform-ops`](gcp-terraform-ops/SKILL.md) | Terraform（初始化、规划、应用、销毁、状态管理） | ✅ 已发布 |
 
 完整路线图请参见 [AGENTS.md 附录 A](AGENTS.md#appendix-a-gcp-product--directory-mapping-planned)。
 
