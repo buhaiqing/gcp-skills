@@ -1,0 +1,82 @@
+[
+  {
+    "query": "Create a Cloud Composer environment",
+    "should_trigger": true
+  },
+  {
+    "query": "Manage Airflow DAGs in Composer",
+    "should_trigger": true
+  },
+  {
+    "query": "Add PyPI packages to Composer environment",
+    "should_trigger": true
+  },
+  {
+    "query": "List all Composer environments",
+    "should_trigger": true
+  },
+  {
+    "query": "Delete the Composer environment",
+    "should_trigger": true
+  },
+  {
+    "query": "Scale Composer workers from small to medium",
+    "should_trigger": true
+  },
+  {
+    "query": "Set Airflow variables in Composer",
+    "should_trigger": true
+  },
+  {
+    "query": "Configure Airflow connections",
+    "should_trigger": true
+  },
+  {
+    "query": "Check Composer environment health",
+    "should_trigger": true
+  },
+  {
+    "query": "Update Composer Airflow version",
+    "should_trigger": true
+  },
+  {
+    "query": "Create a GKE cluster",
+    "should_trigger": false
+  },
+  {
+    "query": "Set up Cloud Storage bucket",
+    "should_trigger": false
+  },
+  {
+    "query": "Configure IAM permissions",
+    "should_trigger": false
+  },
+  {
+    "query": "Check GCP billing costs",
+    "should_trigger": false
+  },
+  {
+    "query": "Create a Dataflow job",
+    "should_trigger": false
+  },
+  {
+    "query": "Set up Dataproc cluster",
+    "should_trigger": false
+  },
+  {
+    "query": "Manage VPC network",
+    "should_trigger": false
+  },
+  {
+    "query": "Configure Cloud SQL database",
+    "should_trigger": false
+  },
+  {
+    "query": "Set up Cloud Monitoring alerts",
+    "should_trigger": false
+  },
+  {
+    "query": "Create Cloud Functions",
+    "should_trigger": false
+  }
+]
