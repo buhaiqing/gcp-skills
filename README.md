@@ -102,6 +102,7 @@ gcp-[product]-ops/
 | [`gcp-secretmanager-ops`](gcp-secretmanager-ops/SKILL.md) | Secret Manager (secrets, versions, IAM) | ✅ Released |
 | [`gcp-cdn-ops`](gcp-cdn-ops/SKILL.md) | Cloud CDN (origins, cache policies, signed URLs) | ✅ Released |
 | [`gcp-securitycenter-ops`](gcp-securitycenter-ops/SKILL.md) | Security Command Center (findings, sources, mute rules) | ✅ Released |
+| [`gcp-filestore-ops`](gcp-filestore-ops/SKILL.md) | Cloud Filestore (instances, file shares, backups, snapshots, NFS) | ✅ Released |
 | [`gcp-gcl-runner-ops`](gcp-gcl-runner-ops/SKILL.md) | GCL Runner (cross-skill Generator-Critic-Loop execution) | ✅ Released |
 | [`gcp-terraform-ops`](gcp-terraform-ops/SKILL.md) | Terraform (init, plan, apply, destroy, state management) | ✅ Released |
 
