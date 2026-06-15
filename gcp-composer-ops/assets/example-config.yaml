@@ -1,0 +1,74 @@
+# Cloud Composer Example Configuration
+# Use YAML anchors to eliminate repeated fields
+
+x-common: &common
+  project: "{{env.CLOUDSDK_CORE_PROJECT}}"
+  region: "{{user.region}}"
+  format: "json"
+
+x-environment: &environment
+  <<: *common
+  environment_name: "my-airflow-env"
+  airflow_version: "2.9.3"
+  python_version: "3.11"
+  environment_size: "small"
+
+# Environment Configuration
+environment:
+  <<: *environment
+  config:
+    software_config:
+      image_version: "composer-2.9.3-airflow-2.9.3"
+      python_version: "3.11"
+      pypi_packages:
+        apache-airflow-providers-amazon: ">=8.0.0"
+        apache-airflow-providers-google: ">=10.0.0"
+      env_variables:
+        PROJECT_ID: "{{env.CLOUDSDK_CORE_PROJECT}}"
+        ENVIRONMENT: "production"
+    
+    workloads:
+      scheduler:
+        cpu: 2
+        memory_gb: 4
+        storage_gb: 10
+      web_server:
+        cpu: 1
+        memory_gb: 2
+        storage_gb: 5
+      worker:
+        cpu: 2
+        memory_gb: 4
+        storage_gb: 10
+    
+    node_config:
+      network: "projects/{{env.CLOUDSDK_CORE_PROJECT}}/global/networks/default"
+      subnetwork: "projects/{{env.CLOUDSDK_CORE_PROJECT}}/regions/{{user.region}}/subnetworks/default"
+      service_account: "composer-service-account@{{env.CLOUDSDK_CORE_PROJECT}}.iam.gserviceaccount.com"
+
+# DAG Storage
+dag_storage:
+  bucket: "gs://{{env.CLOUDSDK_CORE_PROJECT}}-composer-dags"
+  source: "./dags/"
+
+# Variables
+variables:
+  - key: "project_id"
+    value: "{{env.CLOUDSDK_CORE_PROJECT}}"
+  - key: "environment"
+    value: "production"
+  - key: "notification_email"
+    value: "admin@example.com"
+
+# Connections
+connections:
+  - conn_id: "google_cloud_default"
+    conn_type: "google_cloud_platform"
+    project_id: "{{env.CLOUDSDK_CORE_PROJECT}}"
+  
+  - conn_id: "postgres_default"
+    conn_type: "postgres"
+    host: "database.example.com"
+    port: 5432
+    schema: "airflow"
+    login: "airflow"
