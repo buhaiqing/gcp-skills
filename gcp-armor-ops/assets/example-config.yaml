@@ -1,0 +1,51 @@
+# Cloud Armor Example Configuration
+# Use YAML anchors to eliminate repeated fields
+
+x-common: &common
+  project: "{{env.CLOUDSDK_CORE_PROJECT}}"
+  format: "json"
+
+x-policy: &policy
+  <<: *common
+  policy_name: "waf-security-policy"
+  description: "WAF security policy for web application"
+
+# Security Policy Configuration
+security_policy:
+  <<: *policy
+  rules:
+    - priority: 1000
+      expression: "origin.ipgeo.country == 'US'"
+      action: "allow"
+      description: "Allow US traffic"
+    
+    - priority: 2000
+      expression: "evaluatePreconfiguredWaf('xss-v33-stable')"
+      action: "deny-403"
+      description: "Block XSS attacks"
+    
+    - priority: 3000
+      expression: "evaluatePreconfiguredWaf('sqli-v33-stable')"
+      action: "deny-403"
+      description: "Block SQL injection"
+    
+    - priority: 4000
+      expression: "true"
+      action: "throttle"
+      rate_limit:
+        count: 1000
+        interval_sec: 60
+      conform_action: "allow"
+      exceed_action: "deny-429"
+      description: "Rate limiting"
+
+# Adaptive Protection
+adaptive_protection:
+  enabled: true
+  log_ddos: true
+  auto_deploy: false
+
+# Logging
+logging:
+  enable: true
+  metadata: "include-all"

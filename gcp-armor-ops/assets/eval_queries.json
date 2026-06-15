@@ -1,0 +1,82 @@
+[
+  {
+    "query": "Create a Cloud Armor security policy",
+    "should_trigger": true
+  },
+  {
+    "query": "Add a WAF rule to block SQL injection",
+    "should_trigger": true
+  },
+  {
+    "query": "Configure rate limiting on my security policy",
+    "should_trigger": true
+  },
+  {
+    "query": "List all Cloud Armor security policies",
+    "should_trigger": true
+  },
+  {
+    "query": "Delete the WAF security policy",
+    "should_trigger": true
+  },
+  {
+    "query": "Add IP denylist to block traffic from China",
+    "should_trigger": true
+  },
+  {
+    "query": "Enable adaptive DDoS protection",
+    "should_trigger": true
+  },
+  {
+    "query": "Check Cloud Armor denied requests",
+    "should_trigger": true
+  },
+  {
+    "query": "Update security policy fingerprint",
+    "should_trigger": true
+  },
+  {
+    "query": "Configure bot management rules",
+    "should_trigger": true
+  },
+  {
+    "query": "Create a VPC firewall rule",
+    "should_trigger": false
+  },
+  {
+    "query": "Set up Cloud Load Balancing",
+    "should_trigger": false
+  },
+  {
+    "query": "Configure Cloud CDN caching",
+    "should_trigger": false
+  },
+  {
+    "query": "Manage IAM service accounts",
+    "should_trigger": false
+  },
+  {
+    "query": "Check my GCP billing costs",
+    "should_trigger": false
+  },
+  {
+    "query": "Create a Compute Engine VM",
+    "should_trigger": false
+  },
+  {
+    "query": "Set up Cloud DNS zones",
+    "should_trigger": false
+  },
+  {
+    "query": "Configure Cloud NAT gateway",
+    "should_trigger": false
+  },
+  {
+    "query": "Manage VPC peering connections",
+    "should_trigger": false
+  },
+  {
+    "query": "Set up VPN tunnels",
+    "should_trigger": false
+  }
+]
