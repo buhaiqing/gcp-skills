@@ -105,6 +105,8 @@ gcp-[product]-ops/
 | [`gcp-filestore-ops`](gcp-filestore-ops/SKILL.md) | Cloud Filestore (instances, file shares, backups, snapshots, NFS) | ✅ Released |
 | [`gcp-gcl-runner-ops`](gcp-gcl-runner-ops/SKILL.md) | GCL Runner (cross-skill Generator-Critic-Loop execution) | ✅ Released |
 | [`gcp-terraform-ops`](gcp-terraform-ops/SKILL.md) | Terraform (init, plan, apply, destroy, state management) | ✅ Released |
+| [`gcp-armor-ops`](gcp-armor-ops/SKILL.md) | Cloud Armor (security policies, WAF rules, DDoS protection, rate limiting, bot management) | ✅ Released |
+| [`gcp-composer-ops`](gcp-composer-ops/SKILL.md) | Cloud Composer (Airflow environments, DAGs, variables, connections, PyPI packages) | ✅ Released |
 
 See [AGENTS.md Appendix A](AGENTS.md#appendix-a-gcp-product--directory-mapping-planned) for the full roadmap.
 
