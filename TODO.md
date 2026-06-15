@@ -5,6 +5,16 @@
 
 ---
 
+## gcp-armor-ops
+
+| Planned Feature | Status | Notes |
+|----------------|--------|-------|
+| Advanced WAF rule patterns | ⬜ | references/advanced/ |
+| Bot management deep-dive | ⬜ | Custom bot detection rules |
+| Adaptive protection tuning | ⬜ | ML-based threat detection config |
+
+---
+
 ## gcp-bigquery-ops
 
 | Planned Feature | Status | Notes |
@@ -41,6 +51,16 @@ No planned items.
 |----------------|--------|-------|
 | Advanced FinOps/AIOps references | ⬜ | references/advanced/ |
 | Standalone SDK code snippets | ⬜ | If skill becomes SDK-primary |
+
+---
+
+## gcp-composer-ops
+
+| Planned Feature | Status | Notes |
+|----------------|--------|-------|
+| Advanced DAG patterns | ⬜ | references/advanced/ |
+| Airflow 2.x migration guide | ⬜ | Version upgrade runbook |
+| Private environment setup | ⬜ | VPC-native configuration |
 
 ---
 
