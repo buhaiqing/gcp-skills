@@ -1,0 +1,78 @@
+# Cloud Scheduler Job Configuration for GCL Runner
+# These are example configurations for daily health checks and periodic GCL runs
+
+jobs:
+  - name: daily-gcl-health-check
+    description: "Daily health check for GCL Runner infrastructure"
+    schedule: "0 2 * * *"  # 2 AM daily
+    time_zone: "America/New_York"
+    target: "https-trigger"  # HTTP target (Cloud Function)
+    http_target:
+      uri: "https://REGION-PROJECT.cloudfunctions.net/gcl_scheduler_trigger"
+      http_method: "POST"
+      headers:
+        Content-Type: "application/json"
+        X-Trigger-Source: "cloud-scheduler"
+      body: |
+        {
+          "job_name": "daily-gcl-health-check",
+          "schedule": "0 2 * * *",
+          "time_zone": "America/New_York",
+          "custom_data": {
+            "check_type": "health",
+            "environment": "production"
+          }
+        }
+    retry_config:
+      min_backoff_duration: "5s"
+      max_backoff_duration: "300s"
+      max_retry_attempts: 3
+      retry_duration: "3600s"
+
+  - name: hourly-gcl-metrics-aggregation
+    description: "Hourly aggregation of GCL execution metrics"
+    schedule: "0 * * * *"  # Every hour
+    time_zone: "UTC"
+    target: "https-trigger"
+    http_target:
+      uri: "https://REGION-PROJECT.cloudfunctions.net/gcl_scheduler_trigger"
+      http_method: "POST"
+      headers:
+        Content-Type: "application/json"
+      body: |
+        {
+          "job_name": "hourly-gcl-metrics-aggregation",
+          "schedule": "0 * * * *",
+          "time_zone": "UTC",
+          "custom_data": {
+            "operation": "aggregate_metrics"
+          }
+        }
+    retry_config:
+      min_backoff_duration: "10s"
+      max_backoff_duration: "600s"
+      max_retry_attempts: 5
+      retry_duration: "7200s"
+
+  - name: weekly-gcl-audit-summary
+    description: "Weekly audit summary of GCL execution patterns"
+    schedule: "0 3 * * 0"  # 3 AM every Sunday
+    time_zone: "America/Los_Angeles"
+    target: "pubsub-trigger"
+    pubsub_target:
+      topic_name: "projects/PROJECT/topics/gcl-audit-events"
+      data: ""  # Base64 encoded payload if needed
+      attributes:
+        job_name: "weekly-gcl-audit-summary"
+        schedule: "0 3 * * 0"
+        time_zone: "America/Los_Angeles"
+        custom_data: |
+          {
+            "operation": "audit_summary",
+            "period": "weekly"
+          }
+    retry_config:
+      min_backoff_duration: "30s"
+      max_backoff_duration: "900s"
+      max_retry_attempts: 3
+      retry_duration: "86400s"
