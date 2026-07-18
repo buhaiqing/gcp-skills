@@ -26,7 +26,7 @@ def hello_world(request) -> tuple[Any, int]:
     """
     try:
         request_json = request.get_json(silent=True)
-    except Exception:
+    except (ValueError, TypeError):
         request_json = None
 
     response = {

@@ -13,6 +13,8 @@ import logging
 from datetime import UTC, datetime
 from typing import Any
 
+from pydantic import ValidationError
+
 from trigger_automation.schemas.trigger_event import (
     ScheduledTriggerData,
     ScheduledTriggerEvent,
@@ -37,7 +39,8 @@ def handle_scheduler_event(event: dict[str, Any]) -> dict[str, Any]:
     Returns:
         A dict containing the processed event result.
     """
-    logger.info(f"Received scheduler event: {event}")
+    job_name = event.get("job_name", "unknown")
+    logger.info(f"Received scheduler event: job_name={job_name}")
 
     try:
         trigger_data = ScheduledTriggerData(
@@ -64,11 +67,18 @@ def handle_scheduler_event(event: dict[str, Any]) -> dict[str, Any]:
         logger.info(f"Successfully processed scheduler event: {trigger_event.event_id}")
         return result
 
-    except Exception as e:
-        logger.error(f"Error processing scheduler event: {e}")
+    except ValidationError as e:
+        logger.error(f"Validation error processing scheduler event: {e}")
         return {
             "status": "error",
-            "error": str(e),
+            "error": "event validation failed",
+            "timestamp": datetime.now(UTC).isoformat(),
+        }
+    except (TypeError, KeyError, ValueError) as e:
+        logger.error(f"Data error processing scheduler event: {e}")
+        return {
+            "status": "error",
+            "error": "invalid event data",
             "timestamp": datetime.now(UTC).isoformat(),
         }
 

@@ -9,10 +9,13 @@ and integration with external systems.
 from __future__ import annotations
 
 import base64
+import binascii
 import json
 import logging
 from datetime import UTC, datetime
 from typing import Any
+
+from pydantic import ValidationError
 
 from trigger_automation.schemas.trigger_event import (
     PubSubTriggerData,
@@ -37,21 +40,31 @@ def handle_pubsub_event(event: dict[str, Any]) -> dict[str, Any]:
     Returns:
         A dict containing the processed event result.
     """
-    logger.info(f"Received pubsub event: {event}")
+    subscription = event.get("subscription", "unknown")
+    message_id = event.get("message", {}).get("messageId", "unknown")
+    logger.info(f"Received pubsub event: subscription={subscription}, message_id={message_id}")
 
     try:
         message = event.get("message", {})
         data_attr = message.get("data", "")
         attributes = message.get("attributes", {})
 
-        if isinstance(data_attr, str):
+        payload: Any = None
+        if isinstance(data_attr, str) and data_attr:
             try:
-                decoded_data = base64.b64decode(data_attr).decode("utf-8")
+                decoded_data = base64.b64decode(data_attr, validate=True).decode("utf-8")
                 payload = json.loads(decoded_data)
-            except Exception:
-                payload = {"raw": data_attr}
-        else:
+            except (binascii.Error, UnicodeDecodeError, json.JSONDecodeError) as e:
+                logger.warning(f"Failed to decode message data as base64+JSON: {e}")
+                return {
+                    "status": "error",
+                    "error": "invalid message data format",
+                    "timestamp": datetime.now(UTC).isoformat(),
+                }
+        elif data_attr:
             payload = data_attr
+        else:
+            payload = {}
 
         trigger_data = PubSubTriggerData(
             subscription=event.get("subscription", "unknown"),
@@ -80,11 +93,18 @@ def handle_pubsub_event(event: dict[str, Any]) -> dict[str, Any]:
         logger.info(f"Successfully processed pubsub event: {trigger_event.event_id}")
         return result
 
-    except Exception as e:
-        logger.error(f"Error processing pubsub event: {e}")
+    except ValidationError as e:
+        logger.error(f"Validation error processing pubsub event: {e}")
         return {
             "status": "error",
-            "error": str(e),
+            "error": "event validation failed",
+            "timestamp": datetime.now(UTC).isoformat(),
+        }
+    except (TypeError, KeyError, ValueError) as e:
+        logger.error(f"Data error processing pubsub event: {e}")
+        return {
+            "status": "error",
+            "error": "invalid event data",
             "timestamp": datetime.now(UTC).isoformat(),
         }
 
