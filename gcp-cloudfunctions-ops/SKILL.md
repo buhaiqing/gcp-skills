@@ -40,8 +40,6 @@ metadata:
 
 Cloud Functions (2nd gen) provides event-driven, serverless function execution backed by Cloud Run. This skill is an **operational runbook** for agents: explicit scope, credential rules, pre-flight checks, **dual-path execution** (Python SDK + `gcloud` CLI), response validation, and failure recovery.
 
-> **UX Compliance:** Follows the [User Experience Specification](../gcp-skill-generator/references/user-experience-spec.md).
-
 ### CLI Applicability
 
 - **`cli_applicability: dual-path`**: `gcloud` fully supports Cloud Functions (gen1 + gen2). Ship both `references/gcloud-usage.md` and document SDK + `gcloud` steps for every operation. Coverage gaps listed in `references/gcloud-usage.md`.
@@ -248,72 +246,20 @@ Every operation: **Pre-flight → Execute (gcloud and/or SDK/API) → Validate �
 | Source directory exists | `test -d {{user.source_dir}}` | Directory exists | HALT; verify source path |
 | Runtime supported | Check `{{user.runtime}}` against supported list | Valid runtime | HALT; use supported runtime |
 
-#### Execution — CLI (`gcloud`)
+#### Execution — CLI (`gcloud`) / Python SDK
 
-```bash
-gcloud functions deploy "{{user.function_name}}" \
-  --gen2 \
-  --runtime="{{user.runtime:-python312}}" \
-  --trigger-http \
-  --entry-point="{{user.entry_point}}" \
-  --source="{{user.source_dir:-.}}" \
-  --region="{{user.region:-us-central1}}" \
-  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
-  --memory="{{user.memory:-256Mi}}" \
-  --timeout="{{user.timeout:-60}}" \
-  --max-instances="{{user.max_instances:-100}}" \
-  --min-instances="{{user.min_instances:-0}}" \
-  --concurrency="{{user.concurrency:-1}}" \
-  --set-env-vars="{{user.env_vars}}" \
-  --set-secrets="{{user.secrets}}" \
-  --ingress-settings="{{user.ingress:-all}}" \
-  $([ -n "{{user.vpc_connector}}" ] && echo "--vpc-connector={{user.vpc_connector}}") \
-  $([ -n "{{user.service_account}}" ] && echo "--service-account={{user.service_account}}") \
-  $({{user.no_allow_unauthenticated:-false}} == true && echo "--no-allow-unauthenticated") \
-  --format=json
-```
+Full command invocations and SDK examples are in `references/gcloud-usage.md` (Command Map, Common Recipes) and `references/api-sdk-usage.md` (Python/Go SDK). Summary:
 
-#### Execution — Python SDK
+| Step | Action | Description |
+|------|--------|-------------|
+| 1 | `gcloud functions deploy NAME --gen2 --trigger-http` | Create/update HTTP function |
+| 2 | `--runtime/--entry-point/--source/--region/--project` | Core identity flags (see Variable Convention) |
+| 3 | `--memory/--timeout/--max-instances/--min-instances/--concurrency` | Scaling config |
+| 4 | `--set-env-vars/--set-secrets/--ingress-settings` | Env, secrets, ingress |
+| 5 | conditional `--vpc-connector/--service-account/--no-allow-unauthenticated` | Optional flags (only when set) |
+| 6 | `--format=json` | Machine-parseable output |
 
-```python
-import os
-from google.cloud import functions_v2
-from google.cloud.functions_v2 import types
-
-client = functions_v2.FunctionServiceClient()
-parent = f"projects/{os.environ['CLOUDSDK_CORE_PROJECT']}/locations/{{user.region:-us-central1}}"
-
-function = types.Function(
-    name=f"{parent}/functions/{{user.function_name}}",
-    build_config=types.BuildConfig(
-        runtime="{{user.runtime:-python312}}",
-        entry_point="{{user.entry_point}}",
-        source=types.Source(
-            storage_source=types.StorageSource(
-                bucket="gcf-v2-sources",  # Will be auto-created if needed
-            ),
-        ),
-    ),
-    service_config=types.ServiceConfig(
-        max_instance_count={{user.max_instances:-100}},
-        min_instance_count={{user.min_instances:-0}},
-        available_memory="{{user.memory:-256Mi}}",
-        timeout_seconds={{user.timeout:-60}},
-        ingress_settings=types.ServiceConfig.IngressSettings.ALLOW_ALL,
-        environment_variables=dict(kv.split("=") for kv in "{{user.env_vars}}".split(",") if "=" in kv) if "{{user.env_vars}}" else {},
-    ),
-)
-
-operation = client.create_function(parent=parent, function=function)
-result = operation.result()
-print(f"Deployed: {result.service_config.uri}")
-```
-
-Execute:
-```bash
-pip install --quiet --user google-cloud-functions
-python3 deploy_http_function.py
-```
+> **SDK fallback**: `pip install --quiet --user google-cloud-functions`, then `FunctionServiceClient().create_function(...)`. See `references/api-sdk-usage.md` §Python SDK.
 
 #### Post-execution Validation
 
@@ -367,36 +313,20 @@ Validate: `.state == "ACTIVE"`. Report `{{output.function_url}}` from `.serviceC
 
 #### Execution — CLI (`gcloud`)
 
-```bash
-gcloud functions deploy "{{user.function_name}}" \
-  --gen2 \
-  --runtime="{{user.runtime:-python312}}" \
-  --trigger-event-filters="{{user.event_filters}}" \
-  --entry-point="{{user.entry_point}}" \
-  --source="{{user.source_dir:-.}}" \
-  --region="{{user.region:-us-central1}}" \
-  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
-  --memory="{{user.memory:-256Mi}}" \
-  --timeout="{{user.timeout:-60}}" \
-  --max-instances="{{user.max_instances:-3000}}" \
-  --min-instances="{{user.min_instances:-0}}" \
-  --service-account="{{user.service_account}}" \
-  --set-env-vars="{{user.env_vars}}" \
-  --set-secrets="{{user.secrets}}" \
-  --format=json
-```
+Full command in `references/gcloud-usage.md` (Command Map: "Deploy event function", Common Recipes: Pub/Sub, Cloud Storage). Summary:
 
-Common event filter examples:
-```bash
-# Cloud Storage: object finalization
---trigger-event-filters=type=google.cloud.storage.object.v1.final,bucket=my-bucket
+| Step | Action | Description |
+|------|--------|-------------|
+| 1 | `gcloud functions deploy NAME --gen2 --trigger-event-filters=FILTERS` | Create event-triggered function |
+| 2 | `--runtime/--entry-point/--source/--region/--project` | Core identity flags |
+| 3 | `--max-instances` (default 3000 events) / `--min-instances` / `--service-account` | Scaling + identity |
+| 4 | `--set-env-vars/--set-secrets` | Env + secrets |
+| 5 | `--format=json` | Machine-parseable output |
 
-# Pub/Sub: message published
---trigger-event-filters=type=google.cloud.pubsub.topic.v1.messagePublished,topic=my-topic
-
-# Firestore: document write
---trigger-event-filters=type=google.cloud.firestore.document.v1.written,database=(default),namespace=(default),document=collection/{docId}
-```
+Common event filter syntax (passed to `--trigger-event-filters`):
+- Cloud Storage: `type=google.cloud.storage.object.v1.final,bucket=my-bucket`
+- Pub/Sub: `type=google.cloud.pubsub.topic.v1.messagePublished,topic=my-topic`
+- Firestore: `type=google.cloud.firestore.document.v1.written,database=(default),namespace=(default),document=collection/{docId}`
 
 #### Post-execution Validation
 
@@ -438,40 +368,16 @@ Validate: `.state == "ACTIVE"` and `.eventTrigger` is populated.
 
 #### Execution — CLI (`gcloud`)
 
-```bash
-gcloud functions describe "{{user.function_name}}" \
-  --gen2 \
-  --region="{{user.region:-us-central1}}" \
-  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
-  --format=json
-```
+Full command + jq extraction in `references/gcloud-usage.md` (Command Map: "Describe function", JQ Extraction Patterns: Deploy/List Validation). Summary:
+
+| Step | Action | Description |
+|------|--------|-------------|
+| 1 | `gcloud functions describe NAME --gen2` | Fetch full function config |
+| 2 | `--region/--project/--format=json` | Scope + machine output |
 
 #### Post-execution Validation
 
-Report: function name, state, URL, trigger type, runtime, memory, timeout, max/min instances, concurrency, service account, environment variables, update time.
-
-```bash
-gcloud functions describe "{{user.function_name}}" \
-  --gen2 \
-  --region="{{user.region:-us-central1}}" \
-  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
-  --format=json | jq '{
-    name: .name,
-    state: .state,
-    url: .serviceConfig.uri,
-    runtime: .buildConfig.runtime,
-    entryPoint: .buildConfig.entryPoint,
-    memory: .serviceConfig.availableMemory,
-    timeout: .serviceConfig.timeoutSeconds,
-    maxInstances: .serviceConfig.maxInstanceCount,
-    minInstances: .serviceConfig.minInstanceCount,
-    concurrency: .serviceConfig.maxInstanceRequestConcurrency,
-    serviceAccount: .serviceConfig.serviceAccountEmail,
-    triggerType: (if .eventTrigger then "event" else "http" end),
-    envVars: .serviceConfig.environmentVariables,
-    updateTime: .updateTime
-  }'
-```
+Report: function name, state, URL, trigger type, runtime, memory, timeout, max/min instances, concurrency, service account, environment variables, update time. (jq extraction pattern: `references/gcloud-usage.md` §JQ Extraction Patterns.)
 
 ---
 
@@ -479,31 +385,16 @@ gcloud functions describe "{{user.function_name}}" \
 
 #### Execution — CLI (`gcloud`)
 
-```bash
-gcloud functions list \
-  --gen2 \
-  --region="{{user.region:-us-central1}}" \
-  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
-  --format=json
-```
+Full command + jq extraction in `references/gcloud-usage.md` (Command Map: "List functions (gen2)", JQ Extraction Patterns: List Validation). Summary:
+
+| Step | Action | Description |
+|------|--------|-------------|
+| 1 | `gcloud functions list --gen2` | List all gen2 functions |
+| 2 | `--region/--project/--format=json` | Scope + machine output |
 
 #### Post-execution Validation
 
-Report: function names, states, URLs, trigger types, runtimes, creation times.
-
-```bash
-gcloud functions list \
-  --gen2 \
-  --region="{{user.region:-us-central1}}" \
-  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
-  --format=json | jq '[.[] | {
-    name: .name,
-    state: .state,
-    url: .serviceConfig.uri,
-    runtime: .buildConfig.runtime,
-    triggerType: (if .eventTrigger then "event" else "http" end)
-  }]'
-```
+Report: function names, states, URLs, trigger types, runtimes, creation times. (jq extraction pattern: `references/gcloud-usage.md` §JQ Extraction Patterns.)
 
 ---
 
@@ -519,37 +410,21 @@ gcloud functions list \
 
 #### Execution — CLI (`gcloud`)
 
-```bash
-gcloud functions deploy "{{user.function_name}}" \
-  --gen2 \
-  --runtime="{{user.runtime}}" \
-  --entry-point="{{user.entry_point}}" \
-  --source="{{user.source_dir:-.}}" \
-  --region="{{user.region:-us-central1}}" \
-  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
-  --memory="{{user.memory}}" \
-  --timeout="{{user.timeout}}" \
-  --max-instances="{{user.max_instances}}" \
-  --min-instances="{{user.min_instances}}" \
-  --concurrency="{{user.concurrency}}" \
-  --update-env-vars="{{user.env_vars}}" \
-  --set-secrets="{{user.secrets}}" \
-  --format=json
-```
+Full command in `references/gcloud-usage.md` (Command Map: "Update function", Common Recipes: "Update Scaling Configuration"). Summary:
+
+| Step | Action | Description |
+|------|--------|-------------|
+| 1 | `gcloud functions deploy NAME --gen2` | Acts as update when function exists |
+| 2 | `--runtime/--entry-point/--source/--region/--project` | Core identity flags |
+| 3 | `--memory/--timeout/--max-instances/--min-instances/--concurrency` | Scaling config |
+| 4 | `--update-env-vars/--set-secrets` | Env (update merges) + secrets |
+| 5 | `--format=json` | Machine-parseable output |
 
 > **Note:** For gen2, `gcloud functions deploy` acts as an update when the function already exists. Use `--update-env-vars` to modify env vars without replacing all of them.
 
 #### Post-execution Validation
 
-```bash
-gcloud functions describe "{{user.function_name}}" \
-  --gen2 \
-  --region="{{user.region:-us-central1}}" \
-  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
-  --format=json | jq '{state: .state, url: .serviceConfig.uri, updateTime: .updateTime}'
-```
-
-Validate: `.state == "ACTIVE"`.
+Validate `.state == "ACTIVE"` via `gcloud functions describe NAME --gen2 --format=json` (jq pattern: `references/gcloud-usage.md` §JQ Extraction Patterns).
 
 #### Failure Recovery
 
@@ -577,23 +452,16 @@ Validate: `.state == "ACTIVE"`.
 
 #### Execution — CLI (`gcloud`)
 
-```bash
-gcloud functions delete "{{user.function_name}}" \
-  --gen2 \
-  --region="{{user.region:-us-central1}}" \
-  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
-  --format=json
-```
+Full command in `references/gcloud-usage.md` (Command Map: "Delete function", Common Recipes: "Delete Function (Non-Interactive)"). Summary:
+
+| Step | Action | Description |
+|------|--------|-------------|
+| 1 | `gcloud functions delete NAME --gen2` | Irreversible delete |
+| 2 | `--region/--project/--format=json` | Scope + machine output |
 
 #### Post-execution Validation
 
-```bash
-gcloud functions describe "{{user.function_name}}" \
-  --gen2 \
-  --region="{{user.region:-us-central1}}" \
-  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
-  --format=json 2>&1 | grep -q "NOT_FOUND" && echo "Deleted successfully" || echo "Still exists"
-```
+Confirm absence: `gcloud functions describe NAME --gen2 --format=json 2>&1 | grep -q "NOT_FOUND" && echo "Deleted successfully" || echo "Still exists"`.
 
 #### Failure Recovery
 
@@ -618,39 +486,23 @@ gcloud functions describe "{{user.function_name}}" \
 
 #### Execution — CLI (`gcloud`)
 
-```bash
-gcloud functions call "{{user.function_name}}" \
-  --gen2 \
-  --region="{{user.region:-us-central1}}" \
-  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
-  --data='{"key":"value"}' \
-  --format=json
-```
+Full command in `references/gcloud-usage.md` (Command Map: "Invoke function"). Summary:
 
-For authenticated functions:
+| Step | Action | Description |
+|------|--------|-------------|
+| 1 | `gcloud functions call NAME --gen2 --data='JSON'` | Invoke HTTP function |
+| 2 | `--region/--project/--format=json` | Scope + machine output |
+
+For authenticated functions, call the function URL with an identity token (never log the token — see Credential Masking):
 ```bash
 curl -H "Authorization: Bearer $(gcloud auth print-identity-token)" \
-  "$(gcloud functions describe "{{user.function_name}}" \
-    --gen2 \
-    --region="{{user.region:-us-central1}}" \
-    --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
-    --format=json | jq -r '.serviceConfig.uri')" \
-  -H "Content-Type: application/json" \
-  -d '{"key":"value"}'
+  "$(gcloud functions describe NAME --gen2 --region=REGION --project=PROJECT --format=json | jq -r '.serviceConfig.uri')" \
+  -H "Content-Type: application/json" -d '{"key":"value"}'
 ```
 
 #### Post-execution Validation
 
-Report: response body, HTTP status code.
-
-```bash
-gcloud functions call "{{user.function_name}}" \
-  --gen2 \
-  --region="{{user.region:-us-central1}}" \
-  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
-  --data='{"test": true}' \
-  --format=json | jq '{status: .status, body: .responseBody}'
-```
+Report: response body, HTTP status code. Validate via `gcloud functions call NAME --gen2 --data='{"test": true}' --format=json | jq '{status: .status, body: .responseBody}'`.
 
 #### Failure Recovery
 
@@ -674,50 +526,18 @@ gcloud functions call "{{user.function_name}}" \
 
 #### Execution — CLI (`gcloud`)
 
-Recent logs:
-```bash
-gcloud functions logs read "{{user.function_name}}" \
-  --gen2 \
-  --region="{{user.region:-us-central1}}" \
-  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
-  --limit=50 \
-  --format=json
-```
+Full commands in `references/gcloud-usage.md` (Command Map: "Read logs", "Read error logs"). Summary:
 
-Error logs only:
-```bash
-gcloud functions logs read "{{user.function_name}}" \
-  --gen2 \
-  --region="{{user.region:-us-central1}}" \
-  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
-  --min-log-level=error \
-  --limit=50 \
-  --format=json
-```
-
-Time-filtered logs:
-```bash
-gcloud functions logs read "{{user.function_name}}" \
-  --gen2 \
-  --region="{{user.region:-us-central1}}" \
-  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
-  --start-time="2026-06-08T00:00:00Z" \
-  --end-time="2026-06-08T23:59:59Z" \
-  --format=json
-```
+| Step | Action | Description |
+|------|--------|-------------|
+| 1 | `gcloud functions logs read NAME --gen2 --limit=50` | Recent execution logs |
+| 2 | `--min-log-level=error` | Error-only logs |
+| 3 | `--start-time/--end-time` | Time-filtered logs |
+| 4 | `--region/--project/--format=json` | Scope + machine output |
 
 #### Post-execution Validation
 
-Report: log entries with timestamps, severity, and text payload.
-
-```bash
-gcloud functions logs read "{{user.function_name}}" \
-  --gen2 \
-  --region="{{user.region:-us-central1}}" \
-  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
-  --limit=10 \
-  --format=json | jq '[.[] | {timestamp: .timestamp, severity: .severity, message: .textPayload}]'
-```
+Report: log entries with timestamps, severity, and text payload. jq extraction pattern: `references/gcloud-usage.md` §JQ Extraction Patterns (Logs Validation).
 
 ---
 
@@ -725,31 +545,16 @@ gcloud functions logs read "{{user.function_name}}" \
 
 #### Execution — CLI (`gcloud`)
 
-```bash
-gcloud functions list \
-  --gen1 \
-  --region="{{user.region:-us-central1}}" \
-  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
-  --format=json
-```
+Full command in `references/gcloud-usage.md` (Command Map: "List functions (gen1)"). Summary:
+
+| Step | Action | Description |
+|------|--------|-------------|
+| 1 | `gcloud functions list --gen1` | List legacy 1st gen functions |
+| 2 | `--region/--project/--format=json` | Scope + machine output |
 
 #### Post-execution Validation
 
-Report: function names, states, URLs, runtimes. Note: gen1 functions use a different resource model and lack many gen2 features.
-
-```bash
-gcloud functions list \
-  --gen1 \
-  --region="{{user.region:-us-central1}}" \
-  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
-  --format=json | jq '[.[] | {
-    name: .name,
-    state: .status,
-    url: .httpsTrigger.url,
-    runtime: .runtime,
-    entryPoint: .entryPoint
-  }]'
-```
+Report: function names, states, URLs, runtimes. Note: gen1 functions use a different resource model and lack many gen2 features. jq extraction pattern: `references/gcloud-usage.md` §JQ Extraction Patterns.
 
 > **Migration note:** To migrate gen1 to gen2, use `gcloud functions gen1-to-gen2` or redeploy manually with `--gen2`. Gen2 offers better scaling, longer timeouts, VPC connector, and more runtimes.
 
@@ -771,7 +576,7 @@ gcloud functions list \
 
 **Classification**: recommended | **max_iter**: 3 | **Most-scrutinized**: Delete Function, Deploy (can cause downtime if misconfigured)
 
-## Token Efficiency
+## Token Efficiency Guidelines (P0 — 强制)
 
 | Rule | Practice | Rule | Practice |
 |------|----------|------|----------|
@@ -788,4 +593,4 @@ gcloud functions list \
 
 ## See Also
 
-[gcp-skill-generator](../gcp-skill-generator/SKILL.md) | [gcp-cloudrun-ops](../gcp-cloudrun-ops/SKILL.md) | [gcp-iam-ops](../gcp-iam-ops/SKILL.md) | [gcp-vpc-ops](../gcp-vpc-ops/SKILL.md) | [gcp-monitoring-ops](../gcp-monitoring-ops/SKILL.md) | [gcp-secretmanager-ops](../gcp-secretmanager-ops/SKILL.md) | [gcp-gcl-runner-ops](../gcp-gcl-runner-ops/SKILL.md)
+Cross-product delegation targets (IAM, VPC, Secret Manager, Cloud Run, Monitoring, Eventarc, Scheduler, Cloud Build) are listed in [Delegation Rules](#delegation-rules) above. Full command references and recovery detail live in `references/` (see [References](#references)).

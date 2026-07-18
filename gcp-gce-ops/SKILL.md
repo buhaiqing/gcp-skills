@@ -263,81 +263,21 @@ Every operation: **Pre-flight → Execute (gcloud + SDK/API) → Validate → Re
 | boot_disk_type | `pd-balanced` | Balanced performance/cost |
 | network_tier | `STANDARD` | Default Google Cloud tier |
 
-#### Execution — CLI (`gcloud`) (Primary Path)
+#### Execution (dual-path)
 
-```bash
-# Create VM instance with minimal fields
-gcloud compute instances create "{{user.instance_name}}" \
-  --zone="{{user.zone}}" \
-  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
-  --machine-type="{{user.machine_type}}" \
-  --image-project="{{user.image_project}}" \
-  --image-family="{{user.image_family}}" \
-  --boot-disk-size="{{user.boot_disk_size:-20}}" \
-  --boot-disk-type="{{user.boot_disk_type:-pd-balanced}}" \
-  --network-tier="{{user.network_tier:-STANDARD}}" \
-  --format="json"
-```
+Full `gcloud` command at [references/gcloud-usage.md](references/gcloud-usage.md) §Instances (Create). SDK/API scripts at `assets/code-snippets/create_instance.{py,go}`.
 
-**With optional fields (e.g., custom subnet, static IP, additional disks):**
-
-```bash
-gcloud compute instances create "{{user.instance_name}}" \
-  --zone="{{user.zone}}" \
-  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
-  --machine-type="{{user.machine_type}}" \
-  --image-project="{{user.image_project}}" \
-  --image-family="{{user.image_family}}" \
-  --boot-disk-size="20" \
-  --boot-disk-type="pd-balanced" \
-  --subnet="{{user.subnet}}" \
-  --private-network-ip="{{user.private_ip}}" \
-  --network-tier="STANDARD" \
-  --labels=environment=dev,created-by=gcp-skills \
-  --tags="{{user.tags}}" \
-  --metadata=startup-script='#!/bin/bash
-apt-get update' \
-  --format="json"
-```
-
-#### Execution — Python SDK (Primary Fallback)
-
-Full script at [assets/code-snippets/create_instance.py](assets/code-snippets/create_instance.py)
-
-Key steps:
-1. Create client: `compute_v1.InstancesClient()`
-2. Configure instance: `compute_v1.Instance(...)`
-3. Insert: `client.insert(request=...)`
-
-#### Execution — JIT Go SDK (Secondary Fallback)
-
-Full script at [assets/code-snippets/create_instance.go](assets/code-snippets/create_instance.go)
-
-Key steps:
-1. Create client: `compute.NewInstancesRESTClient(ctx, ...)`
-2. Configure instance: `computepb.InsertInstanceRequest{...}`
-3. Insert: `client.Insert(ctx, req)`
+| Step | Action | Description |
+|------|--------|-------------|
+| 1 | `gcloud compute instances create` | Create with `--zone`, `--machine-type`, `--image-project`, `--image-family`, `--boot-disk-size/type`, `--network-tier`, `--format=json` |
+| 2 | Python SDK fallback | `compute_v1.InstancesClient().insert(...)` — full script in `assets/code-snippets/create_instance.py` |
+| 3 | Go SDK fallback | `compute.NewInstancesRESTClient().Insert(ctx, req)` — full script in `assets/code-snippets/create_instance.go` |
 
 #### Post-execution Validation
 
-1. Poll the zone-level operations API until `status: DONE`:
-```bash
-gcloud compute operations describe "{{output.operation_name}}" \
-  --zone="{{user.zone}}" \
-  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
-  --format="json" | jq -r '.status'
-```
-
-2. Describe the instance to verify `RUNNING` state:
-```bash
-gcloud compute instances describe "{{user.instance_name}}" \
-  --zone="{{user.zone}}" \
-  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
-  --format="json" | jq '{name: .name, status: .status, zone: .zone, machineType: .machineType, networkIP: .networkInterfaces[0].networkIP}'
-```
-
+1. Poll the zone-level operations API until `status: DONE`: `gcloud compute operations describe "{{output.operation_name}}" --zone="{{user.zone}}" --project="{{env.CLOUDSDK_CORE_PROJECT}}" --format="json" | jq -r '.status'`
+2. Describe the instance to verify `RUNNING` state: `gcloud compute instances describe "{{user.instance_name}}" --zone="{{user.zone}}" --project="{{env.CLOUDSDK_CORE_PROJECT}}" --format="json" | jq '{name:.name,status:.status,zone:.zone,machineType:.machineType,networkIP:.networkInterfaces[0].networkIP}'`
 3. On success, report instance summary: name, status, zone, machine type, internal IP, external IP (if assigned).
-
 4. On terminal failure, go to **Failure Recovery**.
 
 #### Failure Recovery
@@ -364,43 +304,14 @@ gcloud compute instances describe "{{user.instance_name}}" \
 |-------|--------|----------|------------|
 | Instance exists | `gcloud compute instances describe "{{user.instance_name}}" --zone="{{user.zone}}" --quiet` | Exit 0 | HALT — instance not found |
 
-#### Execution — CLI (`gcloud`) (Primary Path)
+#### Execution (dual-path)
 
+Full `gcloud` command at [references/gcloud-usage.md](references/gcloud-usage.md) §Instances (Describe). SDK script at `assets/code-snippets/describe_instance.py` (`compute_v1.InstancesClient().get(...)`).
+
+Extract with jq (single-line, parse all fields):
 ```bash
-gcloud compute instances describe "{{user.instance_name}}" \
-  --zone="{{user.zone}}" \
-  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
-  --format="json"
+gcloud compute instances describe "{{user.instance_name}}" --zone="{{user.zone}}" --format="json" | jq '{name:.name,id:.id,status:.status,zone:.zone,machineType:(.machineType|split("/")[-1]),cpuPlatform:.cpuPlatform,creationTimestamp:.creationTimestamp,networkIP:.networkInterfaces[0].networkIP,natIP:.networkInterfaces[0].accessConfigs[0].natIP,disks:[.disks[]|{deviceName,boot,diskSizeGb,diskType:(.initializeParams.diskType//.type)}],labels:.labels,tags:.tags.items,metadata:{items:.metadata.items}}'
 ```
-
-Extract with jq:
-```bash
-gcloud compute instances describe "{{user.instance_name}}" \
-  --zone="{{user.zone}}" \
-  --format="json" | jq '{
-    name: .name,
-    id: .id,
-    status: .status,
-    zone: .zone,
-    machineType: .machineType | split("/")[-1],
-    cpuPlatform: .cpuPlatform,
-    creationTimestamp: .creationTimestamp,
-    networkIP: .networkInterfaces[0].networkIP,
-    natIP: .networkInterfaces[0].accessConfigs[0].natIP,
-    disks: [.disks[] | {deviceName, boot, diskSizeGb, diskType: (.initializeParams.diskType // .type)}],
-    labels: .labels,
-    tags: .tags.items,
-    metadata: {items: .metadata.items}
-  }'
-```
-
-#### Execution — Python SDK (Primary Fallback)
-
-Full script at [assets/code-snippets/describe_instance.py](assets/code-snippets/describe_instance.py)
-
-Key steps:
-1. Create client: `compute_v1.InstancesClient()`
-2. Get instance: `client.get(project=..., zone=..., instance=...)`
 
 #### Present to User
 
@@ -428,51 +339,20 @@ Key steps:
 | Change type compatible | For machine type change: instance TERMINATED | TERMINATED | HALT — stop first |
 | Metadata/labels safe | Verify change is non-destructive | — | Warn user |
 
-#### Execution — CLI (`gcloud`) (Primary Path)
+#### Execution (CLI — `gcloud`)
 
-**Update metadata:**
-```bash
-gcloud compute instances add-metadata "{{user.instance_name}}" \
-  --zone="{{user.zone}}" \
-  --metadata="key={{user.metadata_key}},value={{user.metadata_value}}" \
-  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
-  --format="json"
-```
+Full commands at [references/gcloud-usage.md](references/gcloud-usage.md) §Instances (Add metadata / Add labels / Set machine type / Add tags). All use `--zone`, `--project="{{env.CLOUDSDK_CORE_PROJECT}}"`, `--format="json"`.
 
-**Update labels:**
-```bash
-gcloud compute instances add-labels "{{user.instance_name}}" \
-  --zone="{{user.zone}}" \
-  --labels="env={{user.label_env}},team={{user.label_team}}" \
-  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
-  --format="json"
-```
-
-**Change machine type (instance must be TERMINATED):**
-```bash
-gcloud compute instances set-machine-type "{{user.instance_name}}" \
-  --zone="{{user.zone}}" \
-  --machine-type="{{user.new_machine_type}}" \
-  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
-  --format="json"
-```
-
-**Update tags:**
-```bash
-gcloud compute instances add-tags "{{user.instance_name}}" \
-  --zone="{{user.zone}}" \
-  --tags="{{user.tags}}" \
-  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
-  --format="json"
-```
+| Step | Action | Description |
+|------|--------|-------------|
+| 1 | `gcloud compute instances add-metadata` | Update `--metadata=key={{user.metadata_key}},value={{user.metadata_value}}` |
+| 2 | `gcloud compute instances add-labels` | Update `--labels=env={{user.label_env}},team={{user.label_team}}` |
+| 3 | `gcloud compute instances set-machine-type` | Change `--machine-type={{user.new_machine_type}}` (instance MUST be TERMINATED) |
+| 4 | `gcloud compute instances add-tags` | Update `--tags="{{user.tags}}` |
 
 #### Post-execution Validation
 
-Describe instance and verify changes applied:
-```bash
-gcloud compute instances describe "{{user.instance_name}}" \
-  --zone="{{user.zone}}" --format="json" | jq '.metadata.items[] | select(.key == "{{user.metadata_key}}")'
-```
+Describe instance and verify changes applied: `gcloud compute instances describe "{{user.instance_name}}" --zone="{{user.zone}}" --format="json" | jq '.metadata.items[] | select(.key == "{{user.metadata_key}}")'`
 
 ---
 
@@ -483,22 +363,13 @@ gcloud compute instances describe "{{user.instance_name}}" \
 - **MUST** warn: stopping instance may cause data loss for non-persistent disks
 - **MUST** suggest snapshot before stop for critical workloads
 
-#### Execution — CLI (`gcloud`)
+#### Execution (CLI — `gcloud`)
 
-```bash
-gcloud compute instances stop "{{user.instance_name}}" \
-  --zone="{{user.zone}}" \
-  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
-  --format="json"
-```
+Full command at [references/gcloud-usage.md](references/gcloud-usage.md) §Instances (Stop): `gcloud compute instances stop "{{user.instance_name}}" --zone="{{user.zone}}" --project="{{env.CLOUDSDK_CORE_PROJECT}}" --format="json"`
 
 #### Post-execution Validation
 
-Poll until `.status == "TERMINATED"`:
-```bash
-gcloud compute instances describe "{{user.instance_name}}" \
-  --zone="{{user.zone}}" --format="json" | jq -r '.status'
-```
+Poll until `.status == "TERMINATED"`: `gcloud compute instances describe "{{user.instance_name}}" --zone="{{user.zone}}" --format="json" | jq -r '.status'`
 
 ---
 
@@ -518,33 +389,15 @@ gcloud compute instances describe "{{user.instance_name}}" \
 | User confirmation | Ask: `Proceed with irreversible delete of instance <name>? (yes/instance_name)` | Exact match with instance name | HALT — abort |
 | Backup check | Ask: `Create snapshot before delete?` | User responds | If yes → run snapshot create first |
 
-#### Execution — CLI (`gcloud`)
+#### Execution (dual-path)
 
-```bash
-gcloud compute instances delete "{{user.instance_name}}" \
-  --zone="{{user.zone}}" \
-  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
-  --delete-disks="boot" \
-  --format="json"
-```
-
-#### Execution — Python SDK
-
-Full script at [assets/code-snippets/delete_instance.py](assets/code-snippets/delete_instance.py)
-
-Key steps:
-1. Create client: `compute_v1.InstancesClient()`
-2. Delete: `client.delete(request=compute_v1.DeleteInstanceRequest(...))`
+Full `gcloud` command at [references/gcloud-usage.md](references/gcloud-usage.md) §Instances (Delete): `gcloud compute instances delete "{{user.instance_name}}" --zone="{{user.zone}}" --project="{{env.CLOUDSDK_CORE_PROJECT}}" --delete-disks="boot" --format="json"`. SDK script at `assets/code-snippets/delete_instance.py` (`compute_v1.InstancesClient().delete(...)`).
 
 **Never use `--quiet` to bypass this safety gate.**
 
 #### Post-execution Validation
 
-Confirm NOT_FOUND:
-```bash
-gcloud compute instances describe "{{user.instance_name}}" \
-  --zone="{{user.zone}}" --quiet 2>&1 || echo "✅ Instance confirmed deleted"
-```
+Confirm NOT_FOUND: `gcloud compute instances describe "{{user.instance_name}}" --zone="{{user.zone}}" --quiet 2>&1 || echo "✅ Instance confirmed deleted"`
 
 ---
 
@@ -557,25 +410,13 @@ gcloud compute instances describe "{{user.instance_name}}" \
 | Source disk exists | Describe | Exit 0 | HALT |
 | Snapshot quota | `gcloud compute regions describe {{user.zone%-*}} --format=json` | Check quotas | HALT |
 
-#### Execution — CLI (`gcloud`)
+#### Execution (CLI — `gcloud`)
 
-```bash
-gcloud compute disks snapshot "{{user.disk_name}}" \
-  --snapshot-names="{{user.snapshot_name}}" \
-  --zone="{{user.zone}}" \
-  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
-  --labels=created-by=gcp-skills \
-  --format="json"
-```
+Full command at [references/gcloud-usage.md](references/gcloud-usage.md) §Snapshots (Snapshot create): `gcloud compute disks snapshot "{{user.disk_name}}" --snapshot-names="{{user.snapshot_name}}" --zone="{{user.zone}}" --project="{{env.CLOUDSDK_CORE_PROJECT}}" --labels=created-by=gcp-skills --format="json"`
 
 #### Post-execution Validation
 
-Poll until `status: READY`:
-```bash
-gcloud compute snapshots describe "{{user.snapshot_name}}" \
-  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
-  --format="json" | jq -r '.status'
-```
+Poll until `status: READY`: `gcloud compute snapshots describe "{{user.snapshot_name}}" --project="{{env.CLOUDSDK_CORE_PROJECT}}" --format="json" | jq -r '.status'`
 
 ---
 
@@ -585,13 +426,9 @@ gcloud compute snapshots describe "{{user.snapshot_name}}" \
 
 - **MUST** obtain explicit user confirmation: irreversible delete of snapshot `{{user.snapshot_name}}`
 
-#### Execution — CLI (`gcloud`)
+#### Execution (CLI — `gcloud`)
 
-```bash
-gcloud compute snapshots delete "{{user.snapshot_name}}" \
-  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
-  --format="json"
-```
+Full command at [references/gcloud-usage.md](references/gcloud-usage.md) §Snapshots (Snapshot delete): `gcloud compute snapshots delete "{{user.snapshot_name}}" --project="{{env.CLOUDSDK_CORE_PROJECT}}" --format="json"`
 
 ---
 
@@ -604,75 +441,38 @@ gcloud compute snapshots delete "{{user.snapshot_name}}" \
 | Instance template | `gcloud compute instance-templates describe {{user.template_name}} --quiet` | Exit 0 | HALT — create template first |
 | Zone/location | Match template regional requirement | Compatible | HALT |
 
-#### Execution — CLI (`gcloud`)
+#### Execution (CLI — `gcloud`)
 
-```bash
-gcloud compute instance-groups managed create "{{user.mig_name}}" \
-  --base-instance-name="{{user.base_name}}" \
-  --template="{{user.template_name}}" \
-  --size="{{user.size:-3}}" \
-  --zone="{{user.zone}}" \
-  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
-  --format="json"
-```
+Full commands at [references/gcloud-usage.md](references/gcloud-usage.md) §Snapshots & MIGs (MIG create / regional). All use `--template`, `--size`, `--project="{{env.CLOUDSDK_CORE_PROJECT}}"`, `--format="json"`.
 
-**Regional MIG:**
-```bash
-gcloud compute instance-groups managed create "{{user.mig_name}}" \
-  --base-instance-name="{{user.base_name}}" \
-  --template="{{user.template_name}}" \
-  --size="{{user.size:-3}}" \
-  --region="{{user.region}}" \
-  --distribution-policy-zones="{{user.zone1}},{{user.zone2}}" \
-  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
-  --format="json"
-```
+| Step | Action | Description |
+|------|--------|-------------|
+| 1 | `gcloud compute instance-groups managed create` (zonal) | `--base-instance-name={{user.base_name}} --zone={{user.zone}} --size={{user.size:-3}}` |
+| 2 | `gcloud compute instance-groups managed create` (regional) | `--region={{user.region}} --distribution-policy-zones={{user.zone1}},{{user.zone2}}` |
 
 #### Post-execution Validation
 
-```bash
-gcloud compute instance-groups managed describe "{{user.mig_name}}" \
-  --zone="{{user.zone}}" \
-  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
-  --format="json" | jq '{name, targetSize, currentActions}'
-```
+`gcloud compute instance-groups managed describe "{{user.mig_name}}" --zone="{{user.zone}}" --project="{{env.CLOUDSDK_CORE_PROJECT}}" --format="json" | jq '{name, targetSize, currentActions}'`
 
 ---
 
 ### Operation: Create Disk
 
-#### Execution — CLI (`gcloud`)
+#### Execution (CLI — `gcloud`)
 
-```bash
-gcloud compute disks create "{{user.disk_name}}" \
-  --zone="{{user.zone}}" \
-  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
-  --size="{{user.disk_size:-100}}" \
-  --type="{{user.disk_type:-pd-balanced}}" \
-  --format="json"
-```
+Full command at [references/gcloud-usage.md](references/gcloud-usage.md) §Disks (Create): `gcloud compute disks create "{{user.disk_name}}" --zone="{{user.zone}}" --project="{{env.CLOUDSDK_CORE_PROJECT}}" --size="{{user.disk_size:-100}}" --type="{{user.disk_type:-pd-balanced}}" --format="json"`
 
 #### Post-execution Validation
 
-```bash
-gcloud compute disks describe "{{user.disk_name}}" \
-  --zone="{{user.zone}}" --format="json" | jq '{name, status, sizeGb, type}'
-```
+`gcloud compute disks describe "{{user.disk_name}}" --zone="{{user.zone}}" --format="json" | jq '{name, status, sizeGb, type}'`
 
 ---
 
 ### Operation: Attach Disk to Instance
 
-#### Execution — CLI (`gcloud`)
+#### Execution (CLI — `gcloud`)
 
-```bash
-gcloud compute instances attach-disk "{{user.instance_name}}" \
-  --disk="{{user.disk_name}}" \
-  --zone="{{user.zone}}" \
-  --device-name="{{user.device_name}}" \
-  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
-  --format="json"
-```
+Full command at [references/gcloud-usage.md](references/gcloud-usage.md) §Instances (Attach disk): `gcloud compute instances attach-disk "{{user.instance_name}}" --disk="{{user.disk_name}}" --zone="{{user.zone}}" --device-name="{{user.device_name}}" --project="{{env.CLOUDSDK_CORE_PROJECT}}" --format="json"`
 
 ---
 
@@ -683,22 +483,13 @@ gcloud compute instances attach-disk "{{user.instance_name}}" \
 - **MUST** warn: only expansion is supported; shrinking may cause data loss and requires backup first
 - **MUST** obtain explicit confirmation from user
 
-#### Execution — CLI (`gcloud`)
+#### Execution (CLI — `gcloud`)
 
-```bash
-gcloud compute disks resize "{{user.disk_name}}" \
-  --zone="{{user.zone}}" \
-  --size="{{user.new_size}}" \
-  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
-  --format="json"
-```
+Full command at [references/gcloud-usage.md](references/gcloud-usage.md) §Disks (Resize): `gcloud compute disks resize "{{user.disk_name}}" --zone="{{user.zone}}" --size="{{user.new_size}}" --project="{{env.CLOUDSDK_CORE_PROJECT}}" --format="json"`
 
 #### Post-execution Validation
 
-```bash
-gcloud compute disks describe "{{user.disk_name}}" \
-  --zone="{{user.zone}}" --format="json" | jq -r '.sizeGb'
-```
+`gcloud compute disks describe "{{user.disk_name}}" --zone="{{user.zone}}" --format="json" | jq -r '.sizeGb'`
 
 ---
 

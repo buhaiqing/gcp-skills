@@ -45,7 +45,7 @@ metadata:
 
 Google Cloud Load Balancing distributes traffic across backend resources — VM instances, managed instance groups (MIGs), NEGs, Cloud Storage buckets, and serverless services. Six LB types cover external HTTP(S), TCP/SSL proxy, TCP/UDP passthrough, and their internal equivalents. This skill is an **operational runbook** for agents: explicit scope, credential rules, pre-flight checks, **dual-path execution** (official **SDK/API** and **`gcloud`** CLI), response validation, and failure recovery.
 
-> **UX Compliance:** This skill follows the [User Experience Specification](../gcp-skill-generator/references/user-experience-spec.md). All operations include onboarding guidance, minimal prompts, smart defaults, clear feedback, and user-friendly error handling.
+> **UX Compliance:** This skill follows the User Experience Specification (gcp-skill-generator). All operations include onboarding guidance, minimal prompts, smart defaults, clear feedback, and user-friendly error handling.
 
 ### CLI applicability (repository policy)
 
@@ -61,7 +61,7 @@ Google Cloud Load Balancing distributes traffic across backend resources — VM 
 | 4 | **Complete Failure Strategies** | Error taxonomy table with ≥ 10 product-specific codes; HALT vs retry per error type |
 | 5 | **Absolute Single Responsibility** | One product (Load Balancing) with clear delegation to related skills (VPC, GCE, DNS) |
 
-Refer to the [meta-skill](../gcp-skill-generator/SKILL.md#five-core-standards-quality-gates) for detailed descriptions of each standard.
+Refer to the meta-skill (gcp-skill-generator) for detailed descriptions of each standard.
 
 ### Google Cloud Architecture Framework Integration
 
@@ -272,145 +272,30 @@ The recommended creation order:
 | IP version | `IPV4` | Universal client compatibility |
 | Protocol | `HTTPS` | Industry standard with TLS |
 
-#### Execution — Step 1: Create Health Check
+#### Execution (gcloud — full commands in `references/gcloud-usage.md`)
 
-```bash
-gcloud compute health-checks create http "{{user.health_check_name}}" \
-  --port="{{user.port:-80}}" \
-  --request-path="/" \
-  --check-interval="10" \
-  --timeout="5" \
-  --healthy-threshold="2" \
-  --unhealthy-threshold="3" \
-  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
-  --format="json"
-```
+| Step | Action | Description |
+|------|--------|-------------|
+| 1 | `gcloud compute health-checks create http` | HTTP health check (port `{{user.port:-80}}`, interval 10s, timeout 5s, 2/3 thresholds) |
+| 2 | `gcloud compute backend-services create` | Global HTTP backend service, attach health check, `--enable-cdn` |
+| 3 | `gcloud compute backend-services add-backend` | Add instance group (`--balancing-mode=UTILIZATION --max-utilization=0.8`) **or** NEG (`--network-endpoint-group`) |
+| 4 | `gcloud compute url-maps create` | URL map → default backend service |
+| 5 | `gcloud compute ssl-certificates create` | Managed cert for `{{user.domain_name}}` (provision 5–10 min) |
+| 6 | `gcloud compute target-https-proxies create` | Target proxy → url-map + cert + ssl-policy |
+| 7 | `gcloud compute forwarding-rules create` | Rule `{{user.lb_name}}-https-rule`, `--ports=443 --load-balancing-scheme=EXTERNAL_MANAGED` |
 
-#### Execution — Step 2: Create Backend Service
-
-```bash
-gcloud compute backend-services create "{{user.backend_service_name}}" \
-  --protocol="HTTP" \
-  --port-name="http" \
-  --health-checks="{{user.health_check_name}}" \
-  --timeout="30" \
-  --enable-cdn \
-  --global \
-  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
-  --format="json"
-```
-
-#### Execution — Step 3: Add Backend (Instance Group)
-
-```bash
-gcloud compute backend-services add-backend "{{user.backend_service_name}}" \
-  --instance-group="{{user.instance_group_name}}" \
-  --instance-group-zone="{{user.zone}}" \
-  --balancing-mode="UTILIZATION" \
-  --max-utilization="0.8" \
-  --capacity-scaler="1.0" \
-  --global \
-  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
-  --format="json"
-```
-
-**NEG backend alternative:**
-```bash
-gcloud compute backend-services add-backend "{{user.backend_service_name}}" \
-  --network-endpoint-group="{{user.neg_name}}" \
-  --network-endpoint-group-zone="{{user.zone}}" \
-  --global \
-  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
-  --format="json"
-```
-
-#### Execution — Step 4: Create URL Map
-
-```bash
-gcloud compute url-maps create "{{user.url_map_name}}" \
-  --default-service="{{user.backend_service_name}}" \
-  --global \
-  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
-  --format="json"
-```
-
-#### Execution — Step 5: Create Managed SSL Certificate
-
-```bash
-gcloud compute ssl-certificates create "{{user.certificate_name}}" \
-  --domains="{{user.domain_name}}" \
-  --global \
-  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
-  --format="json"
-```
-
-#### Execution — Step 6: Create Target HTTPS Proxy
-
-```bash
-gcloud compute target-https-proxies create "{{user.lb_name}}-https-proxy" \
-  --url-map="{{user.url_map_name}}" \
-  --ssl-certificates="{{user.certificate_name}}" \
-  --ssl-policy="{{user.ssl_policy_name:-modern-tls12-policy}}" \
-  --global \
-  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
-  --format="json"
-```
-
-#### Execution — Step 7: Create Forwarding Rule
-
-```bash
-gcloud compute forwarding-rules create "{{user.lb_name}}-https-rule" \
-  --load-balancing-scheme="EXTERNAL_MANAGED" \
-  --address="{{user.ip_address}}" \
-  --target-https-proxy="{{user.lb_name}}-https-proxy" \
-  --ports="443" \
-  --global \
-  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
-  --format="json"
-```
-
-#### Execution — Alternative: HTTP-only (no SSL)
-
-```bash
-# Skip SSL cert and target-https-proxy
-gcloud compute target-http-proxies create "{{user.lb_name}}-http-proxy" \
-  --url-map="{{user.url_map_name}}" \
-  --global \
-  --project="{{env.CLOUDSDK_CORE_PROJECT}}"
-
-gcloud compute forwarding-rules create "{{user.lb_name}}-http-rule" \
-  --load-balancing-scheme="EXTERNAL_MANAGED" \
-  --address="{{user.ip_address}}" \
-  --target-http-proxy="{{user.lb_name}}-http-proxy" \
-  --ports="80" \
-  --global \
-  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
-  --format="json"
-```
+**HTTP-only alternative:** skip steps 5–6; use `target-http-proxies create` + forwarding rule `--ports=80`.
 
 #### Post-execution Validation
 
 1. Describe forwarding rule to get assigned IP:
 ```bash
 gcloud compute forwarding-rules describe "{{user.lb_name}}-https-rule" \
-  --global \
-  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
-  --format="json" | jq '{name, IPAddress, IPProtocol, portRange, loadBalancingScheme}'
+  --global --project="{{env.CLOUDSDK_CORE_PROJECT}}" --format="json" \
+  | jq '{name, IPAddress, IPProtocol, portRange, loadBalancingScheme}'
 ```
-
-2. Verify backend health:
-```bash
-gcloud compute backend-services get-health "{{user.backend_service_name}}" \
-  --global \
-  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
-  --format="json"
-```
-
-3. Test LB endpoint (check HTTP response):
-```bash
-curl -sI "https://{{user.domain_name}}/" | head -5
-```
-
+2. Verify backend health: `gcloud compute backend-services get-health "{{user.backend_service_name}}" --global --format="json"`
+3. Test LB endpoint: `curl -sI "https://{{user.domain_name}}/" | head -5`
 4. On failure, go to **Failure Recovery**.
 
 #### Failure Recovery
@@ -439,45 +324,14 @@ curl -sI "https://{{user.domain_name}}/" | head -5
 | Region | `us-central1` | Default common region |
 | Network | `default` | Default VPC |
 
-#### Execution — CLI (`gcloud`)
+#### Execution (gcloud — full commands in `references/gcloud-usage.md`)
 
-```bash
-# 1. Health Check
-gcloud compute health-checks create tcp "{{user.health_check_name}}" \
-  --port="{{user.port:-80}}" \
-  --region="{{user.region}}" \
-  --project="{{env.CLOUDSDK_CORE_PROJECT}}"
-
-# 2. Backend Service (regional)
-gcloud compute backend-services create "{{user.backend_service_name}}" \
-  --protocol="TCP" \
-  --load-balancing-scheme="INTERNAL_MANAGED" \
-  --health-checks="{{user.health_check_name}}" \
-  --region="{{user.region}}" \
-  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
-  --format="json"
-
-# 3. Add Backend (MIG)
-gcloud compute backend-services add-backend "{{user.backend_service_name}}" \
-  --instance-group="{{user.instance_group_name}}" \
-  --instance-group-zone="{{user.zone}}" \
-  --region="{{user.region}}" \
-  --balancing-mode="CONNECTION" \
-  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
-  --format="json"
-
-# 4. Forwarding Rule (regional, internal)
-gcloud compute forwarding-rules create "{{user.lb_name}}-internal-rule" \
-  --load-balancing-scheme="INTERNAL_MANAGED" \
-  --backend-service="{{user.backend_service_name}}" \
-  --region="{{user.region}}" \
-  --ports="ALL" \
-  --network="default" \
-  --subnet="{{user.subnet}}" \
-  --ip-protocol="TCP" \
-  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
-  --format="json"
-```
+| Step | Action | Description |
+|------|--------|-------------|
+| 1 | `gcloud compute health-checks create tcp` | TCP health check, `--region={{user.region}}` |
+| 2 | `gcloud compute backend-services create` | Regional `INTERNAL_MANAGED` TCP service, attach health check |
+| 3 | `gcloud compute backend-services add-backend` | Add MIG (`--balancing-mode=CONNECTION`), `--region` |
+| 4 | `gcloud compute forwarding-rules create` | Rule `{{user.lb_name}}-internal-rule`, `--ports=ALL --network=default --subnet={{user.subnet}} --ip-protocol=TCP` |
 
 #### Post-execution Validation
 
@@ -491,38 +345,15 @@ gcloud compute forwarding-rules describe "{{user.lb_name}}-internal-rule" \
 
 ### Operation: Describe LB Resources
 
-#### Execution — CLI (`gcloud`)
+#### Execution (gcloud — full commands in `references/gcloud-usage.md`)
 
-```bash
-# Describe forwarding rule
-gcloud compute forwarding-rules describe "{{user.forwarding_rule_name}}" \
-  --global \
-  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
-  --format="json"
-
-# Describe backend service
-gcloud compute backend-services describe "{{user.backend_service_name}}" \
-  --global \
-  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
-  --format="json" | jq '{name, backends: [.backends[] | {group: (.group|split("/")[-1]), balancingMode, capacityScaler}], healthChecks, sessionAffinity, timeoutSec}'
-
-# Describe URL map
-gcloud compute url-maps describe "{{user.url_map_name}}" \
-  --global \
-  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
-  --format="json" | jq '{name, defaultService: (.defaultService|split("/")[-1]), hostRules: [.hostRules[] | {hosts, pathMatcher}], pathMatchers: [.pathMatchers[] | {name, defaultService: (.defaultService|split("/")[-1])}]}'
-
-# Describe health check
-gcloud compute health-checks describe "{{user.health_check_name}}" \
-  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
-  --format="json"
-
-# Describe NEG
-gcloud compute network-endpoint-groups describe "{{user.neg_name}}" \
-  --zone="{{user.zone}}" \
-  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
-  --format="json" | jq '{name, networkEndpointType, size, zone}'
-```
+| Resource | Action | JSON extraction |
+|----------|--------|----------------|
+| Forwarding rule | `gcloud compute forwarding-rules describe {{user.forwarding_rule_name}} --global` | `$.{name,IPAddress,IPProtocol,portRange,backendService,loadBalancingScheme}` |
+| Backend service | `gcloud compute backend-services describe {{user.backend_service_name}} --global` | `jq` → backends[group,balancingMode,capacityScaler], healthChecks, sessionAffinity, timeoutSec |
+| URL map | `gcloud compute url-maps describe {{user.url_map_name}} --global` | `jq` → defaultService, hostRules, pathMatchers |
+| Health check | `gcloud compute health-checks describe {{user.health_check_name}}` | full JSON |
+| NEG | `gcloud compute network-endpoint-groups describe {{user.neg_name}} --zone={{user.zone}}` | `jq` → name, networkEndpointType, size, zone |
 
 ---
 
@@ -536,22 +367,12 @@ gcloud compute network-endpoint-groups describe "{{user.neg_name}}" \
 - **SHOULD** suggest canary testing with weighted backend routing (`--path-rules` with multiple `backend=weight` pairs)
 - **MUST** obtain explicit user confirmation before applying routing changes
 
-#### Execution — CLI (`gcloud`)
+#### Execution (gcloud — full commands in `references/gcloud-usage.md`)
 
-```bash
-# Show current URL map first
-gcloud compute url-maps describe "{{user.url_map_name}}" \
-  --global --format="json" | jq '{name, defaultService, hostRules, pathMatchers}'
-
-# Add path matcher routing /api/* to specific backend service
-gcloud compute url-maps add-path-matcher "{{user.url_map_name}}" \
-  --default-service="{{user.backend_service_name}}" \
-  --path-matcher-name="api-matcher" \
-  --path-rules="/api={{user.api_backend_service_name}}" \
-  --global \
-  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
-  --format="json"
-```
+| Step | Action | Description |
+|------|--------|-------------|
+| 1 | `gcloud compute url-maps describe` | Show current map (`jq '{name, defaultService, hostRules, pathMatchers}'`) |
+| 2 | `gcloud compute url-maps add-path-matcher` | `--default-service={{user.backend_service_name}} --path-matcher-name=api-matcher --path-rules="/api={{user.api_backend_service_name}}" --global` |
 
 #### Post-execution Validation
 
@@ -564,27 +385,12 @@ gcloud compute url-maps describe "{{user.url_map_name}}" \
 
 ### Operation: Create NEG (Zonal)
 
-#### Execution — CLI (`gcloud`)
+#### Execution (gcloud — full commands in `references/gcloud-usage.md`)
 
-```bash
-# Zonal NEG for VM endpoints
-gcloud compute network-endpoint-groups create "{{user.neg_name}}" \
-  --network-endpoint-type="GCE_VM_IP_PORT" \
-  --zone="{{user.zone}}" \
-  --network="default" \
-  --subnet="{{user.subnet}}" \
-  --default-port="{{user.port:-80}}" \
-  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
-  --format="json"
-
-# Serverless NEG (for Cloud Run / Cloud Functions)
-gcloud compute network-endpoint-groups create "{{user.neg_name}}" \
-  --network-endpoint-type="SERVERLESS" \
-  --region="{{user.region}}" \
-  --cloud-run-service="{{user.cloud_run_service_name}}" \
-  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
-  --format="json"
-```
+| Type | Action | Key flags |
+|------|--------|-----------|
+| Zonal (VM) | `gcloud compute network-endpoint-groups create` | `--network-endpoint-type=GCE_VM_IP_PORT --zone={{user.zone}} --network=default --subnet={{user.subnet}} --default-port={{user.port:-80}}` |
+| Serverless | `gcloud compute network-endpoint-groups create` | `--network-endpoint-type=SERVERLESS --region={{user.region}} --cloud-run-service={{user.cloud_run_service_name}}` |
 
 ---
 
@@ -597,13 +403,10 @@ gcloud compute network-endpoint-groups create "{{user.neg_name}}" \
 - **MUST** confirm: `Proceed with delete of forwarding rule <name> (IP: <ip>)? This will drop all traffic. Confirm by typing the forwarding rule name:`
 - **SHOULD** ask: "Has traffic been redirected to another LB or DNS updated?" — suggest traffic draining before proceeding
 
-#### Execution — CLI (`gcloud`)
+#### Execution (gcloud — full command in `references/gcloud-usage.md`)
 
 ```bash
-gcloud compute forwarding-rules delete "{{user.forwarding_rule_name}}" \
-  --global \
-  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
-  --format="json"
+gcloud compute forwarding-rules delete "{{user.forwarding_rule_name}}" --global
 ```
 
 **Note:** Do NOT use `--quiet` — the pre-flight safety gate above provides interactive confirmation. `--quiet` would bypass it for any agent that copies the command directly.
@@ -627,13 +430,10 @@ gcloud compute forwarding-rules describe "{{user.forwarding_rule_name}}" \
 - **MUST** require the user to type the exact backend service name to confirm irreversible deletion
 - SHOULD check backends' dependent resources (MIG/NEG) exist independently
 
-#### Execution — CLI (`gcloud`)
+#### Execution (gcloud — full command in `references/gcloud-usage.md`)
 
 ```bash
-gcloud compute backend-services delete "{{user.backend_service_name}}" \
-  --global \
-  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
-  --format="json"
+gcloud compute backend-services delete "{{user.backend_service_name}}" --global
 ```
 
 ---
@@ -648,14 +448,11 @@ gcloud compute backend-services delete "{{user.backend_service_name}}" \
 | CAA record (if exists) | `dig +short {{user.domain_name%%.*}} CAA` | Contains `pki.goog` or absent | Warn — CAA must include `pki.goog` for Google CA |
 | LB IP provisioned | Pre-existing forwarding rule with static IP | LB IP matches DNS A record | HALT — create LB or reserve IP first |
 
-#### Execution — CLI (`gcloud`)
+#### Execution (gcloud — full command in `references/gcloud-usage.md`)
 
 ```bash
 gcloud compute ssl-certificates create "{{user.certificate_name}}" \
-  --domains="{{user.domain_name}}" \
-  --global \
-  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
-  --format="json"
+  --domains="{{user.domain_name}}" --global
 ```
 
 > **Async note:** Provisioning takes 5–10 minutes. Do NOT proceed to attach to target proxy until `FULLY_PROVISIONED`.
@@ -665,11 +462,8 @@ gcloud compute ssl-certificates create "{{user.certificate_name}}" \
 Google-managed certificates take 5-10 minutes to provision. Poll status:
 ```bash
 gcloud compute ssl-certificates describe "{{user.certificate_name}}" \
-  --global \
-  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
-  --format="json" | jq '{
-    name, 
-    type, 
+  --global --format="json" | jq '{
+    name, type,
     managed: {status: .managed.status, domains: .managed.domains, domainStatuses: .managed.domainStatuses}
   }'
 ```
@@ -681,7 +475,7 @@ On `FAILED` → check `.managed.domainStatuses` for specific domain errors.
 
 ## Prerequisites
 
-> **Self-Healing:** Installation flows include multi-path recovery per [enhanced-self-healing-framework.md](../gcp-skill-generator/references/enhanced-self-healing-framework.md). Each step has ≥ 3 error-handling strategies.
+> **Self-Healing:** Installation flows include multi-path recovery per the enhanced-self-healing-framework (gcp-skill-generator). Each step has ≥ 3 error-handling strategies.
 
 1. **Install gcloud CLI**:
    ```bash
@@ -757,7 +551,7 @@ On `FAILED` → check `.managed.domainStatuses` for specific domain errors.
 
 ## Quality Gate (GCL)
 
-> This skill implements the **Generator-Critic-Loop (GCL)** adversarial quality gate per `AGENTS.md §11`.
+> This skill implements the **Generator-Critic-Loop (GCL)** adversarial quality gate per the repo AGENTS.md §11.
 
 | Property | Value |
 |----------|-------|
@@ -800,9 +594,9 @@ SKILL.md has full flow; references do not repeat execution steps.
 
 ## See Also
 
-- **Meta-Skill**: [gcp-skill-generator](../gcp-skill-generator/SKILL.md)
-- **VPC**: [gcp-vpc-ops](../gcp-vpc-ops/SKILL.md) — Networking for internal LB
-- **GCE**: [gcp-gce-ops](../gcp-gce-ops/SKILL.md) — Instance groups and NEGs as backends
-- **DNS**: [gcp-dns-ops](../gcp-dns-ops/SKILL.md) — DNS records pointing at LB IP
-- **Monitoring**: [gcp-monitoring-ops](../gcp-monitoring-ops/SKILL.md) — Dashboards and alerts
-- **GCL Runner**: [gcp-gcl-runner-ops](../gcp-gcl-runner-ops/SKILL.md) — Execution quality gate
+- **Meta-Skill**: gcp-skill-generator
+- **VPC**: gcp-vpc-ops — Networking for internal LB
+- **GCE**: gcp-gce-ops — Instance groups and NEGs as backends
+- **DNS**: gcp-dns-ops — DNS records pointing at LB IP
+- **Monitoring**: gcp-monitoring-ops — Dashboards and alerts
+- **GCL Runner**: gcp-gcl-runner-ops — Execution quality gate

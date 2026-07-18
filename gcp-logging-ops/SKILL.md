@@ -41,7 +41,7 @@ metadata:
 
 Google Cloud Logging provides real-time log management and analysis with log buckets, views, sinks, metrics, and exclusions. This skill is an **operational runbook** for agents: explicit scope, credential rules, pre-flight checks, **dual-path execution** (official **SDK/API** and **`gcloud`** CLI), response validation, and failure recovery.
 
-> **UX Compliance:** This skill follows the [User Experience Specification](../gcp-skill-generator/references/user-experience-spec.md). All operations include onboarding guidance, minimal prompts, smart defaults, clear feedback, and user-friendly error handling.
+> **UX Compliance:** This skill follows the Agent Skill OpenSpec UX conventions. All operations include onboarding guidance, minimal prompts, smart defaults, clear feedback, and user-friendly error handling.
 
 ### CLI applicability (repository policy)
 
@@ -57,7 +57,7 @@ Google Cloud Logging provides real-time log management and analysis with log buc
 | 4 | **Complete Failure Strategies** | Error taxonomy table with ≥ 12 product-specific codes; HALT vs retry per error type |
 | 5 | **Absolute Single Responsibility** | One product (Cloud Logging) with clear delegation to related skills (Monitoring, BigQuery, Pub/Sub, Storage) |
 
-Refer to the [meta-skill](../gcp-skill-generator/SKILL.md#five-core-standards-quality-gates) for detailed descriptions of each standard.
+Refer to the Five Core Standards table above for the summary of each quality gate.
 
 ### Google Cloud Architecture Framework Integration
 
@@ -244,24 +244,15 @@ Every operation: **Pre-flight → Execute (gcloud + SDK/API) → Validate → Re
 
 #### Execution — CLI (`gcloud`) (Primary Path)
 
-```bash
-# Read recent error logs
-gcloud logging read "severity>=ERROR" \
-  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
-  --limit=50 \
-  --format="json"
+Full commands at [references/gcloud-usage.md](references/gcloud-usage.md) (Log Entries section).
 
-# Read logs with time range
-gcloud logging read "resource.type=gce_instance AND severity>=ERROR" \
-  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
-  --freshness="24h" \
-  --limit=50 \
-  --format="json"
+| Step | Action | Description |
+|------|--------|-------------|
+| 1 | `gcloud logging read "severity>=ERROR"` | Read recent error logs (add `--freshness`, `--limit`) |
+| 2 | `gcloud logging read "resource.type=gce_instance AND severity>=ERROR"` | Read with resource + time filter |
+| 3 | `gcloud logging tail` | Stream logs live |
 
-# Tail logs (streaming)
-gcloud logging tail \
-  --project="{{env.CLOUDSDK_CORE_PROJECT}}"
-```
+All commands use `--project="{{env.CLOUDSDK_CORE_PROJECT}}" --format="json"`.
 
 #### Execution — Python SDK (Primary Fallback)
 
@@ -278,41 +269,7 @@ Key steps:
 
 #### Execution — JIT Go SDK (Secondary Fallback)
 
-```go
-// main.go
-package main
-
-import (
-    "context"
-    "fmt"
-    "log"
-    "os"
-    "google.golang.org/api/option"
-    logging "cloud.google.com/go/logging/apiv2"
-    loggingpb "cloud.google.com/go/logging/apiv2/loggingpb"
-)
-
-func main() {
-    ctx := context.Background()
-    project := os.Getenv("CLOUDSDK_CORE_PROJECT")
-    client, err := logging.NewClient(ctx, option.WithCredentialsFile(os.Getenv("GOOGLE_APPLICATION_CREDENTIALS")))
-    if err != nil { log.Fatalf("NewClient: %v", err) }
-    defer client.Close()
-    req := &loggingpb.ListLogEntriesRequest{
-        ResourceNames: []string{fmt.Sprintf("projects/%s", project)},
-        Filter: "severity>=ERROR", PageSize: 50,
-    }
-    it := client.ListLogEntries(ctx, req)
-    for entry, err := it.Next(); err == nil; entry, err = it.Next() {
-        fmt.Printf("[%v] %s\n", entry.Timestamp, entry.LogName)
-    }
-}
-```
-
-Execute:
-```bash
-cd /tmp/gcp-sdk-workspace && go mod init sdk-script && go get cloud.google.com/go/logging/apiv2 && go run ./main.go
-```
+Full Go snippet at [assets/code-snippets/list_log_entries.go](assets/code-snippets/list_log_entries.go). Bootstrap per [references/integration.md](references/integration.md) §Go SDK.
 
 #### Present to User
 
@@ -357,24 +314,14 @@ cd /tmp/gcp-sdk-workspace && go mod init sdk-script && go get cloud.google.com/g
 
 #### Execution — CLI (`gcloud`) (Primary Path)
 
-```bash
-gcloud logging buckets create "{{user.log_bucket_name}}" \
-  --location="{{user.region:-global}}" \
-  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
-  --retention-days="{{user.retention_days:-30}}" \
-  --description="{{user.description}}" \
-  --format="json"
-```
+Full commands at [references/gcloud-usage.md](references/gcloud-usage.md) (Log Buckets section).
 
-**With CMEK:**
-```bash
-gcloud logging buckets create "{{user.log_bucket_name}}" \
-  --location="{{user.region:-global}}" \
-  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
-  --retention-days="{{user.retention_days:-30}}" \
-  --cmek-kms-key="{{user.cmek_key_name}}" \
-  --format="json"
-```
+| Step | Action | Description |
+|------|--------|-------------|
+| 1 | `gcloud logging buckets create NAME --location --retention-days` | Create bucket (defaults: `global`, `30`) |
+| 2 | `... --cmek-kms-key=KEY` | Variant with CMEK encryption |
+
+All commands use `--project="{{env.CLOUDSDK_CORE_PROJECT}}" --format="json"`.
 
 #### Execution — Python SDK (Primary Fallback)
 
@@ -387,12 +334,7 @@ Key steps:
 
 #### Post-execution Validation
 
-```bash
-gcloud logging buckets describe "{{user.log_bucket_name}}" \
-  --location="{{user.region:-global}}" \
-  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
-  --format="json" | jq '{name, retentionDays, lifecycleState, createTime}'
-```
+`gcloud logging buckets describe "{{user.log_bucket_name}}" --location="{{user.region:-global}}" --format="json" | jq '{name, retentionDays, lifecycleState, createTime}'`
 
 #### Failure Recovery
 
@@ -417,20 +359,17 @@ gcloud logging buckets describe "{{user.log_bucket_name}}" \
 
 #### Execution — CLI (`gcloud`)
 
-```bash
-gcloud logging buckets update "{{user.log_bucket_name}}" \
-  --location="{{user.region:-global}}" \
-  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
-  --retention-days="{{user.retention_days}}" \
-  --description="{{user.description}}" \
-  --format="json"
-```
+Full command at [references/gcloud-usage.md](references/gcloud-usage.md) (Log Buckets → Update).
+
+| Step | Action | Description |
+|------|--------|-------------|
+| 1 | `gcloud logging buckets update NAME --retention-days --description` | Update retention/description |
+
+Uses `--location="{{user.region:-global}}" --project="{{env.CLOUDSDK_CORE_PROJECT}}" --format="json"`.
 
 #### Post-execution Validation
 
-```bash
-gcloud logging buckets describe "{{user.log_bucket_name}}" --location="{{user.region:-global}}" --format="json"
-```
+`gcloud logging buckets describe "{{user.log_bucket_name}}" --location="{{user.region:-global}}" --format="json"`
 
 ---
 
@@ -445,24 +384,17 @@ gcloud logging buckets describe "{{user.log_bucket_name}}" --location="{{user.re
 
 #### Execution — CLI (`gcloud`)
 
-```bash
-gcloud logging views create "{{user.log_view_name}}" \
-  --bucket="{{user.log_bucket_name}}" \
-  --location="{{user.region:-global}}" \
-  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
-  --log-filter="{{user.filter_query}}" \
-  --description="{{user.description}}" \
-  --format="json"
-```
+Full command at [references/gcloud-usage.md](references/gcloud-usage.md) (Log Views → Create).
+
+| Step | Action | Description |
+|------|--------|-------------|
+| 1 | `gcloud logging views create NAME --bucket --log-filter` | Create view over bucket |
+
+Uses `--location="{{user.region:-global}}" --project="{{env.CLOUDSDK_CORE_PROJECT}}" --format="json"`.
 
 #### Post-execution Validation
 
-```bash
-gcloud logging views describe "{{user.log_view_name}}" \
-  --bucket="{{user.log_bucket_name}}" \
-  --location="{{user.region:-global}}" \
-  --format="json" | jq '{name, filter, description}'
-```
+`gcloud logging views describe "{{user.log_view_name}}" --bucket="{{user.log_bucket_name}}" --location="{{user.region:-global}}" --format="json" | jq '{name, filter, description}'`
 
 ---
 
@@ -474,13 +406,7 @@ gcloud logging views describe "{{user.log_view_name}}" \
 
 #### Execution — CLI (`gcloud`)
 
-```bash
-gcloud logging views delete "{{user.log_view_name}}" \
-  --bucket="{{user.log_bucket_name}}" \
-  --location="{{user.region:-global}}" \
-  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
-  --format="json"
-```
+`gcloud logging views delete "{{user.log_view_name}}" --bucket="{{user.log_bucket_name}}" --location="{{user.region:-global}}" --project="{{env.CLOUDSDK_CORE_PROJECT}}" --format="json"` (full map at [references/gcloud-usage.md](references/gcloud-usage.md) Log Views → Delete).
 
 ---
 
@@ -504,12 +430,7 @@ gcloud logging views delete "{{user.log_view_name}}" \
 
 #### Execution — CLI (`gcloud`)
 
-```bash
-gcloud logging buckets delete "{{user.log_bucket_name}}" \
-  --location="{{user.region:-global}}" \
-  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
-  --format="json"
-```
+`gcloud logging buckets delete "{{user.log_bucket_name}}" --location="{{user.region:-global}}" --project="{{env.CLOUDSDK_CORE_PROJECT}}" --format="json"` (full map at [references/gcloud-usage.md](references/gcloud-usage.md) Log Buckets → Delete).
 
 **Never use `--quiet` to bypass this safety gate.**
 
@@ -524,10 +445,7 @@ Key steps:
 
 #### Post-execution Validation
 
-```bash
-gcloud logging buckets describe "{{user.log_bucket_name}}" \
-  --location="{{user.region:-global}}" --quiet 2>&1 || echo "✅ Bucket confirmed deleted"
-```
+`gcloud logging buckets describe "{{user.log_bucket_name}}" --location="{{user.region:-global}}" --quiet 2>&1 || echo "✅ Bucket confirmed deleted"`
 
 ---
 
@@ -542,28 +460,15 @@ gcloud logging buckets describe "{{user.log_bucket_name}}" \
 
 #### Execution — CLI (`gcloud`) (Primary Path)
 
-```bash
-# Sink to BigQuery
-gcloud logging sinks create "{{user.sink_name}}" \
-  "bigquery.googleapis.com/projects/{{env.CLOUDSDK_CORE_PROJECT}}/datasets/{{user.destination_id}}" \
-  --log-filter="{{user.filter_query}}" \
-  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
-  --format="json"
+Full commands at [references/gcloud-usage.md](references/gcloud-usage.md) (Log Sinks → Create).
 
-# Sink to Cloud Storage
-gcloud logging sinks create "{{user.sink_name}}" \
-  "storage.googleapis.com/{{user.destination_id}}" \
-  --log-filter="{{user.filter_query}}" \
-  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
-  --format="json"
+| Step | Action | Description |
+|------|--------|-------------|
+| 1 | `gcloud logging sinks create NAME "bigquery.googleapis.com/.../datasets/ID"` | Sink to BigQuery |
+| 2 | `... "storage.googleapis.com/ID"` | Sink to Cloud Storage |
+| 3 | `... "pubsub.googleapis.com/.../topics/ID"` | Sink to Pub/Sub |
 
-# Sink to Pub/Sub
-gcloud logging sinks create "{{user.sink_name}}" \
-  "pubsub.googleapis.com/projects/{{env.CLOUDSDK_CORE_PROJECT}}/topics/{{user.destination_id}}" \
-  --log-filter="{{user.filter_query}}" \
-  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
-  --format="json"
-```
+All use `--log-filter="{{user.filter_query}}" --project="{{env.CLOUDSDK_CORE_PROJECT}}" --format="json"`.
 
 #### Execution — Python SDK (Primary Fallback)
 
@@ -578,14 +483,7 @@ Key steps:
 
 Grant the writer identity write access to the destination:
 
-```bash
-# Get writer identity
-WRITER_IDENTITY=$(gcloud logging sinks describe "{{user.sink_name}}" \
-  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
-  --format="json" | jq -r '.writerIdentity')
-
-echo "Grant access to: $WRITER_IDENTITY"
-```
+`WRITER_IDENTITY=$(gcloud logging sinks describe "{{user.sink_name}}" --project="{{env.CLOUDSDK_CORE_PROJECT}}" --format="json" | jq -r '.writerIdentity')` — then grant `WRITER_IDENTITY` write access to the destination.
 
 #### Failure Recovery
 
@@ -614,17 +512,12 @@ echo "Grant access to: $WRITER_IDENTITY"
 
 #### Execution — CLI (`gcloud`)
 
-```bash
-# Show sink details before deletion
-gcloud logging sinks describe "{{user.sink_name}}" \
-  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
-  --format="json" | jq '{name, destination, filter, writerIdentity}'
+| Step | Action | Description |
+|------|--------|-------------|
+| 1 | `gcloud logging sinks describe NAME` | Show `name, destination, filter, writerIdentity` before delete |
+| 2 | `gcloud logging sinks delete NAME` | Delete sink (stops export) |
 
-# Delete
-gcloud logging sinks delete "{{user.sink_name}}" \
-  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
-  --format="json"
-```
+Both use `--project="{{env.CLOUDSDK_CORE_PROJECT}}" --format="json"` (full map at [references/gcloud-usage.md](references/gcloud-usage.md) Log Sinks → Delete).
 
 ---
 
@@ -639,23 +532,14 @@ gcloud logging sinks delete "{{user.sink_name}}" \
 
 #### Execution — CLI (`gcloud`) (Primary Path)
 
-```bash
-# Counter metric
-gcloud logging metrics create "{{user.metric_name}}" \
-  --description="{{user.description}}" \
-  --log-filter="{{user.filter_query}}" \
-  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
-  --format="json"
+Full commands at [references/gcloud-usage.md](references/gcloud-usage.md) (Log-Based Metrics → Create).
 
-# Distribution metric (with label extractor)
-gcloud logging metrics create "{{user.metric_name}}" \
-  --description="{{user.description}}" \
-  --log-filter="{{user.filter_query}}" \
-  --label-extractor="response_code=jsonPayload.status" \
-  --bucket-values="0,100,200,300,400,500" \
-  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
-  --format="json"
-```
+| Step | Action | Description |
+|------|--------|-------------|
+| 1 | `gcloud logging metrics create NAME --log-filter --description` | Counter metric |
+| 2 | `... --label-extractor="response_code=jsonPayload.status" --bucket-values="0,100,...,500"` | Distribution metric |
+
+All use `--project="{{env.CLOUDSDK_CORE_PROJECT}}" --format="json"`.
 
 #### Execution — Python SDK (Primary Fallback)
 
@@ -668,11 +552,7 @@ Key steps:
 
 #### Post-execution Validation
 
-```bash
-gcloud logging metrics describe "{{user.metric_name}}" \
-  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
-  --format="json" | jq '{name, filter, description, createTime}'
-```
+`gcloud logging metrics describe "{{user.metric_name}}" --project="{{env.CLOUDSDK_CORE_PROJECT}}" --format="json" | jq '{name, filter, description, createTime}'`
 
 ---
 
@@ -684,11 +564,7 @@ gcloud logging metrics describe "{{user.metric_name}}" \
 
 #### Execution — CLI (`gcloud`)
 
-```bash
-gcloud logging metrics delete "{{user.metric_name}}" \
-  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
-  --format="json"
-```
+`gcloud logging metrics delete "{{user.metric_name}}" --project="{{env.CLOUDSDK_CORE_PROJECT}}" --format="json"` (full map at [references/gcloud-usage.md](references/gcloud-usage.md) Log-Based Metrics → Delete).
 
 ---
 
@@ -703,21 +579,11 @@ gcloud logging metrics delete "{{user.metric_name}}" \
 
 #### Execution — CLI (`gcloud`)
 
-```bash
-gcloud logging exclusions create "{{user.exclusion_name}}" \
-  --log-filter="{{user.filter_query}}" \
-  --description="{{user.description}}" \
-  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
-  --format="json"
-```
+`gcloud logging exclusions create "{{user.exclusion_name}}" --log-filter="{{user.filter_query}}" --description="{{user.description}}" --project="{{env.CLOUDSDK_CORE_PROJECT}}" --format="json"` (full map at [references/gcloud-usage.md](references/gcloud-usage.md) Log Exclusions → Create).
 
 #### Post-execution Validation
 
-```bash
-gcloud logging exclusions describe "{{user.exclusion_name}}" \
-  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
-  --format="json" | jq '{name, filter, description, createTime}'
-```
+`gcloud logging exclusions describe "{{user.exclusion_name}}" --project="{{env.CLOUDSDK_CORE_PROJECT}}" --format="json" | jq '{name, filter, description, createTime}'`
 
 ---
 
@@ -729,17 +595,13 @@ gcloud logging exclusions describe "{{user.exclusion_name}}" \
 
 #### Execution — CLI (`gcloud`)
 
-```bash
-gcloud logging exclusions delete "{{user.exclusion_name}}" \
-  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
-  --format="json"
-```
+`gcloud logging exclusions delete "{{user.exclusion_name}}" --project="{{env.CLOUDSDK_CORE_PROJECT}}" --format="json"` (full map at [references/gcloud-usage.md](references/gcloud-usage.md) Log Exclusions → Delete).
 
 ---
 
 ## Prerequisites
 
-> **Self-Healing:** Installation flows include multi-path recovery per [enhanced-self-healing-framework.md](../gcp-skill-generator/references/enhanced-self-healing-framework.md).
+> **Self-Healing:** Installation flows include multi-path recovery (gcloud install → Go bootstrap → Python SDK fallback).
 
 1. **Install gcloud CLI** (primary execution path):
    ```bash
@@ -811,7 +673,7 @@ gcloud logging exclusions delete "{{user.exclusion_name}}" \
 
 ## Quality Gate (GCL)
 
-> This skill implements the **Generator-Critic-Loop (GCL)** adversarial quality gate per `AGENTS.md §11`.
+> This skill implements the **Generator-Critic-Loop (GCL)** adversarial quality gate: an independent Critic scores each destructive operation against a quantified rubric (Correctness, Safety, Idempotency, Traceability, Spec Compliance, Factual Accuracy). Safety=0 → ABORT.
 
 | Property | Value |
 |----------|-------|
@@ -848,8 +710,7 @@ SKILL.md has full flow; references do not repeat SKILL.md content.
 
 ## See Also
 
-- **Meta-Skill**: [gcp-skill-generator](../gcp-skill-generator/SKILL.md)
-- **Monitoring**: [gcp-monitoring-ops](../gcp-monitoring-ops/SKILL.md) — Dashboards and alerts
-- **IAM**: [gcp-iam-ops](../gcp-iam-ops/SKILL.md) — Service accounts and permissions
-- **BigQuery**: [gcp-bigquery-ops](../gcp-bigquery-ops/SKILL.md) — Log export destination
-- **GCL Runner**: [gcp-gcl-runner-ops](../gcp-gcl-runner-ops/SKILL.md) — Execution quality gate
+- **Monitoring**: delegate log-based alerting to `gcp-monitoring-ops`
+- **IAM**: delegate service-account/permission tasks to `gcp-iam-ops`
+- **BigQuery**: delegate dataset management (log export destination) to `gcp-bigquery-ops`
+- **GCL Runner**: cross-skill Generator-Critic-Loop execution runner

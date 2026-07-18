@@ -278,19 +278,12 @@ Every operation: **Pre-flight → Execute (gcloud and SDK/API) → Validate → 
 
 ### Operation: Describe / List VPC Networks
 
-**List all networks:**
-```bash
-gcloud compute networks list \
-  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
-  --format="json"
-```
+| Step | Action | Description |
+|------|--------|-------------|
+| 1 | `gcloud compute networks list` | List all networks in project |
+| 2 | `gcloud compute networks describe` | Describe `{{user.network_name}}`; extract `name, selfLink, autoCreateSubnetworks, routingConfig, subnetworks` |
 
-**Describe a specific network:**
-```bash
-gcloud compute networks describe "{{user.network_name}}" \
-  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
-  --format="json" | jq '{name, selfLink, autoCreateSubnetworks, routingConfig, subnetworks}'
-```
+Full command + flags at [references/gcloud-usage.md](references/gcloud-usage.md).
 
 ### Operation: Create VPC Network
 
@@ -309,43 +302,15 @@ gcloud compute networks describe "{{user.network_name}}" \
 | Network name uniqueness | `gcloud compute networks describe "{{user.network_name}}" --format="json"` | NOT_FOUND | HALT; name already exists |
 | CIDR plan (custom-mode) | User provides subnet CIDR ranges | Non-overlapping valid CIDR | HALT; correct before proceeding |
 
-#### Execution — CLI (`gcloud`)
+#### Execution
 
-**Create auto-mode VPC network:**
-```bash
-gcloud compute networks create "{{user.network_name}}" \
-  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
-  --subnet-mode=auto \
-  --bgp-routing-mode=regional \
-  --format="json"
-```
+| Step | Action | Description |
+|------|--------|-------------|
+| 1 | `gcloud compute networks create` | Create network with `--subnet-mode` (auto/custom) + `--bgp-routing-mode` (regional/global) |
+| 2 | Python SDK fallback | `compute_v1.NetworksClient().insert(...)` — full script at [assets/code-snippets/create_network.py](assets/code-snippets/create_network.py) |
+| 3 | Go SDK fallback | `compute.NewNetworksRESTClient().Insert(...)` — full script at [assets/code-snippets/create_network.go](assets/code-snippets/create_network.go) |
 
-**Create custom-mode VPC network:**
-```bash
-gcloud compute networks create "{{user.network_name}}" \
-  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
-  --subnet-mode=custom \
-  --bgp-routing-mode=global \
-  --format="json"
-```
-
-#### Execution — Python SDK (Primary Fallback)
-
-Full script at [assets/code-snippets/create_network.py](assets/code-snippets/create_network.py)
-
-Key steps:
-1. Create client: `compute_v1.NetworksClient()`
-2. Configure network: `compute_v1.Network(name=..., auto_create_subnetworks=False)`
-3. Insert: `client.insert(project=..., network_resource=...)`
-
-#### Execution — JIT Go SDK (Secondary Fallback)
-
-Full script at [assets/code-snippets/create_network.go](assets/code-snippets/create_network.go)
-
-Key steps:
-1. Create client: `compute.NewNetworksRESTClient(ctx, ...)`
-2. Configure network: `computepb.InsertNetworkRequest{...}`
-3. Insert: `client.Insert(ctx, req)`
+Full command + flags at [references/gcloud-usage.md](references/gcloud-usage.md).
 
 #### Post-execution Validation
 
@@ -390,13 +355,13 @@ Prerequisites that MUST be resolved before deletion:
 To proceed, type the network name: _______________
 ```
 
-#### Execution — CLI (`gcloud`)
+#### Execution
 
-```bash
-gcloud compute networks delete "{{user.network_name}}" \
-  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
-  --quiet
-```
+| Step | Action | Description |
+|------|--------|-------------|
+| 1 | `gcloud compute networks delete` | Delete `{{user.network_name}}` with `--quiet` (only after Safety Gate passes) |
+
+Full command + flags at [references/gcloud-usage.md](references/gcloud-usage.md).
 
 #### Post-execution Validation
 
@@ -434,14 +399,13 @@ All VMs and resources using this subnet will lose connectivity.
 To proceed, type the subnet name: _______________
 ```
 
-#### Execution — CLI (`gcloud`)
+#### Execution
 
-```bash
-gcloud compute networks subnets delete "{{user.subnet_name}}" \
-  --region="{{user.region}}" \
-  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
-  --quiet
-```
+| Step | Action | Description |
+|------|--------|-------------|
+| 1 | `gcloud compute networks subnets delete` | Delete `{{user.subnet_name}}` in `{{user.region}}` with `--quiet` (only after Safety Gate passes) |
+
+Full command + flags at [references/gcloud-usage.md](references/gcloud-usage.md).
 
 #### Failure Recovery
 
@@ -453,21 +417,12 @@ gcloud compute networks subnets delete "{{user.subnet_name}}" \
 
 ### Operation: Describe / List Subnets
 
-**List all subnets in a network:**
-```bash
-gcloud compute networks subnets list \
-  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
-  --network="{{user.network_name}}" \
-  --format="json"
-```
+| Step | Action | Description |
+|------|--------|-------------|
+| 1 | `gcloud compute networks subnets list` | List subnets in `{{user.network_name}}` |
+| 2 | `gcloud compute networks subnets describe` | Describe `{{user.subnet_name}}`; extract `name, ipCidrRange, gatewayAddress, network, privateIpGoogleAccess, enableFlowLogs` |
 
-**Describe a specific subnet:**
-```bash
-gcloud compute networks subnets describe "{{user.subnet_name}}" \
-  --region="{{user.region}}" \
-  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
-  --format="json" | jq '{name, ipCidrRange, gatewayAddress, network, privateIpGoogleAccess, enableFlowLogs}'
-```
+Full command + flags at [references/gcloud-usage.md](references/gcloud-usage.md).
 
 ### Operation: Create Subnet
 
@@ -488,18 +443,13 @@ gcloud compute networks subnets describe "{{user.subnet_name}}" \
 | CIDR overlap | Check existing subnets in region | Non-overlapping | HALT; choose non-conflicting CIDR |
 | Subnet name uniqueness | `gcloud compute networks subnets describe "{{user.subnet_name}}" --region="{{user.region}}"` | NOT_FOUND | HALT; name already exists |
 
-#### Execution — CLI (`gcloud`)
+#### Execution
 
-```bash
-gcloud compute networks subnets create "{{user.subnet_name}}" \
-  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
-  --network="{{user.network_name}}" \
-  --region="{{user.region}}" \
-  --range="{{user.subnet_cidr}}" \
-  --private-ip-google-access \
-  --enable-flow-logs \
-  --format="json"
-```
+| Step | Action | Description |
+|------|--------|-------------|
+| 1 | `gcloud compute networks subnets create` | Create `{{user.subnet_name}}` in `{{user.region}}` with `--range={{user.subnet_cidr}}`, `--private-ip-google-access`, `--enable-flow-logs` |
+
+Full command + flags at [references/gcloud-usage.md](references/gcloud-usage.md).
 
 #### Post-execution Validation
 
@@ -520,57 +470,30 @@ gcloud compute networks subnets describe "{{user.subnet_name}}" \
 | Rule name uniqueness | `gcloud compute firewall-rules describe "{{user.firewall_rule_name}}"` | NOT_FOUND | HALT; name already exists |
 | Rule validation | Check priority (0-65535), source CIDR validity | Valid | HALT; fix invalid params |
 
-#### Execution — CLI (`gcloud`)
+#### Execution
 
-```bash
-# Allow SSH (port 22) from specific CIDR
-gcloud compute firewall-rules create "{{user.firewall_rule_name}}" \
-  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
-  --network="{{user.network_name}}" \
-  --direction=INGRESS \
-  --priority=1000 \
-  --source-ranges="{{user.source_cidr}}" \
-  --target-tags=ssh-allowed \
-  --allow=tcp:22 \
-  --format="json"
-```
+| Step | Action | Description |
+|------|--------|-------------|
+| 1 | `gcloud compute firewall-rules create` | Create `{{user.firewall_rule_name}}` with `--direction` (INGRESS/EGRESS), `--priority`, `--source-ranges`/`--destination-ranges`, `--allow`/`--action` |
+| 2 | Common variants | Allow web: `--allow=tcp:80,tcp:443 --source-ranges=0.0.0.0/0`; Deny egress: `--direction=EGRESS --action=DENY --rules=all` |
 
-**More examples:**
-```bash
-# Allow HTTP/HTTPS from anywhere
-gcloud compute firewall-rules create "allow-web" \
-  --network="default" \
-  --direction=INGRESS \
-  --priority=1000 \
-  --source-ranges=0.0.0.0/0 \
-  --allow=tcp:80,tcp:443
-
-# Deny all egress to specific CIDR
-gcloud compute firewall-rules create "deny-malicious-egress" \
-  --network="default" \
-  --direction=EGRESS \
-  --priority=100 \
-  --destination-ranges="203.0.113.0/24" \
-  --action=DENY \
-  --rules=all
-```
+Full command + flags at [references/gcloud-usage.md](references/gcloud-usage.md).
 
 #### Post-execution Validation
 
-```bash
-gcloud compute firewall-rules describe "{{user.firewall_rule_name}}" \
-  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
-  --format="json" | jq '{name, network, direction, priority, sourceRanges, allowed}'
-```
+| Step | Action | Description |
+|------|--------|-------------|
+| 1 | `gcloud compute firewall-rules describe` | Extract `name, network, direction, priority, sourceRanges, allowed` |
+
+Full command + flags at [references/gcloud-usage.md](references/gcloud-usage.md).
 
 ### Operation: Update Firewall Rule
 
-```bash
-gcloud compute firewall-rules update "{{user.firewall_rule_name}}" \
-  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
-  --source-ranges="{{user.source_cidr}}" \
-  --format="json"
-```
+| Step | Action | Description |
+|------|--------|-------------|
+| 1 | `gcloud compute firewall-rules update` | Update `{{user.firewall_rule_name}}` (e.g. `--source-ranges={{user.source_cidr}}`) |
+
+Full command + flags at [references/gcloud-usage.md](references/gcloud-usage.md).
 
 ### Operation: Delete Firewall Rule (Safety Gate)
 
@@ -583,37 +506,22 @@ Deleting it may open or close access to resources.
 To proceed, type the rule name: _______________
 ```
 
-#### Execution — CLI (`gcloud`)
+#### Execution
 
-```bash
-gcloud compute firewall-rules delete "{{user.firewall_rule_name}}" \
-  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
-  --quiet
-```
+| Step | Action | Description |
+|------|--------|-------------|
+| 1 | `gcloud compute firewall-rules delete` | Delete `{{user.firewall_rule_name}}` with `--quiet` (only after Safety Gate passes) |
+
+Full command + flags at [references/gcloud-usage.md](references/gcloud-usage.md).
 
 ### Operation: List / Describe Routes
 
-**List routes:**
-```bash
-gcloud compute routes list \
-  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
-  --format="json"
-```
+| Step | Action | Description |
+|------|--------|-------------|
+| 1 | `gcloud compute routes list` | List all routes; add `--filter="network:{{user.network_name}}"` to scope |
+| 2 | `gcloud compute routes describe` | Describe `{{user.route_name}}` |
 
-**Filter by network:**
-```bash
-gcloud compute routes list \
-  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
-  --filter="network:{{user.network_name}}" \
-  --format="json"
-```
-
-**Describe route:**
-```bash
-gcloud compute routes describe "{{user.route_name}}" \
-  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
-  --format="json"
-```
+Full command + flags at [references/gcloud-usage.md](references/gcloud-usage.md).
 
 **JSON response structure:**
 ```json
@@ -650,62 +558,17 @@ gcloud compute routes describe "{{user.route_name}}" \
 | Destination CIDR overlap | Check with existing subnets | No overlap with local subnet | WARING; potential routing issues |
 | Admin role check | `gcloud projects get-iam-policy` | Has role | HALT; insufficient permissions |
 
-#### Execution — CLI (`gcloud`)
+#### Execution
 
-**Create route with default gateway:**
-```bash
-gcloud compute routes create "{{user.route_name}}" \
-  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
-  --network "{{user.network_name}}" \
-  --destination-range="{{user.destination_range}}" \
-  --next-hop-gateway=default-internet-gateway \
-  --priority={{user.priority | default(1000)}} \
-  --format="json"
-```
+| Step | Action | Description |
+|------|--------|-------------|
+| 1 | `gcloud compute routes create` (default gateway) | `--next-hop-gateway=default-internet-gateway` |
+| 2 | `gcloud compute routes create` (to VM) | `--next-hop-instance={{user.zone}}/{{user.instance_name}} --tags={{user.tags \| default('routes')}}` |
+| 3 | `gcloud compute routes create` (to VPN) | `--next-hop-vpn-tunnel={{user.vpn_tunnel_name}} --tags={{user.tags \| default('routes')}}` |
+| 4 | `gcloud compute routes create` (to IP) | `--next-hop-ip={{user.next_hop_ip}}` |
+| 5 | Python SDK fallback | `compute_v1.RoutesClient().insert(...)` — full script at [assets/code-snippets/create_route.py](assets/code-snippets/create_route.py) |
 
-**Create route to VM instance:**
-```bash
-gcloud compute routes create "{{user.route_name}}" \
-  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
-  --network "{{user.network_name}}" \
-  --destination-range="{{user.destination_range}}" \
-  --next-hop-instance="{{user.zone}}/{{user.instance_name}}" \
-  --priority={{user.priority | default(1000)}} \
-  --tags={{user.tags | default('routes')}} \
-  --format="json"
-```
-
-**Create route to VPN tunnel:**
-```bash
-gcloud compute routes create "{{user.route_name}}" \
-  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
-  --network "{{user.network_name}}" \
-  --destination-range="{{user.destination_range}}" \
-  --next-hop-vpn-tunnel="{{user.vpn_tunnel_name}}" \
-  --priority={{user.priority | default(1000)}} \
-  --tags={{user.tags | default('routes')}} \
-  --format="json"
-```
-
-**Create route to specific IP:**
-```bash
-gcloud compute routes create "{{user.route_name}}" \
-  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
-  --network "{{user.network_name}}" \
-  --destination-range="{{user.destination_range}}" \
-  --next-hop-ip="{{user.next_hop_ip}}" \
-  --priority={{user.priority | default(1000)}} \
-  --format="json"
-```
-
-#### Execution — Python SDK (Primary Fallback)
-
-Full script at [assets/code-snippets/create_route.py](assets/code-snippets/create_route.py)
-
-Key steps:
-1. Create client: `compute_v1.RoutesClient()`
-2. Configure route: `types.Route(name=..., destination_range=..., priority=..., network=...)`
-3. Insert: `route_client.insert(project=..., route_resource=...)`
+All variants use `--network {{user.network_name}} --destination-range={{user.destination_range}} --priority={{user.priority | default(1000)}}`. Full command + flags at [references/gcloud-usage.md](references/gcloud-usage.md).
 
 #### Post-execution Validation
 
@@ -740,29 +603,15 @@ Key steps:
 | Verify no critical dependencies | Review route `nextHopGateway`, `nextHopInstance`, `nextHopVpnTunnel` | No VMs/VPN tunnels depend on this route | HALT; confirm no dependent resources |
 | Confirmation | User provides route name again | User confirms deletion | HALT; no confirmation |
 
-#### Execution — CLI (`gcloud`)
+#### Execution
 
-**Delete route with confirmation:**
-```bash
-# Step 1: Confirm route exists and show details
-gcloud compute routes describe "{{user.route_name}}" \
-  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
-  --format="json" | \
-  jq '{name, destination_range, next_hop_gateway, next_hop_instance, next_hop_vpn_tunnel}'
+| Step | Action | Description |
+|------|--------|-------------|
+| 1 | `gcloud compute routes describe` | Confirm route exists; extract `name, destination_range, next_hop_*` |
+| 2 | `gcloud compute routes delete` | Delete `{{user.route_name}}` with `--quiet` (only after Safety Gate passes) |
+| 3 | Python SDK fallback | `route_client.get(...)` then `route_client.delete(...)` — full script at [assets/code-snippets/delete_route.py](assets/code-snippets/delete_route.py) |
 
-# Step 2: Delete route (user must confirm)
-gcloud compute routes delete "{{user.route_name}}" \
-  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
-  --quiet
-```
-
-**Delete route via Python SDK:**
-
-Full script at [assets/code-snippets/delete_route.py](assets/code-snippets/delete_route.py)
-
-Key steps:
-1. Get route details: `route_client.get(project=..., route=...)`
-2. Delete: `route_client.delete(project=..., route=...)`
+Full command + flags at [references/gcloud-usage.md](references/gcloud-usage.md).
 
 #### Post-execution Validation
 
@@ -782,31 +631,12 @@ Key steps:
 
 ### Operation: Describe / List VPN Tunnels
 
-**List VPN tunnels:**
-```bash
-gcloud compute vpn-tunnels list \
-  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
-  --region="{{user.region}}" \
-  --format="json"
-```
+| Step | Action | Description |
+|------|--------|-------------|
+| 1 | `gcloud compute vpn-tunnels list` | List tunnels in `{{user.region}}`; add `--filter="vpnGateway:{{user.vpn_gateway_name}}"` to scope |
+| 2 | `gcloud compute vpn-tunnels describe` | Describe `{{user.vpn_tunnel_name}}`; extract `name, selfLink, targetVpnGateway, peerIp, ikeVersion, sharedSecret (masked), status` |
 
-**Filter by VPN gateway:**
-```bash
-gcloud compute vpn-tunnels list \
-  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
-  --region="{{user.region}}" \
-  --filter="vpnGateway:{{user.vpn_gateway_name}}" \
-  --format="json"
-```
-
-**Describe a specific VPN tunnel:**
-```bash
-gcloud compute vpn-tunnels describe "{{user.vpn_tunnel_name}}" \
-  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
-  --region="{{user.region}}" \
-  --format="json" | \
-  jq '{name, selfLink, targetVpnGateway, peerIp, ikeVersion, sharedSecret: (.sharedSecret | .[0:4] + "****"), status}'
-```
+Full command + flags at [references/gcloud-usage.md](references/gcloud-usage.md).
 
 **JSON response structure:**
 ```json
@@ -838,52 +668,17 @@ gcloud compute vpn-tunnels describe "{{user.vpn_tunnel_name}}" \
 | IKE version compatibility | IKEv1 and IKEv2 must match on both sides | Same version | HALT; align with peer |
 | IAM role | SA has `roles/compute.networkAdmin` | Has role | HALT; insufficient permissions |
 
-#### Execution — CLI (`gcloud`)
+#### Execution
 
-**Create VPN gateway:**
-```bash
-gcloud compute vpn-gateways create "{{user.vpn_gateway_name}}" \
-  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
-  --region="{{user.region}}" \
-  --network="{{user.network_name}}" \
-  --format="json"
-```
+| Step | Action | Description |
+|------|--------|-------------|
+| 1 | `gcloud compute vpn-gateways create` | Create `{{user.vpn_gateway_name}}` in `{{user.region}}` on `{{user.network_name}}` |
+| 2 | `gcloud compute vpn-tunnels create` | Create `{{user.vpn_tunnel_name}}` with `--peer-address`, `--shared-secret`, `--ike-version={{user.ike_version \| default(2)}}`, `--router` |
+| 3 | HA VPN (failover) | Create `{{user.vpn_tunnel_name}}-secondary` with `--peer-address={{user.peer_gateway_ip_secondary}}` |
 
-**Create VPN tunnel:**
-```bash
-# SECURITY: Generate a secure shared secret
-SHARED_SECRET=$(openssl rand -base64 24)
+> **SECURITY:** Generate the shared secret securely: `SHARED_SECRET=$(openssl rand -base64 24)`. Print and save it immediately — it cannot be recovered after creation. Never log the secret value.
 
-gcloud compute vpn-tunnels create "{{user.vpn_tunnel_name}}" \
-  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
-  --region="{{user.region}}" \
-  --vpn-gateway="{{user.vpn_gateway_name}}" \
-  --peer-address="{{user.peer_gateway_ip}}" \
-  --shared-secret="$SHARED_SECRET" \
-  --ike-version={{user.ike_version | default(2)}} \
-  --router="{{user.router_name}}" \
-  --format="json"
-
-echo "======================================"
-echo "SHARED_SECRET: ${SHARED_SECRET}"
-echo "Save this now - cannot be recovered"
-echo "======================================"
-```
-
-**Create dual VPN tunneled configuration (HA VPN):**
-```bash
-# Create second tunnel (failover)
-SHARED_SECRET_SECOND=$(openssl rand -base64 24)
-
-gcloud compute vpn-tunnels create "{{user.vpn_tunnel_name}}-secondary" \
-  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
-  --region="{{user.region}}" \
-  --vpn-gateway="{{user.vpn_gateway_name}}" \
-  --peer-address="{{user.peer_gateway_ip_secondary}}" \
-  --shared-secret="$SHARED_SECRET_SECOND" \
-  --ike-version={{user.ike_version | default(2)}} \
-  --router="{{user.router_name}}"
-```
+Full command + flags at [references/gcloud-usage.md](references/gcloud-usage.md).
 
 #### Post-execution Validation
 
@@ -917,39 +712,16 @@ gcloud compute vpn-tunnels create "{{user.vpn_tunnel_name}}-secondary" \
 | Peer configuration | Verify peer network has matching tunnel | Peer will also delete | Confirm peer action |
 | Confirmation | User explicitly confirms | User confirms deletion | HALT; no confirmation |
 
-#### Execution — CLI (`gcloud`)
+#### Execution
 
-**Delete VPN tunnel:**
-```bash
-# Step 1: Show tunnel details before deletion
-gcloud compute vpn-tunnels describe "{{user.vpn_tunnel_name}}" \
-  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
-  --region="{{user.region}}" \
-  --format="json" | \
-  jq '{name, targetVpnGateway, peerIpAddress, status}'
+| Step | Action | Description |
+|------|--------|-------------|
+| 1 | `gcloud compute vpn-tunnels describe` | Show `{{user.vpn_tunnel_name}}` details (`name, targetVpnGateway, peerIpAddress, status`) before deletion |
+| 2 | Confirm | User must type `CONFIRM DELETE` to proceed |
+| 3 | `gcloud compute vpn-tunnels delete` | Delete with `--quiet` (only after Safety Gate passes) |
+| 4 | Python SDK fallback | `tunnel_client.get(...)` then `tunnel_client.delete(...)` — full script at [assets/code-snippets/delete_vpn_tunnel.py](assets/code-snippets/delete_vpn_tunnel.py) |
 
-# Step 2: Confirm deletion
-# User must type "CONFIRM DELETE" to proceed
-read -p "Type 'CONFIRM DELETE' to proceed: " confirm
-
-if [ "$confirm" = "CONFIRM DELETE" ]; then
-  gcloud compute vpn-tunnels delete "{{user.vpn_tunnel_name}}" \
-    --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
-    --region="{{user.region}}" \
-    --quiet
-  echo "✅ VPN tunnel {{user.vpn_tunnel_name}} deleted"
-else
-  echo "❌ Deletion cancelled"
-fi
-```
-
-**Delete via Python SDK:**
-
-Full script at [assets/code-snippets/delete_vpn_tunnel.py](assets/code-snippets/delete_vpn_tunnel.py)
-
-Key steps:
-1. Get tunnel: `tunnel_client.get(project=..., region=..., vpn_tunnel=...)`
-2. Delete: `tunnel_client.delete(project=..., region=..., vpn_tunnel=...)`
+Full command + flags at [references/gcloud-usage.md](references/gcloud-usage.md).
 
 #### Post-execution Validation
 
@@ -975,17 +747,13 @@ Key steps:
 |-------|--------|----------|------------|
 | Cloud Router exists | `gcloud compute routers list --region="{{user.region}}"` | Router exists | HALT; create router first |
 
-#### Execution — CLI (`gcloud`)
+#### Execution
 
-```bash
-gcloud compute routers nats create "{{user.nat_gateway_name}}" \
-  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
-  --region="{{user.region}}" \
-  --router="{{user.router_name}}" \
-  --nat-all-subnet-ip-ranges \
-  --auto-allocate-nat-external-ips \
-  --format="json"
-```
+| Step | Action | Description |
+|------|--------|-------------|
+| 1 | `gcloud compute routers nats create` | Create `{{user.nat_gateway_name}}` with `--nat-all-subnet-ip-ranges --auto-allocate-nat-external-ips` |
+
+Full command + flags at [references/gcloud-usage.md](references/gcloud-usage.md).
 
 ### Operation: Delete Cloud NAT
 
@@ -1002,45 +770,16 @@ gcloud compute routers nats create "{{user.nat_gateway_name}}" \
 | Router existence | `gcloud compute routers describe {{user.router_name}}` | Router exists | HALT; router must exist |
 | Confirmation | User confirms deletion intent | User confirms | HALT; no confirmation |
 
-#### Execution — CLI (`gcloud`)
+#### Execution
 
-**List NAT gateways to verify:**
-```bash
-gcloud compute routers nats list \
-  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
-  --region="{{user.region}}" \
-  --router="{{user.router_name}}" \
-  --format="table"
-```
+| Step | Action | Description |
+|------|--------|-------------|
+| 1 | `gcloud compute routers nats list` | Verify NAT gateways on `{{user.router_name}}` |
+| 2 | `gcloud compute routers nats describe` | Show `{{user.nat_name}}` details (`name, natIpAllocateOption, sourceSubnetworkIpRangesToNat`) before deletion |
+| 3 | `gcloud compute routers nats delete` | Delete with `--quiet` (async; monitor via `gcloud compute operations list`) |
+| 4 | Python SDK fallback | `nats_client.list(...)` then `nats_client.delete(...)` — full script at [assets/code-snippets/delete_nat_gateway.py](assets/code-snippets/delete_nat_gateway.py) |
 
-**Delete NAT gateway:**
-```bash
-# Step 1: Show NAT details before deletion
-gcloud compute routers nats describe "{{user.nat_name}}" \
-  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
-  --region="{{user.region}}" \
-  --router="{{user.router_name}}" \
-  --format="json" | \
-  jq '{name, natIpAllocateOption, sourceSubnetworkIpRangesToNat, naptAllSubnetIpRanges}'
-
-# Step 2: Delete NAT (async operation)
-gcloud compute routers nats delete "{{user.nat_name}}" \
-  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
-  --region="{{user.region}}" \
-  --router="{{user.router_name}}" \
-  --quiet
-
-echo "✅ Cloud NAT {{user.nat_name}} deletion initiated"
-echo "Monitor progress with: gcloud compute operations list"
-```
-
-**Delete via Python SDK:**
-
-Full script at [assets/code-snippets/delete_nat_gateway.py](assets/code-snippets/delete_nat_gateway.py)
-
-Key steps:
-1. Find NAT: `nats_client.list(project=..., region=..., router=...)`
-2. Delete: `nats_client.delete(project=..., region=..., router=..., nat=...)`
+Full command + flags at [references/gcloud-usage.md](references/gcloud-usage.md).
 
 #### Post-execution Validation
 
@@ -1068,18 +807,13 @@ Key steps:
 | IAM permission | SA has `compute.networks.updatePeering` | Has permission | HALT; grant permission |
 | Peering limit | `gcloud compute networks list` peer count | < 25 peering limit | HALT; delete old peers |
 
-#### Execution — CLI (`gcloud`)
+#### Execution
 
-```bash
-gcloud compute networks peerings create "{{user.peering_name}}" \
-  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
-  --network="{{user.network_name}}" \
-  --peer-project="{{user.peer_project}}" \
-  --peer-network="{{user.peer_network}}" \
-  --export-custom-routes \
-  --import-custom-routes \
-  --format="json"
-```
+| Step | Action | Description |
+|------|--------|-------------|
+| 1 | `gcloud compute networks peerings create` | Create `{{user.peering_name}}` with `--peer-project`, `--peer-network`, `--export-custom-routes --import-custom-routes` |
+
+Full command + flags at [references/gcloud-usage.md](references/gcloud-usage.md).
 
 ### Operation: Delete VPC Peering
 
@@ -1097,53 +831,18 @@ gcloud compute networks peerings create "{{user.peering_name}}" \
 | Confirmation | User explicitly confirms | User confirms | HALT; no confirmation |
 | Peer side action | Verify peer will also delete their peering | Peer action confirmed | HALT; peer not coordinated |
 
-#### Execution — CLI (`gcloud`)
+#### Execution
 
-**List current peerings:**
-```bash
-gcloud compute networks peerings list \
-  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
-  --network="{{user.network_name}}" \
-  --format="json" | \
-  jq '.[] | {name, network: .networkEmail.split("/")[-1], peerNetwork: .peerNetworkEmail.split("/")[-1], state}'
-```
+| Step | Action | Description |
+|------|--------|-------------|
+| 1 | `gcloud compute networks peerings list` | List current peerings on `{{user.network_name}}` |
+| 2 | `gcloud compute networks peerings describe` | Show `{{user.peering_name}}` details (`name, peerNetwork, state`) before deletion |
+| 3 | Confirm | User must type `CONFIRM DELETE` to proceed |
+| 4 | `gcloud compute networks peerings delete` | Delete with `--quiet` (only after Safety Gate passes) |
+| 5 | Peer side | **Also delete on peer network:** `gcloud compute networks peerings delete {{user.peering_name}} --peer-project={{user.peer_project}} --peer-network={{user.peer_network}}` |
+| 6 | Python SDK fallback | `peering_client.get(...)` then `peering_client.delete(...)` — full script at [assets/code-snippets/delete_vpc_peering.py](assets/code-snippets/delete_vpc_peering.py) |
 
-**Delete VPC peering:**
-```bash
-# Step 1: Show peering details before deletion
-gcloud compute networks peerings describe "{{user.peering_name}}" \
-  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
-  --network="{{user.network_name}}" \
-  --format="json" | \
-  jq '{name, peerNetwork, state}'
-
-# Step 2: Confirm deletion
-# User must type "CONFIRM DELETE" to proceed
-read -p "Type 'CONFIRM DELETE' to proceed: " confirm
-
-if [ "$confirm" = "CONFIRM DELETE" ]; then
-  gcloud compute networks peerings delete "{{user.peering_name}}" \
-    --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
-    --network="{{user.network_name}}" \
-    --quiet
-
-  echo "✅ VPC peering {{user.peering_name}} deleted"
-  echo "⚠️ IMPORTANT: Also delete peering on the peer network:"
-  echo "   gcloud networks peerings delete {{user.peering_name}} \\"
-  echo "     --peer-project={{user.peer_project}} \\"
-  echo "     --peer-network={{user.peer_network}}"
-else
-  echo "❌ Deletion cancelled"
-fi
-```
-
-**Delete via Python SDK:**
-
-Full script at [assets/code-snippets/delete_vpc_peering.py](assets/code-snippets/delete_vpc_peering.py)
-
-Key steps:
-1. Get peering: `peering_client.get(project=..., network=..., peering=...)`
-2. Delete: `peering_client.delete(project=..., network=..., peering=...)`
+Full command + flags at [references/gcloud-usage.md](references/gcloud-usage.md).
 
 #### Post-execution Validation
 

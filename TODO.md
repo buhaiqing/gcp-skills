@@ -231,3 +231,19 @@ No planned items.
 ## gcp-filestore-ops
 
 No planned items.
+
+---
+
+## Cross-Skill — Token Efficiency Optimization
+
+> Audit and improvements from Token Efficiency perspective (2026-07-18).
+
+| Item | Status | Notes |
+|------|--------|-------|
+| AGENTS.md convergence (386→181 lines) | ✅ | Removed redundant TE table, merged §9/§10/§11 duplicate content, extracted §0 shared references |
+| vpc SKILL.md slim (1253→952) | ✅ | Replaced full command blocks with step tables + references/ links |
+| logging SKILL.md slim (854→715) | ✅ | Same pattern |
+| gce SKILL.md slim (830→621) | ✅ | Same pattern |
+| lb SKILL.md slim (807→601) | ✅ | Same pattern |
+| cloudfunctions SKILL.md slim (790→595) | ✅ | Same pattern |
+| Total lines saved in SKILL.md | ✅ | ~1,050 lines |
