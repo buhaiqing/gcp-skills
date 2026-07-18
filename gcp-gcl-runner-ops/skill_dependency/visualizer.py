@@ -58,5 +58,14 @@ class MermaidVisualizer:
         return name.replace("-", "_").replace(".", "_")
 
     def _sanitize_label(self, name: str) -> str:
-        """Sanitize label for display in Mermaid."""
-        return name.replace("_", "-")
+        """Sanitize label for display in Mermaid.
+
+        Escapes characters that could break Mermaid syntax or enable injection.
+        """
+        return (
+            name.replace("\\", "\\\\")
+            .replace('"', '\\"')
+            .replace("\n", "\\n")
+            .replace("\r", "\\r")
+            .replace("\t", "\\t")
+        )

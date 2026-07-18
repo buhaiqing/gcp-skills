@@ -60,8 +60,9 @@ class DependencyExtractor:
         """
         # Check if it's a file path (string doesn't start with --- and exists on disk)
         if isinstance(skill_md, (str, Path)) and not str(skill_md).strip().startswith("---"):
-            if Path(skill_md).exists():
-                path = Path(skill_md)
+            path = Path(skill_md).resolve()
+            # Security: prevent path traversal - reject if path escapes repo root via ..
+            if path.exists() and path.is_file() and not self._is_path_traversal(path):
                 content = path.read_text()
             else:
                 content = str(skill_md)
@@ -184,6 +185,22 @@ class DependencyExtractor:
         delegations.extend(delegation_refs)
 
         return list(set(delegations))
+
+    def _is_path_traversal(self, path: Path) -> bool:
+        """Check if path attempts to escape the gcp-skills directory tree.
+
+        Detects path traversal attacks (e.g., ../../../etc/passwd) by checking
+        if the resolved path, when made relative to the repo root, contains '..'.
+        """
+        try:
+            skill_dir = Path(__file__).resolve().parent  # skill_dependency/
+            repo_root = skill_dir.parent.parent.parent  # gcp-skills/
+            relative = path.resolve().relative_to(repo_root)
+            # If the relative path starts with '..', it's trying to escape
+            return str(relative).startswith("..")
+        except ValueError:
+            # If relative_to raises ValueError, path is outside repo (not a traversal within repo)
+            return False
 
     def _extract_referenced_skills(self, content: str) -> list[str]:
         """Extract skill references from See Also and other sections."""
