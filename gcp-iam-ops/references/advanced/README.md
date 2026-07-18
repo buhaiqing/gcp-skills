@@ -8,5 +8,6 @@
 |-------|------|-------------|
 | AIOps Anomaly Detection | `aiops-iam-anomaly.md` | Privilege escalation detection, API call anomalies, role binding drift |
 | FinOps Cost Optimization | `finops-iam-cost.md` | Service account cost analysis, workload identity savings, role optimization |
+| WIF Troubleshooting | `wif-troubleshooting.md` | Workload Identity Federation diagnostic commands, common errors, resolution steps, audit logging |
 
 > Topics marked ⬜ in [TODO.md](../../TODO.md) are planned but not yet authored.
