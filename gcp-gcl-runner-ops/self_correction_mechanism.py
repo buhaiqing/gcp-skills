@@ -128,7 +128,11 @@ class CorrectionFeedbackLoop:
                 "corrections": self._corrections,
                 "effectiveness": self._correction_effectiveness,
             }
-            self.state_file.write_text(json.dumps(data, indent=2))
+            try:
+                self.state_file.write_text(json.dumps(data, indent=2))
+            except OSError:
+                # Log error but don't crash - corrections still in memory
+                pass
 
     def record_correction(
         self, error_type: str, suggestion_text: str, context: dict[str, Any] | None = None
