@@ -42,13 +42,13 @@
 | P0-2.3 | 事件驱动触发器骨架：Pub/Sub topic | P0-2.1 | Pub/Sub 消息可接收 | ✅ 2026-07-19 |
 | P0-2.4 | Trigger 事件 Schema 定义 | P0-2.3 | Schema 评审通过 | ✅ 2026-07-19 |
 
-### P0-3: 代码库清理
+### P0-3: 代码库清理 ✅
 
-| Task | 描述 | 依赖 | 验收 |
-|------|------|------|------|
-| P0-3.1 | 统一 AGENTS.md 中 agent 模式分类 | — | 分类明确无歧义 |
-| P0-3.2 | 现有 skill 的 trigger 条件标准化 | P0-3.1 | 所有 skill 覆盖 |
-| P0-3.3 | GCL runner 参数标准化 | P0-3.2 | CLI 接口统一 |
+| Task | 描述 | 依赖 | 验收 | 状态 |
+|------|------|------|------|------|
+| P0-3.1 | 统一 AGENTS.md 中 agent 模式分类 | — | 分类明确无歧义 | ✅ 2026-07-19 |
+| P0-3.2 | 现有 skill 的 trigger 条件标准化 | P0-3.1 | 所有 skill 覆盖 | ✅ 2026-07-19 |
+| P0-3.3 | GCL runner 参数标准化 | P0-3.2 | CLI 接口统一 | ✅ 2026-07-19 |
 
 ---
 
@@ -288,6 +288,9 @@ P0-3.1 ─▶ P0-3.2 ─▶ P0-3.3 ───────────────
 ---
 
 ## Version History
+
+### PLAN Version 1.2.0 — 2026-07-19
+- P0-3: 代码库清理 ✅ (AGENTS.md pattern analysis, GCL CLI standardization, skill trigger audit)
 
 ### PLAN Version 1.1.0 — 2026-07-19
 - P0-2: Trigger Automation 原型 ✅ (Cloud Functions 骨架、Scheduler 配置、Pub/Sub 触发器、Schema)
