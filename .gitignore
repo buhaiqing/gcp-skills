@@ -221,4 +221,4 @@ __marimo__/
 
 .omc/
 .omo/
-.terraform/
+.terraform/.worktrees
