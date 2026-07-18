@@ -1,0 +1,43 @@
+# Cloud Logging Log-Based Metrics Configuration for GCL Observability
+# Usage: python3 scripts/create_log_metrics.py --config log_metrics_config.yaml
+
+metrics:
+  - name: gcl_error_rate
+    description: Rate of GCL errors (ERROR/WARNING logs per minute)
+    filter: 'severity=ERROR AND logger="gcl-runner"'
+    type: DELTA_INT64
+
+  - name: gcl_warning_rate
+    description: Rate of GCL warnings per minute
+    filter: 'severity=WARNING AND logger="gcl-runner"'
+    type: DELTA_INT64
+
+  - name: gcl_execution_latency
+    description: GCL execution latency histogram from trace logs
+    filter: 'logger="gcl-runner" AND "latency_ms" IN elements(message)'
+    type: DELTA_DISTRIBUTION
+
+  - name: gcl_safety_failures
+    description: Count of safety=0 events in GCL execution
+    filter: 'severity=ERROR AND "SAFETY_FAIL" IN elements(message)'
+    type: DELTA_INT64
+
+  - name: gcl_autonomy_ratio
+    description: Average autonomy ratio from GCL trace logs
+    filter: 'logger="gcl-runner" AND "autonomy_ratio" IN elements(message)'
+    type: GAUGE_FLOAT64
+
+  - name: gcl_max_iter_terminations
+    description: Count of GCL runs that hit max iterations
+    filter: 'severity=INFO AND "MAX_ITER" IN elements(message)'
+    type: DELTA_INT64
+
+  - name: gcl_generator_errors
+    description: Count of Generator agent errors
+    filter: 'severity=ERROR AND "generator" IN elements(message)'
+    type: DELTA_INT64
+
+  - name: gcl_critic_errors
+    description: Count of Critic agent errors
+    filter: 'severity=ERROR AND "critic" IN elements(message)'
+    type: DELTA_INT64

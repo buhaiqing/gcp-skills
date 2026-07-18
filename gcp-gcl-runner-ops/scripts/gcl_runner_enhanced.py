@@ -1,0 +1,606 @@
+#!/usr/bin/env python3
+"""
+GCL Enhanced Runner — Generator-Critic-Loop adversarial quality gate with enhanced observability.
+
+Usage:
+    python3 gcl_runner_enhanced.py \\
+        --skill gcp-gce-ops \\
+        --op DeleteInstance \\
+        --command 'gcloud compute instances delete my-instance --zone=us-central1-a --quiet'
+
+Exit codes:
+    0 = PASS, 1 = MAX_ITER, 2 = SAFETY_FAIL, 3 = USAGE_ERROR, 4 = RUBRIC_ERROR, 5 = DEGRADED
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import os
+import random
+import re
+import string
+import subprocess
+import sys
+import time
+from dataclasses import asdict
+from datetime import UTC, datetime
+from typing import Any
+
+# Import schema
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from gcl_trace_schema import (
+    AutonomyDecision,
+    Environment,
+    GCLResult,
+    GCLTrace,
+    GCPErrorType,
+    IterationTrace,
+)
+
+# ── Constants ──────────────────────────────────────────────────────────────
+
+TRACE_DIR = os.environ.get(
+    "GCL_TRACE_DIR",
+    os.path.join(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+        "..",
+        "audit-results",
+    ),
+)
+
+DEFAULT_MAX_ITER = 2
+SAFETY_THRESHOLD = 0.5
+DEFAULT_DEGRADE_THRESHOLD = 3
+DEFAULT_ENVIRONMENT = Environment.PRODUCTION
+
+# Error pattern regexes for GCP error classification
+GCP_ERROR_PATTERNS: list[tuple[str, GCPErrorType]] = [
+    (r"INVALID_ARGUMENT|invalid argument", GCPErrorType.INVALID_ARGUMENT),
+    (r"PERMISSION_DENIED|permission denied|Access Denied", GCPErrorType.PERMISSION_DENIED),
+    (r"NOT_FOUND|not found|does not exist", GCPErrorType.NOT_FOUND),
+    (r"TIMEOUT|timeout|timed out", GCPErrorType.TIMEOUT),
+    (r"INTERNAL|internal error|internal server error", GCPErrorType.INTERNAL),
+    (r"UNAUTHENTICATED|unauthenticated|not authenticated", GCPErrorType.UNAUTHENTICATED),
+    (r"RESOURCE_EXHAUSTED|resource exhausted|quota", GCPErrorType.RESOURCE_EXHAUSTED),
+    (r"FAILED_PRECONDITION|failed precondition", GCPErrorType.FAILED_PRECONDITION),
+    (r"ABORTED|aborted", GCPErrorType.ABORTED),
+    (r"OUT_OF_RANGE|out of range", GCPErrorType.OUT_OF_RANGE),
+    (r"UNAVAILABLE|unavailable|service unavailable", GCPErrorType.UNAVAILABLE),
+]
+
+# ── Rubric parsing ─────────────────────────────────────────────────────────
+
+
+def load_rubric(skill_name: str, rubric_path: str | None = None) -> dict:
+    """Load and parse the rubric.md file for a given skill."""
+    if rubric_path:
+        paths = [rubric_path]
+    else:
+        # Default: look in skill directory
+        repo_root = os.environ.get("GCP_SKILLS_ROOT", "")
+        paths = [
+            os.path.join(repo_root, skill_name, "references", "rubric.md"),
+            os.path.join(skill_name, "references", "rubric.md"),
+        ]
+
+    rubric_file = None
+    for p in paths:
+        if os.path.exists(p):
+            rubric_file = p
+            break
+
+    if not rubric_file:
+        print(f"[ERROR] Rubric not found for skill '{skill_name}'", file=sys.stderr)
+        sys.exit(4)
+
+    # Simple rubric parser (extract key fields from markdown)
+    with open(rubric_file) as f:
+        content = f.read()
+
+    rubric = {
+        "file": rubric_file,
+        "classification": _extract_field(content, "classification", "required"),
+        "max_iter": int(_extract_field(content, "max_iter", str(DEFAULT_MAX_ITER))),
+        "dimensions": _extract_dimensions(content),
+        "regexes": _extract_regexes(content),
+    }
+    return rubric
+
+
+def _extract_field(content: str, field: str, default: str) -> str:
+    """Extract a YAML-like field value from markdown frontmatter."""
+    pattern = rf"{field}\s*[:=]\s*[\"']?([^\"'\n]+)[\"']?"
+    m = re.search(pattern, content)
+    return m.group(1).strip() if m else default
+
+
+def _extract_dimensions(content: str) -> list:
+    """Extract rubric dimensions from markdown table."""
+    dims = []
+    # Look for dimension table rows
+    in_table = False
+    for line in content.split("\n"):
+        if "Dimension" in line and "Meaning" in line and "Safety=0" in line:
+            in_table = True
+            continue
+        if in_table and line.startswith("|"):
+            parts = [p.strip() for p in line.split("|")[1:-1]]
+            if len(parts) >= 3:
+                dims.append(
+                    {
+                        "name": parts[0],
+                        "meaning": parts[1],
+                        "safety_zero": "ABORT" in parts[2] if len(parts) > 2 else "",
+                    }
+                )
+        elif in_table and not line.startswith("|") and not line.startswith("---"):
+            break
+    return dims or [
+        {"name": "Correctness", "meaning": "Resource matches request", "safety_zero": ""},
+        {"name": "Safety", "meaning": "Destructive ops confirmed", "safety_zero": "ABORT"},
+        {"name": "Idempotency", "meaning": "No side effects on repeat", "safety_zero": ""},
+        {"name": "Traceability", "meaning": "Auditable output", "safety_zero": ""},
+        {"name": "Spec Compliance", "meaning": "Follows constraints", "safety_zero": ""},
+    ]
+
+
+def _extract_regexes(content: str) -> list:
+    """Extract detection regex patterns from rubric."""
+    regexes = []
+    for line in content.split("\n"):
+        # Match lines like `- `...` → DESTRUCTIVE`
+        m = re.search(r"`([^`]+)`\s*[→-]+\s*(\S+)", line)
+        if m:
+            regexes.append({"pattern": m.group(1), "risk": m.group(2)})
+    return regexes
+
+
+# ── Secret sanitization ────────────────────────────────────────────────────
+
+SECRET_PATTERNS: list[tuple[str, str]] = [
+    (r"GOOGLE_APPLICATION_CREDENTIALS=[^\s]+", "GOOGLE_APPLICATION_CREDENTIALS=<masked>"),
+    (r"--key-file[= ][^\s]+", "--key-file=<masked>"),
+    (r'private_key["\']?\s*[:=]\s*["\']?-----BEGIN', "private_key=<masked>"),
+]
+
+
+def sanitize(text: str) -> str:
+    """Mask secrets in text."""
+    for pattern, replacement in SECRET_PATTERNS:
+        text = re.sub(pattern, replacement, text, flags=re.IGNORECASE)
+    return text
+
+
+def has_inline_secret(command: str) -> bool:
+    """Check if command contains inlined secrets (should fail pre-flight)."""
+    # SA key content in command
+    if "-----BEGIN" in command:
+        return True
+    # Access token as literal
+    if re.search(r"ya29\.\w+", command):
+        return True
+    return False
+
+
+# ── Generator ──────────────────────────────────────────────────────────────
+
+
+def generate(command: str, dry_run: bool = False, timeout: int = 300) -> dict:
+    """Execute the command and capture output."""
+    trace = {
+        "command": sanitize(command),
+        "stdout": "",
+        "stderr": "",
+        "exit_code": -1,
+        "start_time": datetime.now(UTC).isoformat(),
+    }
+
+    if dry_run:
+        trace["stdout"] = "[DRY-RUN] Command not executed"
+        trace["exit_code"] = 0
+        trace["end_time"] = datetime.now(UTC).isoformat()
+        return trace
+
+    try:
+        result = subprocess.run(
+            command,
+            shell=True,
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+        )
+        trace["stdout"] = sanitize(result.stdout)
+        trace["stderr"] = sanitize(result.stderr)
+        trace["exit_code"] = result.returncode
+    except subprocess.TimeoutExpired:
+        trace["stderr"] = f"[ERROR] Command timed out after {timeout}s"
+        trace["exit_code"] = -1
+    except Exception as e:
+        trace["stderr"] = f"[ERROR] {e}"
+        trace["exit_code"] = -2
+
+    trace["end_time"] = datetime.now(UTC).isoformat()
+    return trace
+
+
+# ── Critic ─────────────────────────────────────────────────────────────────
+
+
+def critique(op: str, gen_trace: dict, rubric: dict) -> dict:
+    """Re-classify the generator output using rubric's regex hot-spots."""
+    full_text = f"{gen_trace['command']}\n{gen_trace['stdout']}\n{gen_trace['stderr']}"
+    matched_regexes = []
+    highest_risk = "INFO"
+
+    risk_order = {
+        "INFO": 0,
+        "WARN": 1,
+        "ERROR": 2,
+        "DESTRUCTIVE": 3,
+        "DESTRUCTIVE-BATCH": 4,
+        "FATAL": 5,
+    }
+
+    for rx in rubric.get("regexes", []):
+        pattern = rx["pattern"]
+        try:
+            if re.search(pattern, full_text, re.IGNORECASE):
+                matched_regexes.append(f"{pattern} → {rx['risk']}")
+                risk_level = risk_order.get(rx["risk"].upper(), 0)
+                current_highest = risk_order.get(highest_risk, 0)
+                if risk_level > current_highest:
+                    highest_risk = rx["risk"]
+        except re.error:
+            continue  # Skip invalid regex patterns
+
+    # Score dimensions
+    result = {
+        "correctness": 1.0 if gen_trace["exit_code"] == 0 else 0.0,
+        "safety": 0.0 if highest_risk.upper() in ("DESTRUCTIVE", "DESTRUCTIVE-BATCH", "FATAL") else 1.0,
+        "idempotency": 0.8 if gen_trace["exit_code"] == 0 else 0.0,
+        "traceability": 0.8,
+        "spec_compliance": 0.8,
+        "matched_regexes": matched_regexes,
+        "highest_risk": highest_risk,
+    }
+    return result
+
+
+# ── Termination decision ───────────────────────────────────────────────────
+
+
+def decide(iteration: int, critique_result: dict, rubric: dict, max_iter: int) -> str:
+    """Apply termination rules. Returns: PASS | MAX_ITER | SAFETY_FAIL."""
+    if critique_result["safety"] == 0.0:
+        return "SAFETY_FAIL"
+    if all(v >= SAFETY_THRESHOLD for k, v in critique_result.items() if isinstance(v, int | float)):
+        return "PASS"
+    if iteration >= max_iter - 1:
+        return "MAX_ITER"
+    return "CONTINUE"
+
+
+# ── Trace persistence ─────────────────────────────────────────────────────
+
+
+def persist_trace(trace: dict, output_dir: str | None = None) -> str:
+    """Persist the GCL trace to a JSON file."""
+    out_dir = output_dir or TRACE_DIR
+    os.makedirs(out_dir, exist_ok=True)
+
+    rand_suffix = "".join(random.choices(string.ascii_lowercase + string.digits, k=6))
+    ts = datetime.now().strftime("%Y%m%d-%H%M%S")
+    filename = f"gcl-trace-{ts}-{rand_suffix}.json"
+    filepath = os.path.join(out_dir, filename)
+
+    with open(filepath, "w") as f:
+        json.dump(trace, f, indent=2, default=str)
+
+    return filepath
+
+
+# ── New Enhanced Functions ─────────────────────────────────────────────────
+
+
+def classify_error(stderr: str) -> GCPErrorType | None:
+    """
+    Classify GCP error from stderr output.
+
+    Args:
+        stderr: The stderr output from a command execution
+
+    Returns:
+        GCPErrorType enum value if match found, None otherwise
+    """
+    if not stderr:
+        return None
+
+    for pattern, error_type in GCP_ERROR_PATTERNS:
+        if re.search(pattern, stderr, re.IGNORECASE):
+            return error_type
+
+    return None
+
+
+def calculate_autonomy_ratio(
+    iterations: list[dict[str, Any]], autonomy_decisions: list[AutonomyDecision]
+) -> float:
+    """
+    Calculate the autonomy ratio for GCL execution.
+
+    Autonomy ratio = (autonomous decisions) / (total potential decision points)
+
+    Args:
+        iterations: List of iteration traces
+        autonomy_decisions: List of autonomy decisions made
+
+    Returns:
+        Float between 0.0 and 1.0 representing autonomy ratio
+    """
+    if not iterations:
+        return 0.0
+
+    # Count decision points: each iteration can have autonomy decisions
+    total_iterations = len(iterations)
+
+    # Count autonomous decisions (approved = True means it was handled automatically)
+    autonomous_approved = sum(1 for d in autonomy_decisions if d.approved)
+
+    # Total potential decision points = iterations + autonomy decisions made
+    total_decision_points = total_iterations + len(autonomy_decisions)
+
+    if total_decision_points == 0:
+        return 1.0  # If no decisions needed, fully autonomous
+
+    return autonomous_approved / total_decision_points
+
+
+def should_degrade(failure_count: int, threshold: int) -> bool:
+    """
+    Determine if GCL should degrade to human-in-the-loop.
+
+    Args:
+        failure_count: Number of consecutive failures
+        threshold: Maximum allowed consecutive failures before degradation
+
+    Returns:
+        True if should degrade to human, False otherwise
+    """
+    return failure_count >= threshold
+
+
+def generate_state_snapshot(command: str) -> dict:
+    """
+    Generate a state snapshot for debugging/audit purposes.
+
+    This is a stub function that captures current system state.
+
+    Args:
+        command: The command being executed
+
+    Returns:
+        Dictionary containing state snapshot
+    """
+    # Stub implementation - in production would capture:
+    # - Current directory
+    # - Environment variables (sanitized)
+    # - git status
+    # - Process info
+    return {
+        "timestamp": datetime.now(UTC).isoformat(),
+        "command_hash": str(hash(command)),
+        "working_dir": os.getcwd(),
+        "user": os.environ.get("USER", "unknown"),
+        "gcp_project": os.environ.get("CLOUDSDK_CORE_PROJECT", "not set"),
+    }
+
+
+# ── Enhanced Main loop ─────────────────────────────────────────────────────
+
+
+def main():
+    parser = argparse.ArgumentParser(description="GCL Enhanced Runner")
+    # Existing flags (backward compatible)
+    parser.add_argument("--skill", required=True, help="Target skill name (e.g., gcp-gce-ops)")
+    parser.add_argument("--op", required=True, help="Operation name (e.g., DeleteInstance)")
+    parser.add_argument("--command", required=True, help="Full CLI command to execute")
+    parser.add_argument("--user-request", help="Original natural-language user request")
+    parser.add_argument("--max-iter", type=int, default=DEFAULT_MAX_ITER)
+    parser.add_argument("--rubric", help="Custom rubric path")
+    parser.add_argument("--output-dir", help="Output directory for traces")
+    parser.add_argument("--dry-run", action="store_true", help="Skip subprocess; run Critic only")
+
+    # New flags
+    parser.add_argument(
+        "--trace-to-bq",
+        action="store_true",
+        default=False,
+        help="Enable BigQuery trace upload (default: false)",
+    )
+    parser.add_argument(
+        "--degrade-threshold",
+        type=int,
+        default=DEFAULT_DEGRADE_THRESHOLD,
+        help=f"Number of consecutive failures before human degradation (default: {DEFAULT_DEGRADE_THRESHOLD})",
+    )
+    parser.add_argument(
+        "--environment",
+        type=str,
+        default="production",
+        choices=["production", "staging", "development"],
+        help="Environment (default: production)",
+    )
+    parser.add_argument(
+        "--trace-only",
+        action="store_true",
+        default=False,
+        help="Async mode, don't wait for result",
+    )
+
+    args = parser.parse_args()
+
+    # Parse environment
+    env_map = {
+        "production": Environment.PRODUCTION,
+        "staging": Environment.STAGING,
+        "development": Environment.DEVELOPMENT,
+    }
+    environment = env_map.get(args.environment, Environment.PRODUCTION)
+
+    # Phase 0: Pre-flight
+    if has_inline_secret(args.command):
+        print("[ERROR] Command contains inlined secrets. Refusing to execute.", file=sys.stderr)
+        sys.exit(3)
+
+    rubric = load_rubric(args.skill, args.rubric)
+    actual_max_iter = rubric.get("max_iter", args.max_iter)
+
+    # Initialize enhanced trace using GCLTrace dataclass
+    ts_str = datetime.now().strftime("%Y%m%d-%H%M%S")
+    rand_suffix = "".join(random.choices(string.ascii_lowercase, k=6))
+    trace_id = f"gcl-trace-{ts_str}-{rand_suffix}"
+    start_time = time.time()
+
+    trace = GCLTrace(
+        trace_id=trace_id,
+        timestamp=datetime.now(UTC).isoformat(),
+        skill=args.skill,
+        op=args.op,
+        user_request=args.user_request or "",
+        result=GCLResult.PASS,
+        exit_code=0,
+        latency_ms=0,
+        iterations_count=0,
+        autonomy_ratio=0.0,
+        safety_score=1.0,
+        safety_failures=0,
+        error_type=None,
+        autonomy_decisions=[],
+        degraded_to_human=False,
+        degradation_reason=None,
+        iterations=[],
+        gcp_project=os.environ.get("CLOUDSDK_CORE_PROJECT"),
+        gcp_region=os.environ.get("CLOUDSDK_COMPUTE_REGION"),
+        environment=environment,
+        trace_version="1.0.0",
+        runner_version="1.1.0",
+    )
+
+    # Enhanced tracking
+    consecutive_failures = 0
+    autonomy_decisions: list[AutonomyDecision] = []
+
+    # Async mode: if trace-only, spawn background task and return immediately
+    if args.trace_only:
+        print(f"[TRACE-ONLY] Trace {trace_id} started asynchronously")
+        # In a full implementation, would spawn background task here
+        # For now, just note it
+        persist_trace(trace.to_dict(), args.output_dir)
+        print(f"[TRACE] Saved to {persist_trace(trace.to_dict(), args.output_dir)}")
+        sys.exit(0)
+
+    # Main loop
+    for i in range(actual_max_iter):
+        gen_trace = generate(args.command, dry_run=args.dry_run)
+        crit = critique(args.op, gen_trace, rubric)
+
+        # Classify error
+        error_type = classify_error(gen_trace.get("stderr", ""))
+        if error_type:
+            trace.error_type = error_type
+
+        # Create iteration trace
+        iteration_trace = IterationTrace(
+            iteration=i,
+            command=gen_trace["command"],
+            stdout=gen_trace.get("stdout", ""),
+            stderr=gen_trace.get("stderr", ""),
+            exit_code=gen_trace.get("exit_code", -1),
+            critique=crit,
+            verdict="",
+        )
+
+        verdict = decide(i, crit, rubric, actual_max_iter)
+        iteration_trace.verdict = verdict
+        trace.iterations.append(iteration_trace)
+
+        print(f"[ITER {i}] Verdict: {verdict}")
+
+        # Track consecutive failures
+        if crit.get("correctness", 1.0) < SAFETY_THRESHOLD or crit.get("safety", 1.0) == 0.0:
+            consecutive_failures += 1
+            # Record autonomous rejection
+            autonomy_decisions.append(
+                AutonomyDecision(
+                    type="AUTO_REJECT",
+                    reason=f"Iteration {i} failed safety/correctness check",
+                    timestamp=datetime.now(UTC).isoformat(),
+                    approved=False,
+                )
+            )
+        else:
+            consecutive_failures = 0
+            # Record autonomous approval
+            autonomy_decisions.append(
+                AutonomyDecision(
+                    type="AUTO_APPROVE",
+                    reason=f" iteration {i} passed all checks",
+                    timestamp=datetime.now(UTC).isoformat(),
+                    approved=True,
+                )
+            )
+
+        trace.autonomy_decisions = autonomy_decisions
+
+        # Check for degradation
+        if should_degrade(consecutive_failures, args.degrade_threshold):
+            trace.degraded_to_human = True
+            trace.degradation_reason = f"Exceeded {args.degrade_threshold} consecutive failures"
+            trace.result = GCLResult.ERROR
+            autonomy_decisions.append(
+                AutonomyDecision(
+                    type="DEGRADE_TO_HUMAN",
+                    reason=trace.degradation_reason,
+                    timestamp=datetime.now(UTC).isoformat(),
+                    approved=True,
+                )
+            )
+            print(f"[DEGRADED] {trace.degradation_reason}")
+            break
+
+        if verdict in ("PASS", "SAFETY_FAIL", "MAX_ITER"):
+            trace.result = GCLResult(verdict)
+            trace.final_verdict = verdict if hasattr(trace, "final_verdict") else verdict
+            break
+
+    # Calculate final metrics
+    end_time = time.time()
+    trace.latency_ms = int((end_time - start_time) * 1000)
+    trace.iterations_count = len(trace.iterations)
+    trace.autonomy_ratio = calculate_autonomy_ratio(
+        [asdict(it) for it in trace.iterations], autonomy_decisions
+    )
+
+    # Calculate safety score from iterations
+    if trace.iterations:
+        avg_safety = sum(it.critique.get("safety", 1.0) for it in trace.iterations) / len(trace.iterations)
+        trace.safety_score = avg_safety
+        trace.safety_failures = sum(1 for it in trace.iterations if it.critique.get("safety", 1.0) == 0.0)
+
+    # Persist
+    trace_path = persist_trace(trace.to_dict(), args.output_dir)
+    print(f"[TRACE] Saved to {trace_path}")
+
+    # Exit code
+    verdict_map = {
+        GCLResult.PASS: 0,
+        GCLResult.MAX_ITER: 1,
+        GCLResult.SAFETY_FAIL: 2,
+        GCLResult.ERROR: 5,
+    }
+    sys.exit(verdict_map.get(trace.result, 1))
+
+
+if __name__ == "__main__":
+    main()
