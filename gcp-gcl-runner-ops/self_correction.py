@@ -223,7 +223,7 @@ class CorrectionSuggestionGenerator:
             ],
         ),
         GCPErrorType.PARAM_ERROR: (
-            "请检查命令参数是否正确。验证区域/区域 (zone/region) 拼写、值是否在有效范围内，"
+            "请检查命令参数是否正确。验证区域/可用区 (zone/region) 拼写、值是否在有效范围内，"
             "以及必需参数是否已提供。使用 --help 查看正确语法。",
             0.90,
             [
@@ -248,7 +248,7 @@ class CorrectionSuggestionGenerator:
         ),
         GCPErrorType.NOT_FOUND: (
             "请求的资源不存在。请检查资源标识符 (name/ID) 是否正确，"
-            "以及资源是否在指定的区域/区域中。",
+            "以及资源是否在指定的区域/可用区中。",
             0.95,
             [
                 "https://cloud.google.com/apis/design/errors",
