@@ -37,7 +37,7 @@
 | 24 | gcp-armor-ops | `## Trigger & Scope (Agent-Readable)` | `### SHOULD Use This Skill When` | **Missing** | Yes | Yes |
 | 25 | gcp-monitoring-ops | `## Trigger & Scope (Agent-Readable)` | `### SHOULD Use This Skill When` | Inline in bullets | Yes | Yes |
 | 26 | gcp-skill-generator | **No `## Trigger & Scope`** | `### Use When` (top-level) | N/A | `### Do NOT Use When` | No |
-| 27 | gcp-gcl-runner-ops | `## Trigger & Scope` (table) | **N/A** (table format) | N/A | Yes | Yes |
+| 27 | gcp-gcl-runner-ops | *See §4.4 Special Cases (exempt — table format)* | — | — | — | — |
 
 ---
 
@@ -47,9 +47,10 @@
 
 | Header | Skills | Note |
 |--------|--------|------|
-| `## Trigger & Scope` | 5 (gcs, iam, bigquery, pubsub, gcl-runner) | Older; gcl-runner uses table variant |
-| `## Trigger & Scope (Agent-Readable)` | 21 | Newer format |
+| `## Trigger & Scope` | 4 (gcs, iam, bigquery, pubsub) | Older; need `(Agent-Readable)` suffix |
+| `## Trigger & Scope (Agent-Readable)` | 21 | Newer standard |
 | No `## Trigger & Scope` | 1 (skill-generator) | Meta-skill exception |
+| Table format (exempt) | 1 (gcl-runner-ops) | See §4.4 Special Cases |
 
 ### 2.2 Subsection Header Inconsistency
 
@@ -58,7 +59,7 @@
 | `### SHOULD Use When` | 5 (gcs, cloudsql, iam, bigquery, pubsub) | Older |
 | `### SHOULD Use This Skill When` | 18 | Newer standard |
 | `### Use When` | 1 (skill-generator) | Meta-skill; no `##` parent |
-| Table format (no `###`) | 1 (gcl-runner) | Different structure |
+| Table format (exempt) | 1 (gcl-runner) | See §4.4 Special Cases |
 
 ### 2.3 Keywords Line Inconsistency
 
@@ -186,14 +187,17 @@ Examples:
 
 | Metric | Count |
 |--------|-------|
-| Total skills audited | 28 |
-| Compliant with recommended format | 18 |
+| Total skills audited | 27 |
+| Non-exempt skills | 26 (excludes skill-generator) |
+| Compliant with recommended format | 15 |
 | Need section header fix (`(Agent-Readable)`) | 4 |
 | Need subsection header fix (`SHOULD Use This Skill When`) | 5 |
 | Missing keywords line | 6 |
-| Special exemptions (no action) | 2 |
+| Special exemptions (no action) | 1 (skill-generator) |
 
-**Compliance rate:** 18/28 = 64.3%
+**Compliance rate:** 15/26 = 57.7%
+
+**Note:** Categories overlap (e.g., gcs/iam/bigquery/pubsub need both header AND subsection fixes). Unique non-exempt skills needing fixes: 11. Compliant = 26 non-exempt - 11 issues = 15.
 
 ---
 

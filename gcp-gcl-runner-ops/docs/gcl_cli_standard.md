@@ -88,7 +88,7 @@ python3 gcl_runner_enhanced.py \
 
 | # | Issue | Severity | Location |
 |---|-------|----------|----------|
-| M1 | Exit code 3 (USAGE_ERROR) documented but not implemented | MAJOR | `gcl_runner_enhanced.py:12` (docstring) vs actual (sys.exit not called for usage errors) |
+| M1 | Exit code 3 (USAGE_ERROR) implemented for inline secrets only; not called for other usage errors (e.g., missing required args) | MAJOR | `gcl_runner.py:283` implements `sys.exit(3)` for inline secrets; argparse default behavior used for other errors |
 | M2 | Exit code 4 (RUBRIC_ERROR) documented but not implemented consistently | MAJOR | `gcl_runner_enhanced.py:12` - uses `sys.exit(4)` for missing rubric, but `gcl_runner.py` uses it too |
 | M3 | Exit code 5 (DEGRADED) not documented in base runner | MAJOR | `gcl_runner.py:12` - only lists 0-4, enhanced has 5 |
 | M4 | Missing `--timeout` argument for command execution | MAJOR | Both runners - hardcoded 300s in `generate()` |
@@ -98,7 +98,7 @@ python3 gcl_runner_enhanced.py \
 | # | Issue | Severity | Location |
 |---|-------|----------|----------|
 | m1 | Help text for `--max-iter` doesn't mention rubric override | MINOR | Both runners |
-| m2 | `--output-dir` help text says "Output directory for traces" but base runner doesn't actually use it | MINOR | `gcl_runner.py:276` |
+| m2 | `--output-dir` help text claims it controls trace output, but base runner uses `TRACE_DIR` constant regardless | MINOR | `gcl_runner.py:276` — argparse accepts arg but trace path uses `TRACE_DIR` constant |
 | m3 | `--environment` choices use full names (`production`) but AGENTS.md convention uses short (`prod`) | MINOR | `gcl_runner_enhanced.py:812` |
 
 ---
