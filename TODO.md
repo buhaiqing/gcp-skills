@@ -22,7 +22,7 @@
 |----------------|--------|-------|
 | AIOps anomaly detection | ✅ | references/advanced/aiops-bigquery-anomaly.md |
 | FinOps cost analysis | ✅ | references/advanced/finops-bigquery-cost.md |
-| SQL execution (security-sensitive) | ⬜ | references/advanced/sql-execution.md |
+| SQL execution (security-sensitive) | ✅ | references/advanced/sql-execution.md |
 | INFORMATION_SCHEMA reference | ⬜ | Detailed monitoring queries |
 | BI Engine optimization | ⬜ | Performance tuning guide |
 
@@ -86,7 +86,7 @@ No planned items.
 |----------------|--------|-------|
 | AIOps query insights anomaly detection | ✅ | references/advanced/aiops-query-insights.md |
 | FinOps cost optimization | ✅ | references/advanced/finops-cost-analysis.md |
-| SQL execution (security-sensitive) | ⬜ | references/advanced/sql-execution.md |
+| SQL execution (security-sensitive) | ✅ | references/advanced/sql-execution.md |
 | PITR clone operation | ⬜ | |
 | Cross-region replica failover runbook | ⬜ | |
 | Rotate server CA operation | ⬜ | |
@@ -112,7 +112,7 @@ No planned items.
 |----------------|--------|-------|
 | AIOps anomaly detection | ✅ | references/advanced/aiops-storage-anomaly.md |
 | FinOps cost analysis | ✅ | references/advanced/finops-storage-cost.md |
-| SQL execution (security-sensitive) | ⬜ | references/advanced/sql-execution.md |
+| SQL execution (security-sensitive) | ✅ | references/advanced/sql-execution.md |
 
 ---
 
