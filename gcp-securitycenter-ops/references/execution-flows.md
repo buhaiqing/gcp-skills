@@ -12,12 +12,12 @@ Detailed Pre-flight → Execute → Validate → Recover flows for every SCC ope
 
 ### Pre-flight Checks
 
-| Check | Method | Expected | On Failure |
-|-------|--------|----------|------------|
-| CLI installed | `gcloud version` | Exit 0 | HALT — install Google Cloud SDK |
-| Org-level IAM | Check caller has `roles/securitycenter.admin` at org | Role present | HALT — obtain SCC Admin at org level |
-| API enabled | `gcloud services list --enabled --filter='config.name=securitycenter.googleapis.com'` | API enabled | HALT — enable SCC API with user approval |
-| Current settings check | `gcloud scc settings get --organization="{{user.org_id}}"` | JSON returned | HALT — verify org ID and access |
+| Check | Action | Reference |
+|-------|--------|-----------|
+| CLI installed | HALT if `gcloud version` fails; install SDK | Prerequisites |
+| Org-level IAM | HALT if missing `roles/securitycenter.admin` at org | gcp-iam-ops |
+| API enabled | HALT if SCC API not enabled; enable with user approval | `gcloud services enable` |
+| Current settings | HALT if `gcloud scc settings get` fails; verify org ID | troubleshooting.md |
 
 ### Execution
 
@@ -41,10 +41,10 @@ Detailed Pre-flight → Execute → Validate → Recover flows for every SCC ope
 
 ### Pre-flight Checks
 
-| Check | Method | Expected | On Failure |
-|-------|--------|----------|------------|
-| Viewer role | `gcloud scc sources list --organization="{{user.org_id}}" --limit=1 --format=json` | Exit 0 | HALT — need SCC admin viewer or editor |
-| Source ID for describe | `{{user.source_id}}` is non-empty when describe/update requested | Non-empty | Ask once |
+| Check | Action | Reference |
+|-------|--------|-----------|
+| Viewer role | HALT if `gcloud scc sources list` fails; need SCC viewer | gcloud-usage.md |
+| Source ID for describe | Ask once if empty for describe/update | — |
 
 ### Execution
 
@@ -68,11 +68,11 @@ Detailed Pre-flight → Execute → Validate → Recover flows for every SCC ope
 
 ### Pre-flight Checks
 
-| Check | Method | Expected | On Failure |
-|-------|--------|----------|------------|
-| Viewer role | `gcloud scc findings list --organization="{{user.org_id}}" --limit=1 --format=json` | Exit 0 | HALT — need SCC findings viewer |
-| Filter validity | Validate `{{user.filter}}` filter syntax | Valid expression | HALT — correct filter syntax |
-| Source ID optional | `{{user.source_id}}` | Can be `-` for all sources | Default to `-` |
+| Check | Action | Reference |
+|-------|--------|-----------|
+| Viewer role | HALT if missing `roles/securitycenter.findingsViewer` | gcloud-usage.md |
+| Filter validity | HALT if `{{user.filter}}` syntax invalid | troubleshooting.md |
+| Source ID | Default `-` for all sources | — |
 
 ### Execution
 
@@ -96,12 +96,12 @@ Detailed Pre-flight → Execute → Validate → Recover flows for every SCC ope
 
 ### Pre-flight Checks
 
-| Check | Method | Expected | On Failure |
-|-------|--------|----------|------------|
-| Editor role | Verify `roles/securitycenter.findingsEditor` | Role present | HALT — obtain role |
-| Finding exists | Describe finding to confirm current state | Finding JSON | HALT — verify source/finding IDs |
-| State change preview | Show current state → proposed state | State differs | Ask for confirmation |
-| Production impact | Confirm the finding is not a critical/active threat requiring immediate response | User acknowledged | HALT — clarify intent |
+| Check | Action | Reference |
+|-------|--------|-----------|
+| Editor role | HALT if missing `roles/securitycenter.findingsEditor` | gcp-iam-ops |
+| Finding exists | HALT if describe fails; verify source/finding IDs | gcloud-usage.md |
+| State change preview | Ask for confirmation if state differs | — |
+| Production impact | HALT if critical/active threat; clarify intent | — |
 
 ### Execution
 
@@ -126,12 +126,12 @@ Detailed Pre-flight → Execute → Validate → Recover flows for every SCC ope
 
 ### Pre-flight Checks
 
-| Check | Method | Expected | On Failure |
-|-------|--------|----------|------------|
-| Editor role | `gcloud scc mute-configs list --organization="{{user.org_id}}" --limit=1 --format=json` | Exit 0 | HALT — need SCC mute configs editor |
-| Filter validity | Validate `{{user.mute_filter}}` filter expression | Valid expression | HALT — correct filter syntax |
-| Mute config ID format | `{{user.mute_config_id}}` matches `[a-zA-Z0-9-_]{1,20}` | Valid | HALT — correct ID |
-| Existing config check | Create only: describe by ID first | NOT_FOUND for create | Continue to create; for update, confirm match |
+| Check | Action | Reference |
+|-------|--------|-----------|
+| Editor role | HALT if missing `roles/securitycenter.muteConfigsEditor` | gcp-iam-ops |
+| Filter validity | HALT if `{{user.mute_filter}}` syntax invalid | troubleshooting.md |
+| Mute config ID format | HALT if `{{user.mute_config_id}}` not `[a-zA-Z0-9-_]{1,20}` | — |
+| Existing config check | Create: describe first → continue if NOT_FOUND; Update: confirm match | gcloud-usage.md |
 
 ### Execution
 
@@ -157,12 +157,12 @@ Detailed Pre-flight → Execute → Validate → Recover flows for every SCC ope
 
 ### Pre-flight Checks
 
-| Check | Method | Expected | On Failure |
-|-------|--------|----------|------------|
-| Editor role | `gcloud scc notifications list --organization="{{user.org_id}}" --limit=1 --format=json` | Exit 0 | HALT — need SCC notification configs editor |
-| Pub/Sub topic exists | Validate topic path format | Valid topic | Ask user to create topic via `gcp-pubsub-ops` first |
-| Topic publisher IAM | SCC service agent has `roles/pubsub.publisher` on the topic | Role present | HALT — grant via `gcp-iam-ops` before creating config |
-| Notification config ID format | `{{user.notification_config_id}}` matches `[a-zA-Z0-9-_]{1,20}` | Valid | HALT — correct ID |
+| Check | Action | Reference |
+|-------|--------|-----------|
+| Editor role | HALT if missing `roles/securitycenter.notificationConfigsEditor` | gcp-iam-ops |
+| Pub/Sub topic exists | HALT if topic missing; delegate to `gcp-pubsub-ops` | gcp-pubsub-ops |
+| Topic publisher IAM | HALT if SCC service agent lacks `roles/pubsub.publisher`; delegate to `gcp-iam-ops` | gcp-iam-ops |
+| Notification config ID | HALT if `{{user.notification_config_id}}` not `[a-zA-Z0-9-_]{1,20}` | — |
 
 ### Execution
 
@@ -188,12 +188,12 @@ Detailed Pre-flight → Execute → Validate → Recover flows for every SCC ope
 
 ### Pre-flight Checks
 
-| Check | Method | Expected | On Failure |
-|-------|--------|----------|------------|
-| Editor role | `gcloud scc big-query-exports list --organization="{{user.org_id}}" --limit=1 --format=json` | Exit 0 | HALT — need SCC BQ exports editor |
-| Dataset exists | Validate dataset path format | Valid dataset | Ask user to create dataset via `gcp-bigquery-ops` first |
-| SCC service agent has BQ Data Editor | Check dataset IAM | Role present | HALT — grant SCC service agent BigQuery Data Editor |
-| BQ export ID format | `{{user.bigquery_export_id}}` matches `[a-zA-Z0-9-_]{1,20}` | Valid | HALT — correct ID |
+| Check | Action | Reference |
+|-------|--------|-----------|
+| Editor role | HALT if missing `roles/securitycenter.bigQueryExportsEditor` | gcp-iam-ops |
+| Dataset exists | HALT if missing; delegate to `gcp-bigquery-ops` | gcp-bigquery-ops |
+| SCC service agent BQ IAM | HALT if missing `roles/bigquery.dataEditor` on dataset | gcp-iam-ops |
+| BQ export ID format | HALT if `{{user.bigquery_export_id}}` not `[a-zA-Z0-9-_]{1,20}` | — |
 
 ### Execution
 
@@ -219,10 +219,10 @@ Detailed Pre-flight → Execute → Validate → Recover flows for every SCC ope
 
 ### Pre-flight Checks
 
-| Check | Method | Expected | On Failure |
-|-------|--------|----------|------------|
-| Custom modules editor role | `gcloud scc operations list` or SDK `list_security_health_analytics_custom_modules` | Exit 0 | HALT — need SCC custom modules editor |
-| Module ID valid | `{{user.custom_module_id}}` is non-empty for enable/disable | Non-empty | Ask once |
+| Check | Action | Reference |
+|-------|--------|-----------|
+| Custom modules editor role | HALT if missing `roles/securitycenter.customModulesEditor` | gcp-iam-ops |
+| Module ID valid | Ask once if empty for enable/disable | — |
 
 ### Execution
 
@@ -245,10 +245,10 @@ Detailed Pre-flight → Execute → Validate → Recover flows for every SCC ope
 
 ### Pre-flight Checks
 
-| Check | Method | Expected | On Failure |
-|-------|--------|----------|------------|
-| Viewer role | List effective modules via SDK | Exit 0 | HALT — need SCC admin viewer |
-| Folder/project scope | `{{user.folder_id}}` or `{{env.CLOUDSDK_CORE_PROJECT}}` | Non-empty | Ask once |
+| Check | Action | Reference |
+|-------|--------|-----------|
+| Viewer role | HALT if missing SCC admin viewer | gcp-iam-ops |
+| Folder/project scope | Ask once if empty | — |
 
 ### Execution
 
@@ -269,11 +269,11 @@ Detailed Pre-flight → Execute → Validate → Recover flows for every SCC ope
 
 ### Pre-flight Checks
 
-| Check | Method | Expected | On Failure |
-|-------|--------|----------|------------|
-| Editor role | SDK `list_resource_value_configs` | Exit 0 | HALT — need SCC resource value configs editor |
-| Resource name valid | `{{user.resource_name}}` is a valid GCP resource path | Valid path | HALT — correct resource name |
-| Resource value valid | `{{user.resource_value}}` in `MINIMAL`/`LOW`/`MEDIUM`/`HIGH`/`CRITICAL` | Valid enum | HALT — correct value |
+| Check | Action | Reference |
+|-------|--------|-----------|
+| Editor role | HALT if missing `roles/securitycenter.resourceValueConfigsEditor` | gcp-iam-ops |
+| Resource name valid | HALT if `{{user.resource_name}}` not valid GCP path | api-sdk-usage.md |
+| Resource value valid | HALT if `{{user.resource_value}}` not in MINIMAL/LOW/MEDIUM/HIGH/CRITICAL | — |
 
 ### Execution
 
@@ -298,10 +298,10 @@ Detailed Pre-flight → Execute → Validate → Recover flows for every SCC ope
 
 ### Pre-flight Checks
 
-| Check | Method | Expected | On Failure |
-|-------|--------|----------|------------|
-| Admin role | `gcloud scc settings get --organization="{{user.org_id}}"` | Exit 0 | HALT — need SCC admin |
-| Current settings visible | `gcloud scc settings get` returns settings JSON | JSON returned | HALT — verify org access |
+| Check | Action | Reference |
+|-------|--------|-----------|
+| Admin role | HALT if missing `roles/securitycenter.admin` | gcp-iam-ops |
+| Current settings visible | HALT if `gcloud scc settings get` fails; verify org access | gcloud-usage.md |
 
 ### Execution
 
@@ -323,11 +323,11 @@ Detailed Pre-flight → Execute → Validate → Recover flows for every SCC ope
 
 ### Pre-flight Checks
 
-| Check | Method | Expected | On Failure |
-|-------|--------|----------|------------|
-| Viewer role | `gcloud scc findings list --organization="{{user.org_id}}" --limit=1 --format=json` | Exit 0 | HALT — need SCC findings viewer |
-| Filter valid | `{{user.filter}}` is valid SCC filter syntax | Valid expression | HALT — correct filter |
-| Source ID | Optional; use `-` for all sources | Default `-` | Default `-` |
+| Check | Action | Reference |
+|-------|--------|-----------|
+| Viewer role | HALT if missing `roles/securitycenter.findingsViewer` | gcp-iam-ops |
+| Filter valid | HALT if `{{user.filter}}` syntax invalid | troubleshooting.md |
+| Source ID | Default `-` for all sources | — |
 
 ### Execution
 

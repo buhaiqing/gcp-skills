@@ -198,24 +198,24 @@ Every operation: **Pre-flight → Execute (gcloud + SDK) → Validate → Recove
 
 ### Pre-flight Checks (Common)
 
-| Check | Method | Expected | On Failure |
-|-------|--------|----------|------------|
-| gcloud CLI | `gcloud version` | Exit code 0 | Install gcloud (see Prerequisites) |
-| Credentials | `gcloud auth print-access-token --quiet` | Non-empty token | HALT; authenticate SA |
-| Project | `gcloud config get-value project` or env var | Set and valid | HALT; set `CLOUDSDK_CORE_PROJECT` |
-| Monitoring API | `gcloud services list --enabled --filter="config:monitoring.googleapis.com"` | enabled | HALT; run `gcloud services enable monitoring.googleapis.com` |
+| Check | Command | Action |
+|-------|---------|--------|
+| gcloud CLI | `gcloud version` | Install if exit ≠0 |
+| Credentials | `gcloud auth print-access-token --quiet` | HALT if empty; re-authenticate |
+| Project | `gcloud config get-value project` | HALT if unset; set `CLOUDSDK_CORE_PROJECT` |
+| Monitoring API | `gcloud services list --enabled --filter="config:monitoring.googleapis.com"` | HALT if disabled; enable with `gcloud services enable monitoring.googleapis.com` |
 
 ### Operations Summary
 
 For full gcloud commands, Python SDK scripts, Go SDK fallbacks, pre-flight checks, validation, and recovery for each operation, see [references/gcloud-usage.md](references/gcloud-usage.md).
 
-| Operation | Pre-flight | gcloud CLI | Python SDK | Validation | Recovery |
-|-----------|:----------:|:----------:|:----------:|:----------:|:--------:|
-| Query Time-Series Metrics | [gcloud-usage.md](references/gcloud-usage.md) §Time-Series | [gcloud-usage.md](references/gcloud-usage.md) §Time-Series | [api-sdk-usage.md](references/api-sdk-usage.md) | 3 checks | 4 errors |
-| Alert Policies CRUD | [gcloud-usage.md](references/gcloud-usage.md) §Alert-Policies | [gcloud-usage.md](references/gcloud-usage.md) §Alert-Policies | [api-sdk-usage.md](references/api-sdk-usage.md) | describe + jq | 5 errors |
-| Notification Channels CRUD | [gcloud-usage.md](references/gcloud-usage.md) §Notification-Channels | [gcloud-usage.md](references/gcloud-usage.md) §Notification-Channels | [api-sdk-usage.md](references/api-sdk-usage.md) | list + jq | 5 errors |
-| Dashboards CRUD | [gcloud-usage.md](references/gcloud-usage.md) §Dashboards | [gcloud-usage.md](references/gcloud-usage.md) §Dashboards | [api-sdk-usage.md](references/api-sdk-usage.md) | describe + jq | 4 errors |
-| Uptime Checks CRUD | [gcloud-usage.md](references/gcloud-usage.md) §Uptime-Checks | [gcloud-usage.md](references/gcloud-usage.md) §Uptime-Checks | [api-sdk-usage.md](references/api-sdk-usage.md) | describe + jq | 5 errors |
+| Operation | Risk | Reference |
+|-----------|------|-----------|
+| Query Time-Series Metrics | None | [gcloud-usage.md](references/gcloud-usage.md) §Time-Series |
+| Alert Policies CRUD | **Medium** | [gcloud-usage.md](references/gcloud-usage.md) §Alert-Policies |
+| Notification Channels CRUD | Low | [gcloud-usage.md](references/gcloud-usage.md) §Notification-Channels |
+| Dashboards CRUD | Low | [gcloud-usage.md](references/gcloud-usage.md) §Dashboards |
+| Uptime Checks CRUD | Low | [gcloud-usage.md](references/gcloud-usage.md) §Uptime-Checks |
 
 > **Safety Gates:** Delete operations for alert policies, notification channels, and dashboards require explicit user confirmation (type exact resource ID).
 
@@ -277,3 +277,9 @@ See [assets/example-config.yaml](assets/example-config.yaml) for YAML anchor pat
 
 ### TE-6: Eliminate cross-file duplicate flows
 Detailed execution flows are in [references/gcloud-usage.md](references/gcloud-usage.md); SKILL.md only contains operation summary table with links.
+
+### TE-7: Advanced content in references/advanced/
+Advanced topics (custom metrics, SLO-based alerting, multi-project monitoring) are in [references/advanced/](references/advanced/). Core operations remain in the main references/ files.
+
+### TE-8: Reference depth ≤ 2 layers
+All references use ≤2 path segments (e.g., `references/gcloud-usage.md`). Avoid referencing `references/advanced/some-file.md` directly from SKILL.md — intermediate index in references/ is preferred.

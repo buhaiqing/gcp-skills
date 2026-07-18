@@ -105,16 +105,14 @@
 
 ## Detailed Execution Flows
 
-Every operation: **Pre-flight → Execute → Validate → Recover**. Full scripts below.
-
 ### Operation: Query Time-Series Metrics
 
 #### Pre-flight Checks (additional)
 
-| Check | Method | Expected | On Failure |
-|-------|--------|----------|------------|
-| Metric type | Known from `gcloud monitoring metrics list` | Valid metric type | List available metrics first |
-| Time range | User-provided or default (last 1h) | `< end_time > start_time` | Default to last 1 hour |
+| Check | Action | Reference |
+|-------|--------|-----------|
+| Metric type | Verify via `gcloud monitoring metrics list` | — |
+| Time range | Default: last 1h; user can override | — |
 
 #### Execution
 
@@ -226,23 +224,23 @@ func main() {
 
 #### Failure Recovery
 
-| Error pattern | Max retries | Agent Action | UX Feedback |
-|---------------|-------------|--------------|-------------|
-| `INVALID_ARGUMENT` / 400 | 0 | HALT; fix metric type or filter | `[ERROR] INVALID_ARGUMENT: Invalid metric filter. Verify metric.type exists.` |
-| `PERMISSION_DENIED` / 403 | 0 | HALT; check Monitoring IAM | `[ERROR] PERMISSION_DENIED: Missing monitoring.timeSeries.list permission.` |
-| `UNAVAILABLE` / 503 | 3 (5s, 10s, 20s) | Backoff retry | `⚠️ Monitoring API temporarily unavailable. Retrying...` |
-| `INTERNAL` / 500 | 3 (2s, 4s, 8s) | Retry; then HALT | `[ERROR] INTERNAL: Server error. Retry or create support case.` |
+| Error | Action | Reference |
+|--------|--------|-----------|
+| `INVALID_ARGUMENT` / 400 | HALT; fix metric/filter | troubleshooting.md |
+| `PERMISSION_DENIED` / 403 | HALT; check IAM | troubleshooting.md |
+| `UNAVAILABLE` / 503 | Retry 3x (5s, 10s, 20s backoff) | troubleshooting.md |
+| `INTERNAL` / 500 | Retry 3x (2s, 4s, 8s); then HALT | troubleshooting.md |
 
 ### Operation: Alert Policies (List/Create/Describe/Modify/Delete)
 
 #### Pre-flight Checks
 
-| Check | Method | Expected | On Failure |
-|-------|--------|----------|------------|
-| Alert policy name | `gcloud monitoring alert-policies list` | Unique name | Warn if name exists; ask user |
-| Notification channel | `gcloud monitoring channels list` | Channel exists (optional) | Create channel first or skip |
-| Metric type | `gcloud monitoring metrics list` | Valid metric | List available metrics |
-| **Delete confirmation** | User must confirm with policy ID | Exact match | HALT — user must type exact policy ID |
+| Check | Action | Reference |
+|-------|--------|-----------|
+| Alert policy name | Unique via `gcloud monitoring alert-policies list` | — |
+| Notification channel | Optional; create via `gcloud monitoring channels create` | — |
+| Metric type | Verify via `gcloud monitoring metrics list` | — |
+| **Delete confirmation** | HALT if policy ID not confirmed by user | — |
 
 #### Execution
 
@@ -377,22 +375,22 @@ gcloud monitoring alert-policies describe "{{output.alert_policy_name}}" \
 
 #### Failure Recovery
 
-| Error pattern | Max retries | Agent Action | UX Feedback |
-|---------------|-------------|--------------|-------------|
-| `INVALID_ARGUMENT` / 400 | 0 | HALT; fix condition filter | `[ERROR] INVALID_ARGUMENT: Alert policy condition filter is malformed.` |
-| `ALREADY_EXISTS` / 409 | 0 | HALT; name collision | `[ERROR] ALREADY_EXISTS: An alert policy with this name exists.` |
-| `NOT_FOUND` / 404 | 0 | HALT; describe first | `[ERROR] NOT_FOUND: Alert policy ID not found.` |
-| `PERMISSION_DENIED` / 403 | 0 | HALT | `[ERROR] PERMISSION_DENIED: Missing monitoring.alertPolicies.* permission.` |
-| `QUOTA_EXCEEDED` / 429 | 0 | HALT | `[ERROR] QUOTA_EXCEEDED: Alert policy quota reached.` |
+| Error | Action | Reference |
+|--------|--------|-----------|
+| `INVALID_ARGUMENT` / 400 | HALT; fix condition filter | troubleshooting.md |
+| `ALREADY_EXISTS` / 409 | HALT; use unique name | troubleshooting.md |
+| `NOT_FOUND` / 404 | HALT; describe first | troubleshooting.md |
+| `PERMISSION_DENIED` / 403 | HALT; check IAM | troubleshooting.md |
+| `QUOTA_EXCEEDED` / 429 | HALT; delete unused or request increase | troubleshooting.md |
 
 ### Operation: Notification Channels (List/Create/Describe/Delete)
 
 #### Pre-flight Checks (for Delete)
 
-| Check | Method | Expected | On Failure |
-|-------|--------|----------|------------|
-| Channel in use by alert | `gcloud monitoring alert-policies list --format="json" | jq '.[].notificationChannels[]'` grep channel ID | Optional | Warn user before deletion |
-| **Delete confirmation** | User must confirm with channel ID | Exact match | HALT |
+| Check | Action | Reference |
+|-------|--------|-----------|
+| Channel in use by alert | Check via alert-policies list; warn if in use | — |
+| **Delete confirmation** | HALT if channel ID not confirmed | — |
 
 #### Execution
 
@@ -429,13 +427,13 @@ gcloud monitoring channels list \
 
 #### Failure Recovery
 
-| Error pattern | Max retries | Agent Action | UX Feedback |
-|---------------|-------------|--------------|-------------|
-| `INVALID_ARGUMENT` / 400 | 0 | HALT; check channel type/labels | `[ERROR] Notification channel configuration invalid.` |
-| `ALREADY_EXISTS` / 409 | 0 | HALT | `[ERROR] A notification channel with this name already exists.` |
-| `NOT_FOUND` / 404 | 0 | HALT | `[ERROR] Notification channel not found.` |
-| `PERMISSION_DENIED` / 403 | 0 | HALT | `[ERROR] Missing monitoring.notificationChannels.* permission.` |
-| `FAILED_PRECONDITION` / 400 | 0 | HALT | `[ERROR] Channel requires verification.` |
+| Error | Action | Reference |
+|--------|--------|-----------|
+| `INVALID_ARGUMENT` / 400 | HALT; check channel type/labels | troubleshooting.md |
+| `ALREADY_EXISTS` / 409 | HALT; use unique name | troubleshooting.md |
+| `NOT_FOUND` / 404 | HALT; verify channel ID | troubleshooting.md |
+| `PERMISSION_DENIED` / 403 | HALT; check IAM | troubleshooting.md |
+| `FAILED_PRECONDITION` / 400 | HALT; verify channel | troubleshooting.md |
 
 ### Operation: Dashboards (List/Create/Describe/Delete)
 
@@ -494,21 +492,21 @@ gcloud monitoring dashboards describe "{{output.resource_name}}" \
 
 #### Failure Recovery
 
-| Error pattern | Max retries | Agent Action | UX Feedback |
-|---------------|-------------|--------------|-------------|
-| `INVALID_ARGUMENT` / 400 | 0 | HALT; check dashboard JSON structure | `[ERROR] Dashboard JSON is malformed.` |
-| `NOT_FOUND` / 404 | 0 | HALT | `[ERROR] Dashboard not found.` |
-| `PERMISSION_DENIED` / 403 | 0 | HALT | `[ERROR] Missing monitoring.dashboards.* permission.` |
-| `ABORTED` / 409 | 1 (3s) | Retry once; etag conflict | `[ERROR] Dashboard etag conflict. Re-fetch and retry.` |
+| Error | Action | Reference |
+|--------|--------|-----------|
+| `INVALID_ARGUMENT` / 400 | HALT; check dashboard JSON | troubleshooting.md |
+| `NOT_FOUND` / 404 | HALT; verify dashboard ID | troubleshooting.md |
+| `PERMISSION_DENIED` / 403 | HALT; check IAM | troubleshooting.md |
+| `ABORTED` / 409 | Retry 1x (3s); re-fetch etag | troubleshooting.md |
 
 ### Operation: Uptime Checks (Create/Describe/Delete)
 
 #### Pre-flight Checks
 
-| Check | Method | Expected | On Failure |
-|-------|--------|----------|------------|
-| Target hostname | User-provided domain/IP | Resolvable | HALT; verify hostname |
-| Region availability | `gcloud monitoring uptime list` (no args) | Check regions | Use default regions |
+| Check | Action | Reference |
+|-------|--------|-----------|
+| Target hostname | Verify resolvable; HALT if not | — |
+| Region availability | Use default regions if unavailable | — |
 
 #### Execution
 
@@ -547,10 +545,10 @@ gcloud monitoring uptime describe "{{output.resource_name}}" \
 
 #### Failure Recovery
 
-| Error pattern | Max retries | Agent Action | UX Feedback |
-|---------------|-------------|--------------|-------------|
-| `INVALID_ARGUMENT` / 400 | 0 | HALT; check hostname/URL | `[ERROR] Uptime check config is invalid.` |
-| `NOT_FOUND` / 404 | 0 | HALT | `[ERROR] Uptime check not found.` |
-| `PERMISSION_DENIED` / 403 | 0 | HALT | `[ERROR] Missing monitoring.uptimeCheckConfigs.* permission.` |
-| `QUOTA_EXCEEDED` / 429 | 0 | HALT | `[ERROR] Uptime check quota reached (max 100 per project).` |
-| `FAILED_PRECONDITION` / 400 | 0 | HALT | `[ERROR] Hostname is not resolvable.` |
+| Error | Action | Reference |
+|--------|--------|-----------|
+| `INVALID_ARGUMENT` / 400 | HALT; check hostname/URL | troubleshooting.md |
+| `NOT_FOUND` / 404 | HALT; verify uptime check ID | troubleshooting.md |
+| `PERMISSION_DENIED` / 403 | HALT; check IAM | troubleshooting.md |
+| `QUOTA_EXCEEDED` / 429 | HALT; delete unused (max 100/project) | troubleshooting.md |
+| `FAILED_PRECONDITION` / 400 | HALT; verify hostname resolves | troubleshooting.md |
