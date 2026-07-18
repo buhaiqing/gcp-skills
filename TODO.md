@@ -34,9 +34,9 @@
 |----------------|--------|-------|
 | AIOps spend anomaly detection | ✅ | references/advanced/aiops-billing-anomaly.md |
 | FinOps cost analysis deep-dive | ✅ | references/advanced/finops-cost-analysis.md |
-| Committed use discount analysis | ⬜ | references/advanced/cud-analysis.md |
-| Budget automation with Terraform | ⬜ | google_billing_budget resource examples |
-| Multi-cloud cost comparison | ⬜ | Cross-cloud pricing analysis |
+| Committed use discount analysis | ✅ | references/advanced/cud-analysis.md |
+| Budget automation with Terraform | ✅ | references/advanced/terraform-budget-automation.md |
+| Multi-cloud cost comparison | ✅ | references/advanced/multi-cloud-cost-comparison.md |
 | Token Efficiency section (P0 — 强制) | ✅ | Added per AGENTS.md §9.1 / §10.5 CADL |
 
 ---
