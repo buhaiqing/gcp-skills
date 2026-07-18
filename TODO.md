@@ -9,9 +9,9 @@
 
 | Planned Feature | Status | Notes |
 |----------------|--------|-------|
-| Advanced WAF rule patterns | ⬜ | references/advanced/ |
-| Bot management deep-dive | ⬜ | Custom bot detection rules |
-| Adaptive protection tuning | ⬜ | ML-based threat detection config |
+| Advanced WAF rule patterns | ✅ | references/advanced/advanced-waf-rules.md |
+| Bot management deep-dive | ✅ | references/advanced/bot-management.md |
+| Adaptive protection tuning | ✅ | references/advanced/adaptive-protection.md |
 | Token Efficiency section (P0 — 强制) | ✅ | Added per AGENTS.md §9.1 / §10.5 CADL |
 
 ---
@@ -23,8 +23,8 @@
 | AIOps anomaly detection | ✅ | references/advanced/aiops-bigquery-anomaly.md |
 | FinOps cost analysis | ✅ | references/advanced/finops-bigquery-cost.md |
 | SQL execution (security-sensitive) | ✅ | references/advanced/sql-execution.md |
-| INFORMATION_SCHEMA reference | ⬜ | Detailed monitoring queries |
-| BI Engine optimization | ⬜ | Performance tuning guide |
+| INFORMATION_SCHEMA reference | ✅ | references/advanced/information-schema.md |
+| BI Engine optimization | ✅ | references/advanced/bi-engine-optimization.md |
 
 ---
 
@@ -51,8 +51,8 @@ No planned items.
 
 | Planned Feature | Status | Notes |
 |----------------|--------|-------|
-| Advanced FinOps/AIOps references | ⬜ | references/advanced/ |
-| Standalone SDK code snippets | ⬜ | If skill becomes SDK-primary |
+| Advanced FinOps/AIOps references | ✅ | references/advanced/finops-cloudbuild-cost.md, aiops-cloudbuild-anomaly.md |
+| Standalone SDK code snippets | ✅ | references/advanced/sdk-snippets.md |
 | Token Efficiency section (P0 — 强制) | ✅ | Added per AGENTS.md §9.1 / §10.5 CADL |
 
 ---
@@ -61,9 +61,9 @@ No planned items.
 
 | Planned Feature | Status | Notes |
 |----------------|--------|-------|
-| Advanced DAG patterns | ⬜ | references/advanced/ |
-| Airflow 2.x migration guide | ⬜ | Version upgrade runbook |
-| Private environment setup | ⬜ | VPC-native configuration |
+| Advanced DAG patterns | ✅ | references/advanced/advanced-dag-patterns.md |
+| Airflow 2.x migration guide | ✅ | references/advanced/airflow-2x-migration.md |
+| Private environment setup | ✅ | references/advanced/private-environment-setup.md |
 | Token Efficiency section (P0 — 强制) | ✅ | Added per AGENTS.md §9.1 / §10.5 CADL |
 
 ---
@@ -87,10 +87,10 @@ No planned items.
 | AIOps query insights anomaly detection | ✅ | references/advanced/aiops-query-insights.md |
 | FinOps cost optimization | ✅ | references/advanced/finops-cost-analysis.md |
 | SQL execution (security-sensitive) | ✅ | references/advanced/sql-execution.md |
-| PITR clone operation | ⬜ | |
-| Cross-region replica failover runbook | ⬜ | |
-| Rotate server CA operation | ⬜ | |
-| Reschedule maintenance operation | ⬜ | |
+| PITR clone operation | ✅ | references/advanced/pitr-clone-operation.md |
+| Cross-region replica failover runbook | ✅ | references/advanced/cross-region-failover.md |
+| Rotate server CA operation | ✅ | references/advanced/rotate-server-ca.md |
+| Reschedule maintenance operation | ✅ | references/advanced/reschedule-maintenance.md |
 
 ---
 
@@ -134,7 +134,7 @@ No planned items.
 |----------------|--------|-------|
 | AIOps anomaly detection | ✅ | references/advanced/aiops-iam-anomaly.md |
 | FinOps cost analysis | ✅ | references/advanced/finops-iam-cost.md |
-| Workload Identity Federation troubleshooting | ⬜ | references/advanced/wif-deep-dive.md |
+| Workload Identity Federation troubleshooting | ✅ | references/advanced/wif-troubleshooting.md |
 
 ---
 
@@ -174,8 +174,8 @@ No planned items.
 |----------------|--------|-------|
 | AIOps anomaly detection | ✅ | references/advanced/aiops-pubsub-anomaly.md |
 | FinOps cost analysis | ✅ | references/advanced/finops-pubsub-cost.md |
-| Schema management operations | ⬜ | Schema CRUD and validation |
-| Streaming pull deep dive | ⬜ | Advanced consumer patterns |
+| Schema management operations | ✅ | references/advanced/schema-management.md |
+| Streaming pull deep dive | ✅ | references/advanced/streaming-pull-deep-dive.md |
 
 ---
 
@@ -201,11 +201,11 @@ No planned items.
 
 | Planned Feature | Status | Notes |
 |----------------|--------|-------|
-| FinOps cost estimation from plan output | ⬜ | references/advanced/ |
-| Standalone validation scripts for CI/CD | ⬜ | assets/code-snippets/ |
-| terraform import for more GCP resource types | ⬜ | Cloud SQL, GKE, GCS, BigQuery |
-| Workspace-based team collaboration | ⬜ | If requested |
-| Provider version upgrade runbook | ⬜ | terraform init -upgrade + state migration |
+| FinOps cost estimation from plan output | ✅ | references/advanced/finops-cost-from-plan.md |
+| Standalone validation scripts for CI/CD | ✅ | references/advanced/validation-scripts-ci-cd.md |
+| terraform import for more GCP resource types | ✅ | references/advanced/terraform-import-resources.md |
+| Workspace-based team collaboration | ✅ | references/advanced/workspace-team-collaboration.md |
+| Provider version upgrade runbook | ✅ | references/advanced/provider-version-upgrade.md |
 | Token Efficiency section (P0 — 强制) | ✅ | Added per AGENTS.md §9.1 / §10.5 CADL |
 
 ---
