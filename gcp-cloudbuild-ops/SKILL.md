@@ -207,6 +207,7 @@ Every `gcp-*-ops` SKILL.md MUST include this section. Rules TE-1 to TE-7 sourced
 | **TE-5** YAML anchors | `example-config.yaml` use `&anchor` | Reusable config blocks use anchors to eliminate duplication |
 | **TE-6** Eliminate cross-file duplication | SKILL.md has full flow, references/ don't repeat | Execution flows live in SKILL.md; references/ link, don't re-narrate |
 | **TE-7** Layer professional content | AIOps/FinOps in `references/advanced/`; destructive ops marked Security-Sensitive | Advanced content split out; confirmations gated explicitly |
+| **TE-8** Reference depth ≤ 2 layers | `references/` nested max 2 levels; no `references/advanced/deep/` chains | ~100-500/file |
 
 **Non-compressible**: Agent-executable commands (params, JSON paths), error recovery logic, safety gates, credential rules, cross-skill orchestration chains.
 

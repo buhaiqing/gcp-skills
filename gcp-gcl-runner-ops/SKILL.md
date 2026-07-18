@@ -151,4 +151,4 @@ This skill implements the GCL quality gate defined in `AGENTS.md §11`. As a **s
 ## See Also
 
 - [`audit-results/`](../audit-results/) — gitignored; ephemeral GCL trace storage
-- `gcp-skill-generator/references/gcl-orchestrator-agent.md` — pi-subagents agent definition
+- `gcp-skill-generator/references/gcl-orchestrator-agent.md` — custom subagent-framework agent definition (framework-specific; **deprecated** in favor of `## Delegation Rules`)

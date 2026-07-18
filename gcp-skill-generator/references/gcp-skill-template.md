@@ -608,7 +608,7 @@ req := &computepb.InsertDiskRequest{
 
 ## Token Efficiency Guidelines (P0 — 强制)
 
-Generated skills MUST follow these 7 rules (TE-1 to TE-7). See meta-skill SKILL.md §Token Efficiency Requirements for detailed definitions and the authoritative table.
+Generated skills MUST follow these 8 rules (TE-1 to TE-8). See meta-skill SKILL.md §Token Efficiency Requirements for detailed definitions and the authoritative table.
 
 ### TE-1: API Query > Static Tables
 Use gcloud commands instead of hardcoding machine type / version tables.
@@ -632,6 +632,8 @@ Use anchors to eliminate repeated fields.
 SKILL.md already has full flow, no Complete Workflow in config or SDK files.
 ### TE-7: Layer professional content
 AIOps/FinOps in `references/advanced/`; SQL execution and other destructive/security-sensitive ops marked explicitly with confirmation gates. Split advanced material out of SKILL.md to keep the agent-loaded surface minimal.
+### TE-8: Reference depth ≤ 2 layers
+`references/` nesting max 2 levels; no `references/advanced/deep/` chains. Keep reference files flat and link instead of nesting.
 
 ---
 

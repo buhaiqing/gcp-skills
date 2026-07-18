@@ -194,7 +194,7 @@ Output: PASS or list of hallucination findings with fix suggestions.
 | Unbounded loop | Always set max_iter |
 | Critic seeing user request | **Rubber-stamping** — C must be blind to original intent |
 | Silently downgrading on Safety fail | Safety=0 is ABORT, never soft-pass |
-| Trace not persisted | Required for audit trail per §12.6 |
+| Trace not persisted | Required for audit trail per §6 (Trace Schema) |
 | Critic mutating resources | Read-only role |
 | Trace leaking secrets | Sanitize command output before persisting |
 

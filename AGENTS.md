@@ -183,10 +183,11 @@ Additionally, every skill MUST include a **Well-Architected Framework** table (f
 | **TE-5** YAML anchors | `example-config.yaml` use `&anchor` to eliminate duplication | ~200-400/file |
 | **TE-6** Eliminate cross-file duplication | SKILL.md has full flow, references/ doesn't repeat | Varies |
 | **TE-7** Layer professional content | AIOps/FinOps in `references/advanced/`; SQL execution marked Security-Sensitive with explicit confirmation | ~3,000-8,000/file |
+| **TE-8** Reference depth ≤ 2 layers | references/ nested max 2 levels; no `references/advanced/deep/` chains | ~100-500/file |
 
 **Non-compressible**: Agent-executable commands (params, JSON paths), error recovery logic, safety gates, credential rules, cross-skill orchestration chains.
 
-> **Mandatory per-skill enforcement**: Every `gcp-*-ops` SKILL.md **MUST** include a `## Token Efficiency Guidelines (P0 — 强制)` section (TE-1 to TE-7, sourced from `gcp-skill-generator/references/gcp-skill-template.md` §Token Efficiency Guidelines). A skill missing this section is a **P0 failure** and MUST be fixed before merge. The generator already injects this section for new skills; existing skills lacking it MUST add it on next update (tracked by CADL §10.5 and generator charter C6).
+> **Mandatory per-skill enforcement**: Every `gcp-*-ops` SKILL.md **MUST** include a `## Token Efficiency Guidelines (P0 — 强制)` section (TE-1 to TE-8, sourced from `gcp-skill-generator/references/gcp-skill-template.md` §Token Efficiency Guidelines). A skill missing this section is a **P0 failure** and MUST be fixed before merge. The generator already injects this section for new skills; existing skills lacking it MUST add it on next update (tracked by CADL §10.5 and generator charter C6).
 
 > **Application-level optimization**: AGENTS.md's own always-loaded optimization strategy (TE-A/TE-B/TE-C) is documented at [docs/token-efficiency-strategy.md](docs/token-efficiency-strategy.md) — includes full audit methodology and checklist for scanning existing skills.
 

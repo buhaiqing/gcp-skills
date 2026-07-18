@@ -206,7 +206,7 @@ C1-C6 全通过？
 | C3 | Five Core Standards | `grep -c "Five Core Standards" SKILL.md` | ≥ 1 match | Add Five Core Standards table from template |
 | C4 | Well-Architected | `grep -c "Well-Architected Framework" SKILL.md` | ≥ 1 match | Add Google Cloud Architecture Framework table |
 | C5 | Variables | `grep -c "^## Variables" SKILL.md` | ≥ 1 match | Add Variables section with `{{env.*}}`/`{{user.*}}`/`{{output.*}}` |
-| **C6** | **Token Efficiency** | See §Token Efficiency Requirements in meta-skill | All 6 TE rules applied | Fix per TE guidelines below |
+| **C6** | **Token Efficiency** | See §Token Efficiency Requirements in meta-skill | All 8 TE rules (TE-1 to TE-8) applied | Fix per TE guidelines below |
 
 ### Self-Remediation Template (自动修复模板)
 
@@ -712,7 +712,7 @@ Optional later improvements: PR template checkbox linking to that doc; periodic 
 - [ ] **Well-Architected Reference:** SKILL.md links to `well-architected-assessment.md` for pillar-specific assessment patterns
 
 - [ ] **[GCL] Rubric present (when `required` or `recommended` per `AGENTS.md` §11 (Generator-Critic-Loop)):** `references/rubric.md` exists with 5 core dimensions + 3 GCP-specific extensions, per-op Safety sub-rules table (≥ 3 sub-rules per destructive op), detection regex list (≥ 5 patterns for data-plane skills), ≥ 2 worked examples (one PASS, one SAFETY_FAIL), and changelog with 1.0.0 entry per [gcl-rollout-spec.md](references/gcl-rollout-spec.md) §4
-- [ ] **[GCL] Prompt templates present (when `required` or `recommended`):** `references/prompt-templates.md` exists with Generator template (hard rules list referencing rubric's per-op sub-rules) AND Critic template (independent re-query pattern, regex application, **Critic MUST NOT see `{{user.request}}`** for rubber-stamping prevention per `AGENTS.md` §12.2) per [gcl-rollout-spec.md](references/gcl-rollout-spec.md) §5
+- [ ] **[GCL] Prompt templates present (when `required` or `recommended`):** `references/prompt-templates.md` exists with Generator template (hard rules list referencing rubric's per-op sub-rules) AND Critic template (independent re-query pattern, regex application, **Critic MUST NOT see `{{user.request}}`** for rubber-stamping prevention per `AGENTS.md` §11 (Generator-Critic-Loop)) per [gcl-rollout-spec.md](references/gcl-rollout-spec.md) §5
 - [ ] **[GCL] Quality Gate section in SKILL.md (when `required` or `recommended`):** `## Quality Gate (GCL)` section inserted between `## Operational Best Practices` and `## See Also — Meta-Skill Rules`, with classification table (Required? / `max_iter` / Most-scrutinized ops), `Changelog` line at 1.0.0, and links to both `references/rubric.md` AND `references/prompt-templates.md` per [gcl-rollout-spec.md](references/gcl-rollout-spec.md) §6
 - [ ] **[GCL] Cross-skill delegation documented (when skill touches other products):** Generator template hard rules list explicit delegation to other skills' GCL rules (e.g. GCE → `gcp-vpc-ops` for VPC ops; Cloud SQL → `gcp-gce-ops` for VM connectivity) per [gcl-rollout-spec.md](references/gcl-rollout-spec.md) §7
 
@@ -758,7 +758,7 @@ Optional later improvements: PR template checkbox linking to that doc; periodic 
 | [user-experience-spec.md](references/user-experience-spec.md) | Mandatory UX requirements for all generated skills |
 | [aiops-best-practices.md](references/aiops-best-practices.md) | Mandatory AIOps patterns for Cloud Monitoring / diagnosis skills |
 | [gcl-rollout-spec.md](references/gcl-rollout-spec.md) | **NEW** Generator-Critic-Loop (GCL) rollout playbook — how to generate `references/rubric.md` + `references/prompt-templates.md` + `## Quality Gate (GCL)` section in SKILL.md for a new `gcp-*-ops` skill; covers `required` / `recommended` / `optional` classification, per-op Safety sub-rule format, regex hot-spot detection, cross-skill delegation, and GCE worked example |
-| [gcl-orchestrator-agent.md](references/gcl-orchestrator-agent.md) | **NEW** `pi-subagents` custom agent definition (`gcl-orchestrator`) that wraps `gcp-gcl-runner-ops/scripts/gcl_runner.py` for the parent pi session. **Deprecated** — skills should delegate GCL execution directly via `## Delegation Rules` to the `gcp-gcl-runner-ops` shared skill instead. |
+| [gcl-orchestrator-agent.md](references/gcl-orchestrator-agent.md) | **NEW** custom subagent-framework agent definition (`gcl-orchestrator`) that wraps `gcp-gcl-runner-ops/scripts/gcl_runner.py` for the parent agent session. **Framework-specific / Deprecated** — skills should delegate GCL execution directly via `## Delegation Rules` to the `gcp-gcl-runner-ops` shared skill instead. |
 | [gcl-actiontrail-crosscheck-spec.md](references/gcl-actiontrail-crosscheck-spec.md) | **NEW** GCL ↔ Cloud Audit Logs cross-check spec (Phase 3-C). For each `gcl-trace-*.json`, an independent `gcloud logging read` call verifies the op actually happened in the cloud; catches `PHANTOM_PASS` / `PHANTOM_FAIL` / `RESOURCE_MISMATCH` / `TIMING_ANOMALY` findings |
 | [well-architected-assessment.md](references/well-architected-assessment.md) | **NEW** Google Cloud Architecture Framework five-pillar assessment integration |
 | [assets/eval_queries.json](assets/eval_queries.json) | Eval queries for testing the meta-skill's description trigger accuracy |
