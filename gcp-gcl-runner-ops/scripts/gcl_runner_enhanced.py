@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import logging
 import os
 import random
 import re
@@ -27,8 +28,18 @@ from dataclasses import asdict
 from datetime import UTC, datetime
 from typing import Any
 
+try:
+    from google.api_core.exceptions import GoogleAPIError
+    from google.cloud import bigquery
+
+    BIGQUERY_AVAILABLE = True
+except ImportError:
+    BIGQUERY_AVAILABLE = False
+
 # Import schema
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+# Import logging
+from gcl_logging import get_gcl_logger, log_gcl_event
 from gcl_trace_schema import (
     AutonomyDecision,
     Environment,
@@ -49,10 +60,30 @@ TRACE_DIR = os.environ.get(
     ),
 )
 
+# BigQuery constants
+BQ_DATASET_ID = "gcp_skills_gcl_audit"
+BQ_TABLE_ID = "gcl_traces"
+BQ_PROJECT_ID = os.environ.get("CLOUDSDK_CORE_PROJECT")
+
 DEFAULT_MAX_ITER = 2
 SAFETY_THRESHOLD = 0.5
 DEFAULT_DEGRADE_THRESHOLD = 3
 DEFAULT_ENVIRONMENT = Environment.PRODUCTION
+
+# Retry constants for exponential backoff
+RETRY_BASE_DELAY = 1.0  # Base delay in seconds
+RETRY_MAX_DELAY = 60.0  # Max delay in seconds
+RETRY_EXPONENTIAL_FACTOR = 2.0  # Multiplier for exponential backoff
+RETRY_MAX_RETRIES = 3  # Max retries per operation
+
+# Transient errors that should trigger retry
+RETRYABLE_ERROR_TYPES: set[GCPErrorType] = {
+    GCPErrorType.TIMEOUT,
+    GCPErrorType.INTERNAL,
+    GCPErrorType.UNAVAILABLE,
+    GCPErrorType.RESOURCE_EXHAUSTED,
+    GCPErrorType.ABORTED,
+}
 
 # Error pattern regexes for GCP error classification
 GCP_ERROR_PATTERNS: list[tuple[str, GCPErrorType]] = [
@@ -186,14 +217,44 @@ def has_inline_secret(command: str) -> bool:
 # ── Generator ──────────────────────────────────────────────────────────────
 
 
-def generate(command: str, dry_run: bool = False, timeout: int = 300) -> dict:
-    """Execute the command and capture output."""
+def generate(
+    command: str,
+    dry_run: bool = False,
+    timeout: int = 300,
+    max_retries: int = RETRY_MAX_RETRIES,
+    base_delay: float = RETRY_BASE_DELAY,
+    max_delay: float = RETRY_MAX_DELAY,
+    exponential_factor: float = RETRY_EXPONENTIAL_FACTOR,
+    skill: str = "",
+    op: str = "",
+) -> dict:
+    """
+    Execute the command and capture output with exponential backoff retry.
+
+    Args:
+        command: The command to execute
+        dry_run: If True, skip actual execution and return dummy trace
+        timeout: Command timeout in seconds
+        max_retries: Maximum number of retry attempts (default: 3)
+        base_delay: Initial delay in seconds (default: 1.0)
+        max_delay: Maximum delay in seconds (default: 60.0)
+        exponential_factor: Multiplier for each retry (default: 2.0)
+        skill: Skill name for logging (optional)
+        op: Operation name for logging (optional)
+
+    Returns:
+        Dictionary with command execution trace
+    """
+    logger = get_gcl_logger("gcl-generator", use_cloud_logging=False)
+
     trace = {
         "command": sanitize(command),
         "stdout": "",
         "stderr": "",
         "exit_code": -1,
         "start_time": datetime.now(UTC).isoformat(),
+        "retry_count": 0,
+        "retry_delays": [],
     }
 
     if dry_run:
@@ -202,25 +263,133 @@ def generate(command: str, dry_run: bool = False, timeout: int = 300) -> dict:
         trace["end_time"] = datetime.now(UTC).isoformat()
         return trace
 
-    try:
-        result = subprocess.run(
-            command,
-            shell=True,
-            capture_output=True,
-            text=True,
-            timeout=timeout,
-        )
-        trace["stdout"] = sanitize(result.stdout)
-        trace["stderr"] = sanitize(result.stderr)
-        trace["exit_code"] = result.returncode
-    except subprocess.TimeoutExpired:
-        trace["stderr"] = f"[ERROR] Command timed out after {timeout}s"
-        trace["exit_code"] = -1
-    except Exception as e:
-        trace["stderr"] = f"[ERROR] {e}"
-        trace["exit_code"] = -2
+    last_exception: Exception | None = None
+
+    for attempt in range(max_retries + 1):
+        try:
+            result = subprocess.run(
+                command,
+                shell=True,
+                capture_output=True,
+                text=True,
+                timeout=timeout,
+            )
+            trace["stdout"] = sanitize(result.stdout)
+            trace["stderr"] = sanitize(result.stderr)
+            trace["exit_code"] = result.returncode
+
+            # Check if error is retryable
+            if result.returncode != 0:
+                error_type = classify_error(trace["stderr"])
+                if error_type in RETRYABLE_ERROR_TYPES and attempt < max_retries:
+                    # Calculate delay with exponential backoff
+                    delay = min(base_delay * (exponential_factor ** attempt), max_delay)
+                    trace["retry_delays"].append(delay)
+                    trace["retry_count"] = attempt + 1
+
+                    log_gcl_event(
+                        logger,
+                        f"Retryable error detected, retrying in {delay:.1f}s",
+                        severity="WARNING",
+                        skill=skill,
+                        op=op,
+                        result="RETRY",
+                        extra={
+                            "attempt": attempt + 1,
+                            "max_retries": max_retries,
+                            "error_type": error_type.value if error_type else "UNKNOWN",
+                            "delay_seconds": delay,
+                            "exit_code": result.returncode,
+                        },
+                    )
+                    time.sleep(delay)
+                    continue
+
+            # Success or permanent failure - break out of loop
+            break
+
+        except subprocess.TimeoutExpired:
+            trace["stderr"] = f"[ERROR] Command timed out after {timeout}s"
+            trace["exit_code"] = -1
+            last_exception = None  # Timeout is classified by error_type below
+
+            # Check if we should retry on timeout
+            if attempt < max_retries:
+                error_type = classify_error(trace["stderr"])
+                if error_type == GCPErrorType.TIMEOUT or "TIMEOUT" in trace["stderr"].upper():
+                    delay = min(base_delay * (exponential_factor ** attempt), max_delay)
+                    trace["retry_delays"].append(delay)
+                    trace["retry_count"] = attempt + 1
+
+                    log_gcl_event(
+                        logger,
+                        f"Timeout error, retrying in {delay:.1f}s",
+                        severity="WARNING",
+                        skill=skill,
+                        op=op,
+                        result="RETRY",
+                        extra={
+                            "attempt": attempt + 1,
+                            "max_retries": max_retries,
+                            "error_type": "TIMEOUT",
+                            "delay_seconds": delay,
+                        },
+                    )
+                    time.sleep(delay)
+                    continue
+            break
+
+        except Exception as e:
+            trace["stderr"] = f"[ERROR] {e}"
+            trace["exit_code"] = -2
+            last_exception = e
+
+            # Check if error is retryable
+            error_type = classify_error(trace["stderr"])
+            if error_type in RETRYABLE_ERROR_TYPES and attempt < max_retries:
+                delay = min(base_delay * (exponential_factor ** attempt), max_delay)
+                trace["retry_delays"].append(delay)
+                trace["retry_count"] = attempt + 1
+
+                log_gcl_event(
+                    logger,
+                    f"Retryable exception, retrying in {delay:.1f}s",
+                    severity="WARNING",
+                    skill=skill,
+                    op=op,
+                    result="RETRY",
+                    extra={
+                        "attempt": attempt + 1,
+                        "max_retries": max_retries,
+                        "error_type": error_type.value if error_type else "UNKNOWN",
+                        "delay_seconds": delay,
+                        "exception": str(e),
+                    },
+                )
+                time.sleep(delay)
+                continue
+
+            # Non-retryable exception or max retries reached
+            break
 
     trace["end_time"] = datetime.now(UTC).isoformat()
+
+    # Log final attempt (non-retry)
+    if trace["retry_count"] > 0:
+        log_gcl_event(
+            logger,
+            f"Command completed after {trace['retry_count']} retries",
+            severity="INFO",
+            skill=skill,
+            op=op,
+            result="COMPLETED",
+            extra={
+                "total_retries": trace["retry_count"],
+                "retry_delays": trace["retry_delays"],
+                "exit_code": trace["exit_code"],
+            },
+        )
+
     return trace
 
 
@@ -300,6 +469,56 @@ def persist_trace(trace: dict, output_dir: str | None = None) -> str:
     return filepath
 
 
+def upload_trace_to_bq(
+    trace: dict,
+    dataset_id: str = BQ_DATASET_ID,
+    table_id: str = BQ_TABLE_ID,
+    project_id: str | None = BQ_PROJECT_ID,
+) -> bool:
+    """
+    Upload a GCL trace to BigQuery using streaming insert.
+
+    Args:
+        trace: The GCL trace dictionary to upload
+        dataset_id: BigQuery dataset ID (default: gcp_skills_gcl_audit)
+        table_id: BigQuery table ID (default: gcl_traces)
+        project_id: GCP project ID (default: from CLOUDSDK_CORE_PROJECT env)
+
+    Returns:
+        True if upload succeeded, False if it failed
+    """
+    if not BIGQUERY_AVAILABLE:
+        logging.warning(
+            "[WARN] google-cloud-bigquery not installed, skipping BQ upload"
+        )
+        return False
+
+    try:
+        client_kwargs = {}
+        if project_id:
+            client_kwargs["project"] = project_id
+
+        client = bigquery.Client(**client_kwargs)
+        table_ref = f"{dataset_id}.{table_id}"
+
+        # Use insert_rows_json for streaming insert
+        errors = client.insert_rows_json(table_ref, [trace])
+
+        if errors:
+            logging.error(f"[ERROR] BigQuery insert errors: {errors}")
+            return False
+
+        logging.info(f"[OK] Trace {trace.get('trace_id', 'unknown')} uploaded to BigQuery")
+        return True
+
+    except GoogleAPIError as e:
+        logging.error(f"[ERROR] BigQuery API error during upload: {e}")
+        return False
+    except Exception as e:
+        logging.error(f"[ERROR] Unexpected error during BigQuery upload: {e}")
+        return False
+
+
 # ── New Enhanced Functions ─────────────────────────────────────────────────
 
 
@@ -374,7 +593,12 @@ def generate_state_snapshot(command: str) -> dict:
     """
     Generate a state snapshot for debugging/audit purposes.
 
-    This is a stub function that captures current system state.
+    Captures current system state including:
+    - Current timestamp (ISO 8601)
+    - git status (current branch, any uncommitted changes)
+    - Working directory
+    - Environment variables (sanitized - only GCP-related vars)
+    - Active gcloud configuration
 
     Args:
         command: The command being executed
@@ -382,18 +606,175 @@ def generate_state_snapshot(command: str) -> dict:
     Returns:
         Dictionary containing state snapshot
     """
-    # Stub implementation - in production would capture:
-    # - Current directory
-    # - Environment variables (sanitized)
-    # - git status
-    # - Process info
-    return {
+    snapshot = {
         "timestamp": datetime.now(UTC).isoformat(),
         "command_hash": str(hash(command)),
         "working_dir": os.getcwd(),
         "user": os.environ.get("USER", "unknown"),
-        "gcp_project": os.environ.get("CLOUDSDK_CORE_PROJECT", "not set"),
     }
+
+    # Capture git status
+    snapshot["git"] = _capture_git_status()
+
+    # Capture sanitized GCP-related environment variables
+    snapshot["env"] = _capture_gcp_env_vars()
+
+    # Capture active gcloud configuration
+    snapshot["gcloud"] = _capture_gcloud_config()
+
+    return snapshot
+
+
+def _capture_git_status() -> dict:
+    """Capture current git status."""
+    status: dict = {
+        "branch": "unknown",
+        "has_uncommitted_changes": False,
+        "uncommitted_files": [],
+        "stash_count": 0,
+    }
+
+    try:
+        # Get current branch
+        branch_result = subprocess.run(
+            ["git", "branch", "--show-current"],
+            capture_output=True,
+            text=True,
+            timeout=5,
+        )
+        if branch_result.returncode == 0:
+            status["branch"] = branch_result.stdout.strip()
+
+        # Check for uncommitted changes
+        diff_result = subprocess.run(
+            ["git", "diff", "--name-only"],
+            capture_output=True,
+            text=True,
+            timeout=5,
+        )
+        if diff_result.returncode == 0:
+            uncommitted = [f.strip() for f in diff_result.stdout.strip().split("\n") if f.strip()]
+            status["has_uncommitted_changes"] = len(uncommitted) > 0
+            status["uncommitted_files"] = uncommitted
+
+        # Check for staged changes
+        staged_result = subprocess.run(
+            ["git", "diff", "--cached", "--name-only"],
+            capture_output=True,
+            text=True,
+            timeout=5,
+        )
+        if staged_result.returncode == 0:
+            staged = [f.strip() for f in staged_result.stdout.strip().split("\n") if f.strip()]
+            status["staged_files"] = staged
+            status["has_uncommitted_changes"] = status["has_uncommitted_changes"] or len(staged) > 0
+
+        # Get stash count
+        stash_result = subprocess.run(
+            ["git", "stash", "list"],
+            capture_output=True,
+            text=True,
+            timeout=5,
+        )
+        if stash_result.returncode == 0:
+            status["stash_count"] = len([line for line in stash_result.stdout.strip().split("\n") if line.strip()])
+
+    except (subprocess.TimeoutExpired, FileNotFoundError):
+        status["error"] = "git command unavailable or timed out"
+
+    return status
+
+
+def _capture_gcp_env_vars() -> dict:
+    """
+    Capture GCP-related environment variables (sanitized).
+
+    Only includes GCP-related variables, sensitive values are masked.
+    """
+    gcp_prefixes = [
+        "CLOUDSDK_",
+        "GCP_",
+        "GOOGLE_",
+        "GCLOUD_",
+    ]
+
+    gcp_vars: dict = {}
+    for key, value in os.environ.items():
+        if any(key.startswith(prefix) for prefix in gcp_prefixes):
+            # Sanitize sensitive values
+            if any(secret_key in key.upper() for secret_key in ["KEY", "SECRET", "TOKEN", "PASSWORD", "CREDENTIAL"]):
+                gcp_vars[key] = "<masked>"
+            else:
+                gcp_vars[key] = value
+
+    return gcp_vars
+
+
+def _capture_gcloud_config() -> dict:
+    """Capture active gcloud configuration."""
+    config: dict = {
+        "active_configuration": "unknown",
+        "project": None,
+        "region": None,
+        "zone": None,
+        "account": None,
+    }
+
+    try:
+        # Get active configuration name
+        config_result = subprocess.run(
+            ["gcloud", "config", "configuration", "list", "--format=value(name)"],
+            capture_output=True,
+            text=True,
+            timeout=5,
+        )
+        if config_result.returncode == 0 and config_result.stdout.strip():
+            config["active_configuration"] = config_result.stdout.strip()
+
+        # Get project
+        project_result = subprocess.run(
+            ["gcloud", "config", "get-value", "project"],
+            capture_output=True,
+            text=True,
+            timeout=5,
+        )
+        if project_result.returncode == 0 and project_result.stdout.strip():
+            config["project"] = project_result.stdout.strip()
+
+        # Get region
+        region_result = subprocess.run(
+            ["gcloud", "config", "get-value", "compute/region"],
+            capture_output=True,
+            text=True,
+            timeout=5,
+        )
+        if region_result.returncode == 0 and region_result.stdout.strip():
+            config["region"] = region_result.stdout.strip()
+
+        # Get zone
+        zone_result = subprocess.run(
+            ["gcloud", "config", "get-value", "compute/zone"],
+            capture_output=True,
+            text=True,
+            timeout=5,
+        )
+        if zone_result.returncode == 0 and zone_result.stdout.strip():
+            config["zone"] = zone_result.stdout.strip()
+
+        # Get account
+        account_result = subprocess.run(
+            ["gcloud", "config", "get-value", "account"],
+            capture_output=True,
+            text=True,
+            timeout=5,
+        )
+        if account_result.returncode == 0 and account_result.stdout.strip():
+            config["account"] = account_result.stdout.strip()
+
+    except (subprocess.TimeoutExpired, FileNotFoundError):
+        config["error"] = "gcloud command unavailable or timed out"
+
+    return config
 
 
 # ── Enhanced Main loop ─────────────────────────────────────────────────────
@@ -491,18 +872,31 @@ def main():
     consecutive_failures = 0
     autonomy_decisions: list[AutonomyDecision] = []
 
+    # Capture pre-state snapshot
+    pre_state = generate_state_snapshot(args.command)
+
     # Async mode: if trace-only, spawn background task and return immediately
     if args.trace_only:
         print(f"[TRACE-ONLY] Trace {trace_id} started asynchronously")
         # In a full implementation, would spawn background task here
         # For now, just note it
-        persist_trace(trace.to_dict(), args.output_dir)
-        print(f"[TRACE] Saved to {persist_trace(trace.to_dict(), args.output_dir)}")
+        trace_dict = trace.to_dict()
+        trace_path = persist_trace(trace_dict, args.output_dir)
+        print(f"[TRACE] Saved to {trace_path}")
+
+        # Upload to BigQuery if requested
+        if args.trace_to_bq:
+            bq_success = upload_trace_to_bq(trace_dict)
+            if bq_success:
+                print(f"[TRACE] Uploaded to BigQuery: {BQ_DATASET_ID}.{BQ_TABLE_ID}")
+            else:
+                print(f"[WARN] BigQuery upload failed, trace saved to {trace_path} only")
+
         sys.exit(0)
 
     # Main loop
     for i in range(actual_max_iter):
-        gen_trace = generate(args.command, dry_run=args.dry_run)
+        gen_trace = generate(args.command, dry_run=args.dry_run, skill=args.skill, op=args.op)
         crit = critique(args.op, gen_trace, rubric)
 
         # Classify error
@@ -588,9 +982,26 @@ def main():
         trace.safety_score = avg_safety
         trace.safety_failures = sum(1 for it in trace.iterations if it.critique.get("safety", 1.0) == 0.0)
 
+    # Capture post-state snapshot
+    post_state = generate_state_snapshot(args.command)
+
+    # Add pre/post state to trace dict
+    trace_dict = trace.to_dict()
+    trace_dict["pre_state"] = pre_state
+    trace_dict["post_state"] = post_state
+
     # Persist
-    trace_path = persist_trace(trace.to_dict(), args.output_dir)
+    trace_path = persist_trace(trace_dict, args.output_dir)
     print(f"[TRACE] Saved to {trace_path}")
+
+    # Upload to BigQuery if requested (errors are logged but don't fail the run)
+    if args.trace_to_bq:
+        trace_dict = trace.to_dict()
+        bq_success = upload_trace_to_bq(trace_dict)
+        if bq_success:
+            print(f"[TRACE] Uploaded to BigQuery: {BQ_DATASET_ID}.{BQ_TABLE_ID}")
+        else:
+            print(f"[WARN] BigQuery upload failed, trace saved to {trace_path} only")
 
     # Exit code
     verdict_map = {
