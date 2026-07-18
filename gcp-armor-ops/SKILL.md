@@ -337,6 +337,9 @@ Poll describe until `NOT_FOUND` or status indicates deleted.
 - [Monitoring & Alerts](references/monitoring.md)
 - [Integration](references/integration.md)
 - [Well-Architected Assessment](references/well-architected-assessment.md)
+- [Advanced WAF Rules](references/advanced/advanced-waf-rules.md)
+- [Bot Management](references/advanced/bot-management.md)
+- [Adaptive Protection](references/advanced/adaptive-protection.md)
 
 ## Operational Best Practices
 
