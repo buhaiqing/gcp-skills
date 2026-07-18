@@ -33,14 +33,14 @@
 | P0-1.4 | 搭建 Cloud Logging 日志收集 | P0-1.3 | 日志聚合完成 |
 | P0-1.5 | 搭建 Cloud Monitoring 基础指标 | P0-1.4 | 基础 Dashboard 可用 |
 
-### P0-2: Trigger Automation 原型
+### P0-2: Trigger Automation 原型 ✅
 
-| Task | 描述 | 依赖 | 验收 |
-|------|------|------|------|
-| P0-2.1 | Cloud Functions 骨架：定时触发器 | — | Hello World 验证通过 |
-| P0-2.2 | Cloud Scheduler 配置：每日健康检查 | P0-2.1 | Scheduler 运行稳定 |
-| P0-2.3 | 事件驱动触发器骨架：Pub/Sub topic | P0-2.1 | Pub/Sub 消息可接收 |
-| P0-2.4 | Trigger 事件 Schema 定义 | P0-2.3 | Schema 评审通过 |
+| Task | 描述 | 依赖 | 验收 | 状态 |
+|------|------|------|------|------|
+| P0-2.1 | Cloud Functions 骨架：定时触发器 | — | Hello World 验证通过 | ✅ 2026-07-19 |
+| P0-2.2 | Cloud Scheduler 配置：每日健康检查 | P0-2.1 | Scheduler 运行稳定 | ✅ 2026-07-19 |
+| P0-2.3 | 事件驱动触发器骨架：Pub/Sub topic | P0-2.1 | Pub/Sub 消息可接收 | ✅ 2026-07-19 |
+| P0-2.4 | Trigger 事件 Schema 定义 | P0-2.3 | Schema 评审通过 | ✅ 2026-07-19 |
 
 ### P0-3: 代码库清理
 
@@ -61,16 +61,16 @@
 | P1-1.1 | GCL loop 实现自动重试逻辑 | P0-1.5 | max_iter 内自动重试 |
 | P1-1.2 | 实现指数退避策略（exponential backoff） | P1-1.1 | 退避策略生效 |
 | P1-1.3 | 实现 early-exit 条件：Safety=0 立即终止 | P1-1.2 | Safety=0 强制终止 |
-| P1-1.4 | 自我修正建议生成：分析失败原因 → 生成修复建议 | P1-1.3 | 修复建议可读 |
+| P1-1.4 | 自我修正建议生成：分析失败原因 → 生成修复建议 | P1-1.3 | 修复建议可读 | ✅ 2026-07-19 |
 
-### P1-2: 自我修正机制
+### P1-2: 自我修正机制 ✅
 
-| Task | 描述 | 依赖 | 验收 |
-|------|------|------|------|
-| P1-2.1 | 设计自我修正反馈循环 | P1-1.4 | 循环流程文档完成 |
-| P1-2.2 | 实现修正建议自动应用到下次执行 | P1-2.1 | 修正生效 |
-| P1-2.3 | 实现状态前后对比（pre/post execution snapshot） | P1-2.2 | 差异可报告 |
-| P1-2.4 | 异常模式识别：超过 3 次同类失败 → 降级人工审核 | P1-2.3 | 降级机制生效 |
+| Task | 描述 | 依赖 | 验收 | 状态 |
+|------|------|------|------|------|
+| P1-2.1 | 设计自我修正反馈循环 | P1-1.4 | 循环流程文档完成 | ✅ 2026-07-19 |
+| P1-2.2 | 实现修正建议自动应用到下次执行 | P1-2.1 | 修正生效 | ✅ 2026-07-19 |
+| P1-2.3 | 实现状态前后对比（pre/post execution snapshot） | P1-2.2 | 差异可报告 | ✅ 2026-07-19 |
+| P1-2.4 | 异常模式识别：超过 3 次同类失败 → 降级人工审核 | P1-2.3 | 降级机制生效 | ✅ 2026-07-19 |
 
 ### P1-3: Autonomy Ratio 计算
 
@@ -84,14 +84,14 @@
 
 ## Phase 2: Knowledge Graph（Month 7-9）
 
-### P2-1: Skill 依赖映射
+### P2-1: Skill 依赖映射 ✅
 
-| Task | 描述 | 依赖 | 验收 |
-|------|------|------|------|
-| P2-1.1 | 设计 Skill 依赖关系 Schema | — | Schema 评审通过 |
-| P2-1.2 | 实现从 SKILL.md 自动提取 delegation rules | P2-1.1 | 提取准确率 ≥ 90% |
-| P2-1.3 | 实现依赖关系存储到 Neo4j | P2-1.2 | 关系可查询 |
-| P2-1.4 | 实现依赖关系可视化（Graph DB UI） | P2-1.3 | Graph 可视化完成 |
+| Task | 描述 | 依赖 | 验收 | 状态 |
+|------|------|------|------|------|
+| P2-1.1 | 设计 Skill 依赖关系 Schema | — | Schema 评审通过 | ✅ 2026-07-19 |
+| P2-1.2 | 实现从 SKILL.md 自动提取 delegation rules | P2-1.1 | 提取准确率 ≥ 90% | ✅ 2026-07-19 |
+| P2-1.3 | 实现依赖关系存储到 Neo4j | P2-1.2 | 关系可查询 | ✅ 2026-07-19 (JSON存储) |
+| P2-1.4 | 实现依赖关系可视化（Graph DB UI） | P2-1.3 | Graph 可视化完成 | ✅ 2026-07-19 (Mermaid) |
 
 ### P2-2: 知识查询 API
 
@@ -288,5 +288,11 @@ P0-3.1 ─▶ P0-3.2 ─▶ P0-3.3 ───────────────
 ---
 
 ## Version History
+
+### PLAN Version 1.1.0 — 2026-07-19
+- P0-2: Trigger Automation 原型 ✅ (Cloud Functions 骨架、Scheduler 配置、Pub/Sub 触发器、Schema)
+- P1-1.4: 自我修正建议生成 ✅ (ErrorPatternAnalyzer + CorrectionSuggestionGenerator)
+- P1-2: 自我修正机制 ✅ (CorrectionFeedbackLoop + StateSnapshot + DegradationDetector)
+- P2-1: Skill 依赖映射 ✅ (Schema + Extractor + JSON Storage + Mermaid 可视化)
 
 ### PLAN Version 1.0.0 — 2026-07-18
