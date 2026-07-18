@@ -186,6 +186,8 @@ Additionally, every skill MUST include a **Well-Architected Framework** table (f
 
 **Non-compressible**: Agent-executable commands (params, JSON paths), error recovery logic, safety gates, credential rules, cross-skill orchestration chains.
 
+> **Mandatory per-skill enforcement**: Every `gcp-*-ops` SKILL.md **MUST** include a `## Token Efficiency Guidelines (P0 — 强制)` section (TE-1 to TE-7, sourced from `gcp-skill-generator/references/gcp-skill-template.md` §Token Efficiency Guidelines). A skill missing this section is a **P0 failure** and MUST be fixed before merge. The generator already injects this section for new skills; existing skills lacking it MUST add it on next update (tracked by CADL §10.5 and generator charter C6).
+
 > **Application-level optimization**: AGENTS.md's own always-loaded optimization strategy (TE-A/TE-B/TE-C) is documented at [docs/token-efficiency-strategy.md](docs/token-efficiency-strategy.md) — includes full audit methodology and checklist for scanning existing skills.
 
 ---
@@ -222,6 +224,100 @@ Additionally, every skill MUST include a **Well-Architected Framework** table (f
 | **F8 校验** | 自审 F8 检查项以根 `TODO.md` 为准 |
 
 Any issue found → fix one by one → all must pass before finishing.
+
+---
+
+### 10.2 AGENTS.md 行数门禁（Agent CMD Size Guard）
+
+**硬限制**：本文件（AGENTS.md）**不得超过 500 行**。
+
+#### 为什么是 500 行
+
+- LLM 上下文窗口有限，过长的规则文件会稀释重要规则的注意力权重
+- 500 行 ≈ 8000 tokens，约占常用模型上下文的 2-3%，留足空间给实际工作内容
+- 超过 500 行后，规则间的优先级冲突概率显著上升
+
+#### 自我监督机制
+
+每次向本文件写入新内容前，**必须**执行：
+
+```bash
+wc -l AGENTS.md
+```
+
+| 当前行数 | 动作 |
+|---------|------|
+| < 400 行 | 自由添加 |
+| 400-500 行 | 谨慎添加，同时精简已有内容 |
+| ≥ 500 行 | **禁止添加**，必须先精简再写入 |
+
+#### 精简策略（按优先级）
+
+1. **删除冗余示例**：保留结论，删除代码推导过程（代码在仓库里，规则里只需说"做什么"）
+2. **合并同类项**：多个相似规则合并为一个 checklist 或表格
+3. **降级到 docs/**：详细实现文档移到 `docs/` 子目录，AGENTS.md 只放摘要 + 链接
+4. **删除过时规则**：已被实践淘汰的规则直接删除（git 有历史）
+
+---
+
+## 10.5 复利资产沉淀机制（Compound-Asset Distillation Loop, CADL）
+
+**这不是一条规范，而是一套工作闭环——任何实质任务完成后，Agent 必须走完「提取 → 判定落点 → 写入 → 门禁」才能结束。目的是让每次踩坑、每次评审、每次跨 skill 协作都变成下一次的可复用资产，形成复利。**
+
+### 为什么是机制而非规范
+
+单条规则（如"记得写 AGENTS.md"）会被忽略，因为无触发、无闭环。CADL 把沉淀变成工作流的**必经出口**：任务不做沉淀 = 任务未完成。Agent 调用任何 Skill 后都走到这一步，Skill 本身也通过下方「Skill 侧钩子」提示大模型。
+
+### 触发条件（满足任一即必须走 CADL）
+
+- 多步 / 跨文件任务完成
+- 跨 Skill 协作（用了 Delegation Rules 或并行 agent）
+- 评审 / 修复循环（如 GCL、Post-Update Self-Review §10）
+- 发现 repo 缺陷 / 坑（即使不在本次 scope，也记）
+- 验证中发现预存 FAIL 并归因
+- 用户给出可复用的工作流偏好（如"用双写子命令绕过 CLI bug"）
+
+### 闭环步骤
+
+```
+1. 提取   → 从刚完成的任务中抽象出可复用模式：
+             踩坑避免 / 评审维度 / 协作模式 / 验证命令 / 复用 helper
+             格式："问题 → 反模式 → 正确做法（含代码示例）"
+ 2. 落点判定 → 离开本仓库还有用？ → 用户级 AGENTS.md（即各 agent 框架的全局 agent 指南，路径随所用框架而定，例如 `~/.config/<agent>/AGENTS.md` 或等价位置）
+             仅本仓库适用？     → 项目级 AGENTS.md（本文件）
+             是某 skill 专属可调用的能力？ → 独立 Skill 文件（经 gcp-skill-generator）
+3. 写入   → 可执行、有示例、有边界、先 grep 现有 AGENTS.md 确认未覆盖（不重复）
+4. 门禁   → 写入前查 wc -l，本文件 ≥500 行先精简再写（见 §10.2 行数门禁）
+5. 复用   → 下次同类任务，Agent 读 AGENTS.md 即获得该资产 → 复利生效
+```
+
+### Skill 侧钩子（让每个 Skill 自带沉淀意识）
+
+- **源头**：`gcp-skill-generator` 在生成每个 skill 时，须在 SKILL.md 末尾注入一行：
+   `> 任务完成后按根 AGENTS.md 的「复利资产沉淀机制 (CADL)」复盘并沉淀可复用资产。`
+   未来所有 `gcp-*-ops` 自动继承此意识。
+- **现存 skill**：逐批在 SKILL.md 末尾补同一行提示，使大模型调用任何 skill 后都看到触发信号。
+- **大模型侧**：Agent 在任意 skill 调用结束前，主动检查 CADL 触发条件，而非等用户提醒。
+
+### 反模式（违反 CADL）
+
+| 反模式 | 正确做法 |
+|---|---|
+| 任务做完就结束，不沉淀 | 走完 CADL 闭环再交付 |
+| 把一次性上下文当资产写进 AGENTS.md | 只沉淀跨任务可复用的模式 |
+| 重复已有条目 | 写入前 grep 确认未覆盖 |
+| 只在 GCL / Self-Review 相关任务才沉淀 | 评审/修复/协作/验证都触发 |
+
+### 通用性约束（Agent 无关 — MANDATORY）
+
+> 本仓库所有规范、Skill、模板、CADL 落点描述 **不得硬编码依赖任何具体 Coding Agent**（如 OpenCode、Claude Code、Cursor 等）。
+
+**规则**：
+- Agent 名称、路径、配置文件位置必须泛化表述，例如用户级 agent 指南写作「各 agent 框架的全局 agent 指南，路径随所用框架而定（如 `~/.config/<agent>/AGENTS.md` 或等价位置）」，而非写死 `~/.config/opencode/AGENTS.md`。
+- Skill / 模板中的触发提示、变量约定、执行方式应保持框架无关，使任意兼容 agentskills 规范的 agent 均可加载执行。
+- 若某流程确实仅特定框架支持，须在文档中明确标注为「可选 / 框架特定」而非默认要求。
+
+**反模式**：在 AGENTS.md、SKILL.md、模板或 references/ 中直接写出具体 agent 产品名作为路径或强制依赖。
 
 ---
 

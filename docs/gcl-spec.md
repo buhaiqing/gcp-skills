@@ -26,7 +26,7 @@
 
 GCL enforces a Generator ↔ Critic adversarial loop on every cloud operation, scored against a quantified rubric. It catches **silent destructive failures** that single-shot pre-flight checks miss.
 
-**Core contract** is defined in `AGENTS.md §12`. This file is the detailed implementation spec.
+**Core contract** is defined in `AGENTS.md §11`. This file is the detailed implementation spec.
 
 ---
 
@@ -245,6 +245,6 @@ Validates the generated command for structural correctness **before execution**,
 
 ### References
 
-- `AGENTS.md §12` — canonical GCL spec (summary level)
+- `AGENTS.md §11` — canonical GCL spec (summary level)
 - `gcp-gcl-runner-ops/SKILL.md` — shared runner skill
 - `gcp-skill-generator/references/gcl-rollout-spec.md` — how to generate GCL files for new skills

@@ -8,7 +8,7 @@
 
 ## Overview
 
-`gcl_runner.py` is a standalone Python 3.10+ CLI that implements the GCL loop flow from `AGENTS.md §12.4`:
+`gcl_runner.py` is a standalone Python 3.10+ CLI that implements the GCL loop flow from `AGENTS.md §11`:
 
 ```
 [0] Pre-flight  — load rubric, resolve env.* / user.*, sanitize secrets

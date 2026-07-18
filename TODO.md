@@ -12,6 +12,7 @@
 | Advanced WAF rule patterns | ⬜ | references/advanced/ |
 | Bot management deep-dive | ⬜ | Custom bot detection rules |
 | Adaptive protection tuning | ⬜ | ML-based threat detection config |
+| Token Efficiency section (P0 — 强制) | ✅ | Added per AGENTS.md §9.1 / §10.5 CADL |
 
 ---
 
@@ -36,6 +37,7 @@
 | Committed use discount analysis | ⬜ | references/advanced/cud-analysis.md |
 | Budget automation with Terraform | ⬜ | google_billing_budget resource examples |
 | Multi-cloud cost comparison | ⬜ | Cross-cloud pricing analysis |
+| Token Efficiency section (P0 — 强制) | ✅ | Added per AGENTS.md §9.1 / §10.5 CADL |
 
 ---
 
@@ -51,6 +53,7 @@ No planned items.
 |----------------|--------|-------|
 | Advanced FinOps/AIOps references | ⬜ | references/advanced/ |
 | Standalone SDK code snippets | ⬜ | If skill becomes SDK-primary |
+| Token Efficiency section (P0 — 强制) | ✅ | Added per AGENTS.md §9.1 / §10.5 CADL |
 
 ---
 
@@ -61,6 +64,7 @@ No planned items.
 | Advanced DAG patterns | ⬜ | references/advanced/ |
 | Airflow 2.x migration guide | ⬜ | Version upgrade runbook |
 | Private environment setup | ⬜ | VPC-native configuration |
+| Token Efficiency section (P0 — 强制) | ✅ | Added per AGENTS.md §9.1 / §10.5 CADL |
 
 ---
 
@@ -120,6 +124,7 @@ No planned items.
 | Advanced monitoring AIOps | ✅ | references/advanced/aiops-gke-anomaly.md |
 | Workload Identity Federation deep-dive | ✅ | references/advanced/workload-identity-deep-dive.md |
 | Private cluster setup guide | ✅ | references/advanced/private-cluster-setup.md |
+| Token Efficiency section (P0 — 强制) | ✅ | Added per AGENTS.md §9.1 / §10.5 CADL |
 
 ---
 
@@ -188,6 +193,7 @@ No planned items.
 | Event Threat Detection deep-dive | ✅ | references/advanced/event-threat-detection.md |
 | SCC Enterprise tier specifics | ✅ | references/advanced/scc-enterprise.md |
 | SDK-only operations with code snippets | ✅ | references/advanced/sdk-operations.md |
+| Token Efficiency section (P0 — 强制) | ✅ | Added per AGENTS.md §9.1 / §10.5 CADL |
 
 ---
 
@@ -200,6 +206,7 @@ No planned items.
 | terraform import for more GCP resource types | ⬜ | Cloud SQL, GKE, GCS, BigQuery |
 | Workspace-based team collaboration | ⬜ | If requested |
 | Provider version upgrade runbook | ⬜ | terraform init -upgrade + state migration |
+| Token Efficiency section (P0 — 强制) | ✅ | Added per AGENTS.md §9.1 / §10.5 CADL |
 
 ---
 

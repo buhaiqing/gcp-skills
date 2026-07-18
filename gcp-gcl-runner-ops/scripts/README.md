@@ -1,6 +1,6 @@
 # GCL Runner Scripts
 
-This directory contains the implementation of the Generator-Critic-Loop (GCL) adversarial quality gate, defined in `AGENTS.md §12`.
+This directory contains the implementation of the Generator-Critic-Loop (GCL) adversarial quality gate, defined in `AGENTS.md §11`.
 
 ## Files
 

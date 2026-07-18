@@ -28,7 +28,7 @@ metadata:
 # GCP GCL Runner — Shared Quality Gate Skill
 
 This skill provides the **Generator-Critic-Loop (GCL)** adversarial quality gate
-as defined in `AGENTS.md §12`. It is a **shared framework skill**: other `gcp-*-ops`
+as defined in `AGENTS.md §11`. It is a **shared framework skill**: other `gcp-*-ops`
 skills delegate their GCL execution here rather than implementing inline GCL logic.
 
 ## Trigger & Scope
@@ -122,12 +122,12 @@ python3 {{env.GCP_SKILLS_ROOT}}/gcp-gcl-runner-ops/scripts/gcl_runner.py \
 
 - [GCL Execution Reference](references/gcl-execution.md) — detailed runner usage guide
 - [Integration](references/integration.md) — cross-skill integration and audit cross-check
-- AGENTS.md §12 — canonical GCL spec
+- AGENTS.md §11 — canonical GCL spec
 - `gcp-skill-generator/references/gcl-rollout-spec.md` — how to generate GCL files for a new skill
 
 ## Quality Gate (GCL)
 
-This skill implements the GCL quality gate defined in `AGENTS.md §12`. As a **shared framework skill**, it operates at `required` level:
+This skill implements the GCL quality gate defined in `AGENTS.md §11`. As a **shared framework skill**, it operates at `required` level:
 
 | Property | Value |
 |----------|-------|

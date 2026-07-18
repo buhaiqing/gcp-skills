@@ -665,7 +665,7 @@ gcloud kms keys describe "{{user.key_name}}" \
 
 ## Quality Gate (GCL)
 
-> This skill implements the **Generator-Critic-Loop (GCL)** adversarial quality gate per `AGENTS.md §12`.
+> This skill implements the **Generator-Critic-Loop (GCL)** adversarial quality gate per `AGENTS.md §11`.
 
 | Property | Value |
 |----------|-------|

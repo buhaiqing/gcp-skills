@@ -608,7 +608,7 @@ req := &computepb.InsertDiskRequest{
 
 ## Token Efficiency Guidelines (P0 — 强制)
 
-Generated skills MUST follow these 6 rules. See meta-skill SKILL.md for detailed examples.
+Generated skills MUST follow these 7 rules (TE-1 to TE-7). See meta-skill SKILL.md §Token Efficiency Requirements for detailed definitions and the authoritative table.
 
 ### TE-1: API Query > Static Tables
 Use gcloud commands instead of hardcoding machine type / version tables.
@@ -630,6 +630,8 @@ File-top comment block; one per resource type.
 Use anchors to eliminate repeated fields.
 ### TE-6: Eliminate cross-file duplicate flows
 SKILL.md already has full flow, no Complete Workflow in config or SDK files.
+### TE-7: Layer professional content
+AIOps/FinOps in `references/advanced/`; SQL execution and other destructive/security-sensitive ops marked explicitly with confirmation gates. Split advanced material out of SKILL.md to keep the agent-loaded surface minimal.
 
 ---
 
@@ -877,4 +879,8 @@ func main() {
 ```
 
 > Use `os.Getenv("KEY")` for all credentials. Never hardcode secrets in scripts.
-````
+```
+
+---
+
+> **任务完成后按根 `AGENTS.md` 的「复利资产沉淀机制 (CADL)」复盘并沉淀可复用资产。** 每次 skill 调用结束前，主动检查 CADL 触发条件（多步/跨文件任务、跨 skill 协作、评审/修复循环、发现 repo 缺陷、验证预存 FAIL 归因、用户工作流偏好），走完「提取 → 判定落点 → 写入 → 门禁」闭环再交付。`

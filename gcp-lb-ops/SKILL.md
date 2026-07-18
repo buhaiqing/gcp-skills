@@ -757,7 +757,7 @@ On `FAILED` → check `.managed.domainStatuses` for specific domain errors.
 
 ## Quality Gate (GCL)
 
-> This skill implements the **Generator-Critic-Loop (GCL)** adversarial quality gate per `AGENTS.md §12`.
+> This skill implements the **Generator-Critic-Loop (GCL)** adversarial quality gate per `AGENTS.md §11`.
 
 | Property | Value |
 |----------|-------|

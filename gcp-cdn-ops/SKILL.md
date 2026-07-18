@@ -666,7 +666,7 @@ Verify key is no longer present (empty output = success).
 
 ## Quality Gate (GCL)
 
-> This skill implements the **Generator-Critic-Loop (GCL)** adversarial quality gate per `AGENTS.md §12`.
+> This skill implements the **Generator-Critic-Loop (GCL)** adversarial quality gate per `AGENTS.md §11`.
 
 | Property | Value |
 |----------|-------|

@@ -682,7 +682,7 @@ echo "sudo mount -o vers=3,proto=tcp {{instance_ip}}:{{file_share_path}} /mnt/fi
 
 ## Quality Gate (GCL)
 
-> This skill implements the **Generator-Critic-Loop (GCL)** adversarial quality gate per `AGENTS.md §12`.
+> This skill implements the **Generator-Critic-Loop (GCL)** adversarial quality gate per `AGENTS.md §11`.
 
 - **Rubric**: [references/rubric.md](references/rubric.md)
 - **Prompt Templates**: [references/prompt-templates.md](references/prompt-templates.md)
