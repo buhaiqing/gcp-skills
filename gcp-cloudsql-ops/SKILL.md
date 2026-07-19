@@ -448,6 +448,10 @@ gcloud sql instances restart "{{user.instance_name}}" \
 |---------|------|---------|
 | 1.0.0 | 2026-06-07 | Instance lifecycle, backup/recovery, replicas, import/export, DB/user mgmt, security, Query Insights; dual-path gcloud+SDK; GCL quality gate |
 
+## AIOps 自愈
+
+Cloud SQL 的 AIOps 自愈闭环（连接池耗尽 / 高 QPS 落盘 / 副本延迟）见 [references/advanced/aiops-query-insights.md](references/advanced/aiops-query-insights.md) 的 **Self-Healing Playbook** 段。所有自愈动作默认 dry-run + 幂等，需人工复核门禁放行；failover / 实例重启 / promote-replica 标 **HALT** 禁止自动执行。错误分类与跨 skill 影响面引用 `docs/error-taxonomy.md` 与 `docs/cross-skill-blast-radius.md`。
+
 ## See Also
 
 [gcp-skill-generator](../gcp-skill-generator/SKILL.md) | [gcp-gcs-ops](../gcp-gcs-ops/SKILL.md) | [gcp-vpc-ops](../gcp-vpc-ops/SKILL.md) | [gcp-iam-ops](../gcp-iam-ops/SKILL.md) | [gcp-monitoring-ops](../gcp-monitoring-ops/SKILL.md) | [gcp-gcl-runner-ops](../gcp-gcl-runner-ops/SKILL.md)

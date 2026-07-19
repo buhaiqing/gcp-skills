@@ -290,9 +290,128 @@ gcloud sql operations list --instance=my-instance --limit=10
 gcloud sql instances describe my-instance --format="value(diskUsage,diskQuota)"
 ```
 
+## Self-Healing Playbook
+
+> 自愈闭环：detection → DRY-RUN preview → 门禁 → 幂等 apply。所有自愈动作**默认 dry-run**，需人工复核门禁放行后才执行真实变更。failover / 实例重启 / promote-replica 等破坏性动作标 **HALT**，禁止自动执行。
+>
+> 凭证遮蔽遵循 AGENTS.md §0.1：任何命令输出中的 SA key、密码、token 一律替换为 `****`，仅校验存在性（`test -f "$GOOGLE_APPLICATION_CREDENTIALS"`），绝不 `cat` 或打印内容。
+>
+> 错误分类与跨 skill 影响面评估见 [docs/error-taxonomy.md](../../../docs/error-taxonomy.md) 与 [docs/cross-skill-blast-radius.md](../../../docs/cross-skill-blast-radius.md)。闭环反馈模式参考 [gcp-gcl-runner-ops/trace_feedback.py](../../../gcp-gcl-runner-ops/trace_feedback.py)。
+
+### 通用执行框架
+
+每个自愈场景统一遵循四阶段，门禁未通过则停止并升级人工：
+
+```
+1. DETECTION   — 基于 Cloud Monitoring 指标 / Query Insights 判定异常
+2. DRY-RUN     — 打印将执行的变更（preview），不触碰资源
+3. GATE        — 人工复核门禁：HALT 类动作一律拦截；非 HALT 类需确认
+4. APPLY       — 幂等执行：重复运行结果一致，可安全重试
+```
+
+| 动作类别 | 风险 | 门禁 |
+|----------|------|------|
+| 连接池参数调整（max_connections / 连接超时） | Medium | 人工确认后 apply |
+| 高 QPS 落盘：kill 长事务 / 限流 | Medium | 人工确认后 apply |
+| 副本延迟：重连 / 重建副本 | High | HALT — 人工介入 |
+| 实例重启 / failover / promote-replica | **High** | **HALT — 禁止自动** |
+
+### Scenario 1: 连接池耗尽 (Connection Pool Exhaustion)
+
+**Detection**
+```bash
+# 连接数逼近上限（>90%）
+gcloud sql instances describe "{{user.instance_name}}" \
+  --project="{{env.CLOUDSDK_CORE_PROJECT}}" --format="json" \
+  | jq '{maxConnections: .settings.userLabels.max_connections, current: .currentDiskSize}'
+gcloud monitoring time-series list \
+  --filter='metric.type="cloudsql.googleapis.com/database/connection_count" AND resource.labels.instance_name="{{user.instance_name}}"' \
+  --project="{{env.CLOUDSDK_CORE_PROJECT}}" --format="json"
+```
+
+**DRY-RUN preview** — 仅打印计划调整，不执行：
+```bash
+echo "[DRY-RUN] Would raise max_connections flag on {{user.instance_name}} (current -> +50)"
+echo "[DRY-RUN] Would advise app-side pool shrink / connection timeout reduction"
+```
+
+**Gate** — 非 HALT，需人工确认后放行。
+
+**Idempotent apply**
+```bash
+# 幂等：patch 设置目标值，重复执行结果一致
+gcloud sql instances patch "{{user.instance_name}}" \
+  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
+  --database-flags max_connections={{user.new_max_connections}} --format=json
+# 验证
+gcloud sql instances describe "{{user.instance_name}}" \
+  --project="{{env.CLOUDSDK_CORE_PROJECT}}" --format="value(settings.databaseFlags)"
+```
+
+### Scenario 2: 高 QPS 落盘 (High QPS Disk Spill)
+
+**Detection**
+```bash
+# 识别落盘长事务 / 慢查询（duration > 300s）
+gcloud sql operations list --instance="{{user.instance_name}}" \
+  --filter="operationType=QUERY" --format="json" \
+  | jq '.[] | select(.duration > 300) | {id, user, startTime, duration}'
+```
+
+**DRY-RUN preview** — 列出将被取消的操作，不实际取消：
+```bash
+gcloud sql operations list --instance="{{user.instance_name}}" \
+  --filter="operationType=QUERY" --format="json" \
+  | jq -r '.[] | select(.duration > 300) | "[DRY-RUN] Would cancel op: \(.id) user=\(.user) duration=\(.duration)"'
+```
+
+**Gate** — 非 HALT，需人工确认后放行（取消查询可能中断在途业务）。
+
+**Idempotent apply**
+```bash
+# 幂等：已取消的操作再次 cancel 返回 NOT_FOUND，无副作用
+gcloud sql operations list --instance="{{user.instance_name}}" \
+  --filter="operationType=QUERY" --format="json" \
+  | jq -r '.[] | select(.duration > 300) | .id' \
+  | while read -r op_id; do
+      gcloud sql operations cancel "{{user.instance_name}}" "$op_id" \
+        --project="{{env.CLOUDSDK_CORE_PROJECT}}" --format=json || true
+    done
+```
+
+### Scenario 3: 副本延迟 (Replica Lag)
+
+**Detection**
+```bash
+gcloud monitoring time-series list \
+  --filter='metric.type="cloudsql.googleapis.com/database/replication/seconds_behind_master" AND resource.labels.instance_name="{{user.replica_name}}"' \
+  --project="{{env.CLOUDSDK_CORE_PROJECT}}" --format="json"
+```
+
+**DRY-RUN preview**
+```bash
+echo "[DRY-RUN] Replica lag detected on {{user.replica_name}}; HALT — no auto action"
+echo "[DRY-RUN] Suggested manual steps: verify replica health, check write load, consider rebuild replica"
+```
+
+**Gate** — **HALT**：副本延迟自愈（重连 / 重建副本 / promote）一律拦截，升级人工处理。禁止自动 failover 或重启。
+
+### 闭环反馈 (Closed-Loop Feedback)
+
+自愈执行结果应回写 GCL 反馈链路，供 Critic 评估有效性：
+```bash
+# 可选：将自愈结果上报 GCL 反馈（详见 gcp-gcl-runner-ops/trace_feedback.py）
+python3 ../../../gcp-gcl-runner-ops/trace_feedback.py \
+  --skill gcp-cloudsql-ops --scenario connection-pool --outcome "{{user.outcome}}"
+```
+> 凭证遮蔽：上述脚本读取 `GOOGLE_APPLICATION_CREDENTIALS` 环境变量，输出中 SA 路径与 token 一律 `****`，不打印明文。
+
 ## See Also
 
 - [Cloud SQL Monitoring](../monitoring.md)
 - [Cloud SQL Core Concepts](../core-concepts.md)
 - [Troubleshooting](../troubleshooting.md)
+- [Error Taxonomy](../../../docs/error-taxonomy.md)
+- [Cross-Skill Blast Radius](../../../docs/cross-skill-blast-radius.md)
+- [GCL Runner — trace_feedback](../../../gcp-gcl-runner-ops/trace_feedback.py)
 - [Google Cloud Architecture Framework — Performance](https://cloud.google.com/architecture/framework/performance)
