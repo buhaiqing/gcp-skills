@@ -52,7 +52,6 @@ from gcl_trace_schema import (
 # ── AIOps primitive modules (wired into the runner, not decorative) ──
 from self_correction_mechanism import (
     StateSnapshot,
-    CorrectionFeedbackLoop,
     DegradationDetector,
 )
 from autonomy_ratio import AutonomyRatioTracker, AutonomyRatioAlert
@@ -273,8 +272,6 @@ def generate(
         trace["end_time"] = datetime.now(UTC).isoformat()
         return trace
 
-    last_exception: Exception | None = None
-
     for attempt in range(max_retries + 1):
         try:
             result = subprocess.run(
@@ -321,7 +318,6 @@ def generate(
         except subprocess.TimeoutExpired:
             trace["stderr"] = f"[ERROR] Command timed out after {timeout}s"
             trace["exit_code"] = -1
-            last_exception = None  # Timeout is classified by error_type below
 
             # Check if we should retry on timeout
             if attempt < max_retries:
@@ -352,7 +348,6 @@ def generate(
         except Exception as e:
             trace["stderr"] = f"[ERROR] {e}"
             trace["exit_code"] = -2
-            last_exception = e
 
             # Check if error is retryable
             error_type = classify_error(trace["stderr"])
@@ -917,7 +912,6 @@ def main():
 
     # ── Wire AIOps primitive modules into the runner ──
     state_snapshot = StateSnapshot()
-    correction_loop = CorrectionFeedbackLoop()
     degradation_detector = DegradationDetector(threshold=args.degrade_threshold)
     history_file = os.path.join(args.output_dir or TRACE_DIR, "autonomy_ratio_history.json")
     autonomy_tracker = AutonomyRatioTracker(history_file=history_file)
@@ -974,7 +968,14 @@ def main():
                     extra={"differences": state_diff["differences"]},
                 )
         except RuntimeError:
-            pass
+            log_gcl_event(
+                runner_logger,
+                f"State drift comparison failed at iteration {i}",
+                severity="WARNING",
+                skill=args.skill,
+                op=args.op,
+                result="STATE_DRIFT_COMPARE_FAILED",
+            )
 
         # Classify error
         error_type = classify_error(gen_trace.get("stderr", ""))

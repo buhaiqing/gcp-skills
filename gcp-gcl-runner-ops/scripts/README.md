@@ -53,9 +53,16 @@ python3 scripts/gcl_runner.py \
 
 ## Testing
 
+The test suite lives under `gcp-gcl-runner-ops/tests/` (not in `scripts/`). Run it from the repo root with pytest:
+
 ```bash
-python3 scripts/gcl_runner_test.py
-python3 scripts/gcl_auditlog_crosscheck_test.py
+python3 -m pytest gcp-gcl-runner-ops/tests/ -q
+```
+
+Or from within the skill directory:
+
+```bash
+cd gcp-gcl-runner-ops && python3 -m pytest
 ```
 
 ## Design Decisions

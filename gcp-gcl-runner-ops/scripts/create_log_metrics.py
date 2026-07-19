@@ -20,6 +20,7 @@ from typing import Any
 
 import yaml
 from google.api import metric_pb2
+from google.api_core.exceptions import NotFound
 from google.cloud import logging_v2
 from google.cloud.logging_v2.services.logging_service_v2 import LoggingServiceV2Client
 from google.cloud.logging_v2.types import LogMetric
@@ -64,15 +65,6 @@ def load_config(config_path: str) -> list[dict[str, Any]]:
     return data.get("metrics", DEFAULT_METRICS)
 
 
-def build_metric(filter_str: str, metric_type: str) -> LogMetric:
-    """Build a LogMetric proto from filter string and type."""
-    metric = LogMetric()
-    metric.filter = filter_str
-    # Note: Log-based metrics don't require explicit metric_kind in the API
-    # The type is set automatically based on the metric definition
-    return metric
-
-
 def _metric_kind_from_string(metric_type: str) -> int:
     """Map string metric type to MetricKind enum value.
 
@@ -111,8 +103,8 @@ def create_or_update_metric(
     existing = None
     try:
         existing = client.get_log_metric(request={"metric_name": full_metric_name})
-    except Exception:
-        pass  # Metric doesn't exist
+    except NotFound:
+        existing = None  # Metric doesn't exist
 
     if dry_run:
         action = "CREATE" if existing is None else "UPDATE"
