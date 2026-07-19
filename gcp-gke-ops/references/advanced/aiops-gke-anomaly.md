@@ -287,6 +287,156 @@ kubectl autoscale deployment DEPLOYMENT_NAME \
 kubectl patch deployment DEPLOYMENT_NAME -p '{"spec":{"template":{"spec":{"containers":[{"name":"CONTAINER_NAME","resources":{"requests":{"cpu":"100m","memory":"128Mi"}}}]}}}}'
 ```
 
+## Self-Healing Playbook
+
+> **Scope**: This section defines the closed-loop self-healing contract for GKE AIOps. Every remediation path follows **detection → DRY-RUN preview → gate → idempotent apply**. Destructive or irreversible actions (node pool deletion, version upgrade rollback) are marked **HALT** and require explicit human confirmation — they are NOT auto-applied.
+>
+> **Credential Masking**: Per `AGENTS.md §0.1`, never log `GOOGLE_APPLICATION_CREDENTIALS` content or SA key values. Verify existence only: `test -f "$GOOGLE_APPLICATION_CREDENTIALS" && echo "✅ SA exists"`.
+>
+> **Error taxonomy**: Map each failure to `docs/error-taxonomy.md`.
+> **Blast radius**: Cross-skill impact and rollback boundaries follow `AGENTS.md §5` (Cross-Skill Composition) and `AGENTS.md §7` (Security Constraints).
+> **Closed-loop feedback**: After each apply, emit a feedback record via `gcp-gcl-runner-ops/trace_feedback.py` (see [Closed-Loop Feedback](#closed-loop-feedback)).
+
+### Self-Healing Contract (mandatory per path)
+
+| Phase | Action | Gate |
+|-------|--------|------|
+| 1. Detection | Identify anomaly via metric/log query | Signal confidence ≥ threshold |
+| 2. DRY-RUN preview | Print the exact `gcloud`/`kubectl` command that *would* run, with target resource | Human/Agent reviews preview |
+| 3. Gate | Check risk class (safe-apply vs HALT) + blast radius | HALT → stop and request confirmation |
+| 4. Idempotent apply | Execute only if not already in desired state | Re-validate post-state |
+
+**Idempotency rule**: Probe desired state first; skip apply if already satisfied. Never run a delete/rollback without a prior DRY-RUN and explicit confirmation.
+
+---
+
+### Playbook 1 — Node NotReady
+
+**Detection**
+```bash
+kubectl get nodes -o json | jq -r '.items[] | select(.status.conditions[] | select(.type=="Ready" and .status!="True")) | .metadata.name'
+```
+
+**DRY-RUN preview**
+```bash
+# Would enable autorepair and (if still NotReady after grace) cordon+drain
+echo "DRY-RUN: gcloud container node-pools update {{user.node_pool_name}} --cluster={{user.cluster_name}} --location={{user.location}} --enable-autorepair"
+echo "DRY-RUN: kubectl cordon NODE_NAME && kubectl drain NODE_NAME --ignore-daemonsets --delete-emptydir-data"
+```
+
+**Gate**: Safe-apply (autorepair enable). Drain is safe-apply only if workloads are replicated; single-replica workloads → HALT.
+
+**Idempotent apply**
+```bash
+# Probe: already autorepairing?
+if ! gcloud container node-pools describe "{{user.node_pool_name}}" --cluster="{{user.cluster_name}}" --location="{{user.location}}" --format="value(management.autoRepair)" | grep -q "true"; then
+  gcloud container node-pools update "{{user.node_pool_name}}" --cluster="{{user.cluster_name}}" --location="{{user.location}}" --enable-autorepair
+fi
+```
+
+---
+
+### Playbook 2 — Node Pool Scale-Up Failed
+
+**Detection**
+```bash
+gcloud container operations list --filter="operationType=UPGRADE_NODE_POOL OR operationType=REPAIR_CLUSTER" --format="json" | jq -r '.[] | select(.status=="FAILED") | .name'
+# Or autoscaler stuck:
+kubectl get events --field-selector reason=FailedScheduling -A
+```
+
+**DRY-RUN preview**
+```bash
+echo "DRY-RUN: gcloud container clusters resize {{user.cluster_name}} --node-pool={{user.node_pool_name}} --num-nodes=TARGET --zone={{user.location}}"
+```
+
+**Gate**: Safe-apply if target ≤ max-nodes of autoscaling config. Exceeds max-nodes → HALT (raises quota/cost; needs human raise of `--max-nodes`).
+
+**Idempotent apply**
+```bash
+CURRENT=$(gcloud container node-pools describe "{{user.node_pool_name}}" --cluster="{{user.cluster_name}}" --location="{{user.location}}" --format="value(currentNodeCount)")
+if [ "$CURRENT" -lt "$TARGET" ]; then
+  gcloud container clusters resize "{{user.cluster_name}}" --node-pool="{{user.node_pool_name}}" --num-nodes="$TARGET" --zone="{{user.location}}" --format="json"
+fi
+```
+
+---
+
+### Playbook 3 — Workload CrashLoopBackOff
+
+**Detection**
+```bash
+kubectl get pods --all-namespaces -o json | jq -r '.items[] | select(.status.phase!="Running") | .metadata.namespace + "/" + .metadata.name'
+kubectl get pods --all-namespaces | grep -i crashloop
+```
+
+**DRY-RUN preview**
+```bash
+echo "DRY-RUN: kubectl rollout restart deployment/DEPLOYMENT -n NAMESPACE"
+echo "DRY-RUN: kubectl describe pod POD -n NAMESPACE   # inspect lastState.terminated.reason"
+```
+
+**Gate**: Safe-apply (rollout restart) for stateless deployments. StatefulSet with volume-bound single replica → HALT (risk data loss / disruption).
+
+**Idempotent apply**
+```bash
+# Only restart if not already progressing
+if ! kubectl rollout status deployment/DEPLOYMENT -n NAMESPACE --timeout=5s >/dev/null 2>&1; then
+  kubectl rollout restart deployment/DEPLOYMENT -n NAMESPACE
+fi
+```
+
+---
+
+### Playbook 4 — HPA Hit Max Replicas
+
+**Detection**
+```bash
+kubectl get hpa --all-namespaces -o json | jq -r '.items[] | select(.status.currentReplicas >= .spec.maxReplicas) | .metadata.namespace + "/" + .metadata.name'
+```
+
+**DRY-RUN preview**
+```bash
+echo "DRY-RUN: kubectl patch hpa HPA -n NAMESPACE --patch '{\"spec\":{\"maxReplicas\":NEW_MAX}}'"
+```
+
+**Gate**: Safe-apply if NEW_MAX within quota budget. Exceeds project quota or cost guardrail → HALT (request human quota/cost approval).
+
+**Idempotent apply**
+```bash
+CUR_MAX=$(kubectl get hpa HPA -n NAMESPACE -o jsonpath='{.spec.maxReplicas}')
+if [ "$CUR_MAX" -lt "$NEW_MAX" ]; then
+  kubectl patch hpa HPA -n NAMESPACE --patch "{\"spec\":{\"maxReplicas\":$NEW_MAX}}"
+fi
+```
+
+---
+
+### HALT Paths (never auto-applied)
+
+| Path | Why HALT | Required action |
+|------|----------|-----------------|
+| Node pool deletion | Irreversible, disrupts workloads | Explicit human confirmation with exact pool name |
+| Node pool version upgrade rollback | Can cause version skew / data-plane disruption | Human approval + DRY-RUN of downgrade command |
+| Any delete of PV/PVC | Data loss | HALT — backup first |
+
+---
+
+### Closed-Loop Feedback
+
+After each apply (or HALT), emit a feedback record so the GCL Critic can audit factual accuracy and traceability:
+
+```bash
+python3 gcp-gcl-runner-ops/trace_feedback.py \
+  --skill gcp-gke-ops \
+  --playbook "node-notready" \
+  --action "enable-autorepair" \
+  --result "applied" \
+  --resource "{{user.node_pool_name}}"
+```
+
+The feedback record feeds the Generator-Critic-Loop (`AGENTS.md §12`): Critic verifies the applied state matches the DRY-RUN preview and that no HALT path was bypassed.
+
 ## Best Practices
 
 1. **Baseline Metrics**: Establish baselines for normal behavior before setting thresholds
