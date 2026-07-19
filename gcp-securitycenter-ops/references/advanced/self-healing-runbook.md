@@ -84,67 +84,16 @@ Every action follows **DRY-RUN → 人工复核门禁 → APPLY → VALIDATE →
 
 **Recovery action:** `REMEDIATE` (idempotent_safe = true). **Gate:** `{{user.confirm_mute}} == "yes"`, else `HALT`.
 
-#### Step 1 — Pre-flight (no mutation)
+The end-to-end auto-mute implementation (Pre-flight → DRY-RUN → 人工复核门禁 → APPLY → VALIDATE → RECOVER, with idempotency guard) is the **authoritative** copy maintained in the legacy fragment:
 
-```bash
-test -f "$GOOGLE_APPLICATION_CREDENTIALS" && echo "✅ SA exists (masked)"
-gcloud config get-value project
-gcloud scc mute-configs list --organization="{{user.org_id}}" --format=json | jq -r '.[].name' || true
-```
+> 详见 [aiops-scc-anomaly.md §Self-Healing Runbook: Auto-mute Low-Severity Findings](aiops-scc-anomaly.md#self-healing-runbook-auto-mute-low-severity-findings)
 
-#### Step 2 — DRY-RUN: preview exactly what the mute config would cover
+This runbook does **not** re-narrate those steps — it is the orchestration entry point. Runbook-specific additions layered on top of that flow:
 
-```bash
-MUTE_FILTER='state="ACTIVE" AND severity="LOW"'
-gcloud scc findings list "organizations/{{user.org_id}}/sources/-" \
-  --filter="$MUTE_FILTER" --format=json \
-  | jq '{matched: length, sample: [.[0:5][].name]}'
-echo "[DRY-RUN] Would create mute config '{{user.mute_config_id}}' covering the findings above."
-```
-
-#### Step 3 — 人工复核门禁 (HALT until explicit confirmation)
-
-```bash
-# Idempotent guard: skip if the mute config already exists
-if gcloud scc mute-configs describe "{{user.mute_config_id}}" \
-     --organization="{{user.org_id}}" --format='value(name)' 2>/dev/null; then
-  echo "[GATE] Mute config already exists — idempotent skip (no re-apply)."
-  exit 0
-fi
-# HALT: require explicit human confirmation before any mutating apply
-if [ "{{user.confirm_mute}}" != "yes" ]; then
-  echo "[HALT] confirm_mute != 'yes'. Aborting mute apply. Present DRY-RUN output for review."
-  exit 1
-fi
-```
-
-#### Step 4 — APPLY (only after gate passes)
-
-```bash
-gcloud scc mute-configs create "{{user.mute_config_id}}" \
-  --organization="{{user.org_id}}" \
-  --description="AIOps auto-mute: low-severity active findings (self-healing, reviewed)" \
-  --filter="$MUTE_FILTER" \
-  --format=json
-```
-
-#### Step 5 — VALIDATE (confirm coverage, no credential leak)
-
-```bash
-gcloud scc mute-configs describe "{{user.mute_config_id}}" \
-  --organization="{{user.org_id}}" --format=json \
-  | jq '{name, filter, description, createTime}'
-```
-
-#### Step 6 — RECOVER (reversible — delete the mute config to un-mute)
-
-```bash
-# Deleting a mute config is destructive → GCL required, explicit confirm
-# gcloud scc mute-configs delete "{{user.mute_config_id}}" --organization="{{user.org_id}}"
-echo "[RECOVER] To un-mute, run the delete above with explicit confirmation (GCL required)."
-```
-
-**Idempotency:** Step 3's existence guard makes repeated runs a no-op if the config exists. **Reversibility:** delete the config (Step 6). **Blast-radius guard:** never mute above `LOW` unattended; scope `category`+`resourceName` where possible; keep a weekly TTL review.
+- **GCL wrapper:** every `mute-configs create` must pass through `gcl_runner_enhanced.py` (§5) which enforces the DRY-RUN evidence + human gate before APPLY.
+- **Idempotency:** the fragment's Step 3 existence guard makes repeated runs a no-op if the config exists.
+- **Reversibility:** delete the config (fragment Step 6) — destructive, GCL required.
+- **Blast-radius guard:** never mute above `LOW` unattended; scope `category`+`resourceName` where possible; keep a weekly TTL review.
 
 ### 3.2 Auto-close stale findings
 
