@@ -72,9 +72,9 @@
 
 ## 6. 验收标准（Acceptance Criteria）
 
-- [ ] 每个新建/补全的 aiops 文档都包含：触发条件、检测（含指标/日志查询）、自愈动作（含 dry-run + 幂等 + 门禁）、GCL 连接段、error-taxonomy 引用
-- [ ] cdn README 引用的 4 个文件全部存在，或 README 已修正为有效引用
-- [ ] `docs/cross-skill-blast-radius.md` 存在，覆盖 ≥3 条跨域链路（如 LB→GCE→VPC、CDN→DNS→GCS、IAM→多产品）
-- [ ] 所有新增文档通过 markdownlint（`npx markdownlint-cli2 "gcp-*/SKILL.md"` 及相关 md）
-- [ ] 现有测试套件失败数不增加（基线 16 failed，预存，非本轮引入）
-- [ ] 不破坏既有 aiops 文档的链接完整性
+- [x] 每个新建/补全的 aiops 文档都包含：触发条件、检测（含指标/日志查询）、自愈动作（含 dry-run + 幂等 + 门禁）、GCL 连接段、error-taxonomy 引用
+- [x] cdn README 引用的 4 个文件全部存在，或 README 已修正为有效引用
+- [x] `docs/cross-skill-blast-radius.md` 存在，覆盖 ≥3 条跨域链路（如 LB→GCE→VPC、CDN→DNS→GCS、IAM→多产品）
+- [x] 所有新增文档通过 markdownlint（`npx markdownlint-cli2 "gcp-*/SKILL.md"` 及相关 md）
+- [x] 现有测试套件失败数不增加（基线：commit 17f388d 已将 16 failed 归零；本轮 586 passed / 13 skipped / 0 failed）
+- [x] 不破坏既有 aiops 文档的链接完整性
