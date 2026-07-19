@@ -44,21 +44,20 @@ messages that scrolled out of context. Post-goal evidence commands:
 - lint:   `npx markdownlint-cli2 "gcp-X-ops/**/*.md"`
 - links:  `ls` the referenced files; grep bare filenames for pointers
 
-## L4 — Test isolation / pollution looks like a code regression
+## L4 — Stale `.pyc` bytecode looks like a code regression
 
 A background full-suite run reported `1 failed` (`test_log_metrics::test_create_new_metric`,
-`Exception: Not found` at `create_log_metrics.py:105`). On re-run in isolation and in the
-module it **passed**. Root cause was a real but *already-fixed* regression:
+`Exception: Not found` at `create_log_metrics.py:105`). The test passed when re-run in
+isolation / in-module. Root cause: a **stale `__pycache__/*.pyc`** — the `opt/code-quality`
+commit changed `create_log_metrics.py` (`except:` → `except NotFound:` at line 106), but an
+old cached `.pyc` was loaded by the background run, causing the `NotFound` mock to slip
+past the narrowed handler. `be0c728` aligned the test mock, and clearing `__pycache__`
+made all 591 tests pass deterministically.
 
-- `opt/code-quality` narrowed a bare `except:` → `except NotFound:` in
-  `create_log_metrics.py:106`.
-- `be0c728` aligned the test mock (`side_effect = NotFound(...)`) to match.
-
-**Rule:** before assuming a regression, (a) re-run the single test in isolation, (b)
-re-run the containing module, (c) check `git log` for a recent except-narrowing /
-refactor commit touching the file. The bare `Exception: Not found` text came from a
-leaked mock in a *different* test, not from `create_log_metrics.py` (grep showed no
-`raise NotFound` / `Exception("Not found")` in the source).
+**Rule:** when a single test fails in one run but passes on re-run / in isolation:
+(a) `find . -name __pycache__ -type d -exec rm -rf {} +`, then re-run; (b) only if it
+still fails, treat as a real regression. Grep the source for `raise NotFound` /
+`Exception("...")` to confirm the failure path exists before theorizing test pollution.
 
 ## L5 — Subagent turn-limit / stuck handling
 
