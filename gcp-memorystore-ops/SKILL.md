@@ -674,8 +674,13 @@ See `assets/example-config.yaml` for anchor usage.
 ### TE-6: Eliminate cross-file duplication
 SKILL.md has full flow; references do not repeat SKILL.md content.
 
+## AIOps 自愈 (Self-Healing)
+
+> Memorystore for Redis 类故障（内存满、慢查询/阻塞、主从 failover）需要自愈能力。完整 runbook 见 [references/advanced/aiops-memorystore-anomaly.md](references/advanced/aiops-memorystore-anomaly.md)：内存阈值告警 → 自动扩容/eviction 策略（dry-run 预览 + 门禁）、慢查询/阻塞诊断命令与建议、主从 failover 自愈验证（副本健康 + 幂等重连）、blast-radius（影响 GCE/GKE 应用）、自愈动作 dry-run + 幂等 + 门禁、破坏性标 HALT、凭证遮蔽 §0.1。错误码遵循 [docs/error-taxonomy.md](../../docs/error-taxonomy.md)，故障辐射模型遵循 [docs/cross-skill-blast-radius.md](../../docs/cross-skill-blast-radius.md)。
+
 ## See Also
 
+- **AIOps Self-Healing**: [references/advanced/aiops-memorystore-anomaly.md](references/advanced/aiops-memorystore-anomaly.md) — anomaly detection & self-healing runbook
 - **Meta-Skill**: [gcp-skill-generator](../gcp-skill-generator/SKILL.md)
 - **VPC**: [gcp-vpc-ops](../gcp-vpc-ops/SKILL.md) — Networking for Redis instances
 - **Compute Engine**: [gcp-gce-ops](../gcp-gce-ops/SKILL.md) — Connect applications to Redis
