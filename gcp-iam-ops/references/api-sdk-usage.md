@@ -79,7 +79,7 @@
 ### Get IAM Policy
 ```python
 import os
-from google.cloud import resource_manager_v3
+from google.cloud import resourcemanager_v3 as resource_manager_v3
 
 project = os.environ["CLOUDSDK_CORE_PROJECT"]
 client = resource_manager_v3.ProjectsClient()
@@ -93,7 +93,7 @@ for binding in policy.bindings:
 ### Add IAM Policy Binding
 ```python
 import os
-from google.cloud import resource_manager_v3
+from google.cloud import resourcemanager_v3 as resource_manager_v3
 from google.iam.v1 import policy_pb2
 
 project = os.environ["CLOUDSDK_CORE_PROJECT"]
@@ -217,7 +217,7 @@ print(f"Deleted SA: {{user.service_account_email}}")
 ### Test IAM Permissions
 ```python
 import os
-from google.cloud import resource_manager_v3
+from google.cloud import resourcemanager_v3 as resource_manager_v3
 
 project = os.environ["CLOUDSDK_CORE_PROJECT"]
 client = resource_manager_v3.ProjectsClient()

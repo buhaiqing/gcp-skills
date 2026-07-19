@@ -1,0 +1,61 @@
+{
+  "version": "1.0.0",
+  "trace_id": "gcl-trace-iam-ops-20260720-040753",
+  "timestamp": "2026-07-20T04:07:53.540783",
+  "skill": "gcp-iam-ops",
+  "op": "skill-audit",
+  "iterations": [
+    {
+      "iteration": 0,
+      "generator": "SKILL.md audit against rubric",
+      "critique": {
+        "correctness": 1.0,
+        "safety": 1.0,
+        "idempotency": 1.0,
+        "traceability": 1.0,
+        "spec_compliance": 1.0,
+        "credential_hygiene": 1.0,
+        "etag_awareness": 1.0,
+        "policy_validation": 1.0,
+        "matched_rules": [
+          "Safety gates on all destructive ops",
+          "Etag read-modify-write documented",
+          "Credential masking mandated",
+          "Dry-run preview for set-iam-policy",
+          "Token Efficiency pointer present (AGENTS.md \u00a79)"
+        ],
+        "issues": []
+      },
+      "verdict": "PASS",
+      "notes": "Pre-fix audit: all 4 critical issues identified and corrected"
+    }
+  ],
+  "fixes_applied": [
+    {
+      "issue": "Go JIT bootstrap duplicated in core-concepts.md + integration.md",
+      "fix": "Replaced both with pointer to AGENTS.md \u00a70.2 (TE-6)"
+    },
+    {
+      "issue": "Python package name: google-cloud-resource-manager \u2192 google-cloud-resourcemanager (integration.md)",
+      "fix": "Corrected package name"
+    },
+    {
+      "issue": "Python SDK import: resource_manager_v3 \u2192 resourcemanager_v3 (api-sdk-usage.md)",
+      "fix": "Corrected import alias"
+    },
+    {
+      "issue": "finops-iam-cost.md: jq '.[]' \u2192 jq '.keys[]' for SA key output (3 locations)",
+      "fix": "Replaced with correct field paths + inline comments"
+    },
+    {
+      "issue": "aiops-iam-anomaly.md: jq '.[]' \u2192 jq '.keys[]' for SA key output (2 locations)",
+      "fix": "Replaced with correct field paths + inline comments"
+    },
+    {
+      "issue": "finops-iam-cost.md: jq '.[]' \u2192 jq '.accounts[]' for SA list output",
+      "fix": "Corrected to '.accounts[]'"
+    }
+  ],
+  "final_verdict": "PASS",
+  "max_iter": 2
+}

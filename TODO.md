@@ -136,6 +136,9 @@ No planned items.
 | AIOps anomaly detection | ✅ | references/advanced/aiops-iam-anomaly.md |
 | FinOps cost analysis | ✅ | references/advanced/finops-iam-cost.md |
 | Workload Identity Federation troubleshooting | ✅ | references/advanced/wif-troubleshooting.md |
+| TE-6 deduplication (Go bootstrap) | ✅ | core-concepts.md + integration.md → AGENTS.md §0.2 |
+| jq field path fixes (keys/accounts) | ✅ | finops-iam-cost.md + aiops-iam-anomaly.md |
+| Python SDK import fixes | ✅ | integration.md + api-sdk-usage.md |
 
 ---
 

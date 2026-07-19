@@ -179,11 +179,11 @@ bq query --use_legacy_sql=false \
 ### Key Age Monitoring
 
 ```bash
-# Monitor service account key age
+# Monitor service account key age — correct field: keys are in .keys[] not bare array
 gcloud iam service-accounts keys list \
   --iam-account=my-service-account@my-project.iam.gserviceaccount.com \
   --format="json" | \
-  jq '.[] | {
+  jq '.keys[] | {
     keyId: .name,
     createdAt: .validAfterTime,
     age: ((now - (.validAfterTime | fromdateiso8601)) / 86400 | floor)
@@ -194,11 +194,11 @@ gcloud iam service-accounts keys list \
 ### Key Rotation Detection
 
 ```bash
-# Detect keys needing rotation
+# Detect keys needing rotation — correct field: keys are in .keys[] not bare array
 gcloud iam service-accounts keys list \
   --iam-account=my-service-account@my-project.iam.gserviceaccount.com \
   --format="json" | \
-  jq '.[] | select(
+  jq '.keys[] | select(
     ((now - (.validAfterTime | fromdateiso8601)) / 86400) > 90
   )' | \
   jq -r '.name + " needs rotation (age: " + ((now - (.validAfterTime | fromdateiso8601)) / 86400 | floor | tostring) + " days)"'

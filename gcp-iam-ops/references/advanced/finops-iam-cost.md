@@ -50,7 +50,6 @@ Optimizing these costs can reduce IAM overhead by 30-50% for most workloads.
 ### Cost Calculator
 
 ```bash
-# Calculate audit logging cost
 echo "10GB audit logs: $(echo "scale=2; 10 * 0.50" | bc) = $5.00/month"
 echo "100GB audit logs: $(echo "scale=2; 100 * 0.50" | bc) = $50.00/month"
 ```
@@ -60,28 +59,24 @@ echo "100GB audit logs: $(echo "scale=2; 100 * 0.50" | bc) = $50.00/month"
 ### Key Inventory
 
 ```bash
-# List all service account keys
+# List all service accounts with key counts
 gcloud iam service-accounts list --format="json" | \
-  jq '.[] | {
-    email: .email,
-    name: .name,
-    projectId: .projectId
-  }' | \
+  jq '.accounts[] | {email: .email, name: .name}' | \
   jq -s '.' | \
   jq '.[] | {
     email: .email,
-    keyCount: (gcloud iam service-accounts keys list --iam-account=.email --format="json" | length)
+    keyCount: (gcloud iam service-accounts keys list --iam-account=.email --format="json" | jq '.keys | length')
   }'
 ```
 
 ### Key Age Analysis
 
 ```bash
-# Analyze key age
+# Analyze key age — correct field names: .keys[].validAfterTime, .keys[].validBeforeTime, .keys[].keyType
 gcloud iam service-accounts keys list \
   --iam-account=my-sa@my-project.iam.gserviceaccount.com \
   --format="json" | \
-  jq '.[] | {
+  jq '.keys[] | {
     keyId: .name,
     createdAt: .validAfterTime,
     ageDays: ((now - (.validAfterTime | fromdateiso8601)) / 86400 | floor),
@@ -92,12 +87,11 @@ gcloud iam service-accounts keys list \
 ### Unused Key Detection
 
 ```bash
-# Detect unused keys
+# Detect unused keys — correct field names: .keys[].name, .keys[].keyType
 gcloud iam service-accounts keys list \
   --iam-account=my-sa@my-project.iam.gserviceaccount.com \
   --format="json" | \
-  jq '.[] | select(.keyType == "USER_MANAGED")' | \
-  jq -r '.name' | \
+  jq '.keys[] | select(.keyType == "USER_MANAGED") | .name' | \
   while read -r key; do
     LAST_USED=$(gcloud logging read "protoPayload.request.name=$key" --limit=1 --format="value(timestamp)" 2>/dev/null)
     if [ -z "$LAST_USED" ]; then
@@ -123,16 +117,15 @@ gcloud logging read "protoPayload.methodName=google.iam.credentials.v1.GenerateA
 ### Federation vs Key Comparison
 
 ```bash
-# Compare costs
 echo "Service Account Key management:"
 echo "  - Key rotation overhead: ~2 hours/month"
 echo "  - Security risk: Medium"
-echo "  - Cost: $0 (but operational overhead)"
+echo "  - Cost: \$0 (but operational overhead)"
 echo ""
 echo "Workload Identity Federation:"
 echo "  - No key management"
 echo "  - Security risk: Low"
-echo "  - Cost: $0 (and lower operational overhead)"
+echo "  - Cost: \$0 (and lower operational overhead)"
 ```
 
 ## Role Optimization
@@ -140,7 +133,7 @@ echo "  - Cost: $0 (and lower operational overhead)"
 ### Role Usage Analysis
 
 ```bash
-# Analyze role usage
+# Analyze role usage via Cloud Audit Logs
 bq query --use_legacy_sql=false \
   "SELECT
     protoPayload.principalEmail as user,
@@ -157,7 +150,7 @@ bq query --use_legacy_sql=false \
 
 ```bash
 # Detect unused roles
-gcloud projects get-iam-policy $CLOUDSDK_CORE_PROJECT --format=json | \
+gcloud projects get-iam-policy "$CLOUDSDK_CORE_PROJECT" --format="json" | \
   jq '.bindings[] | {
     role: .role,
     members: .members,
@@ -182,9 +175,9 @@ gcloud iam roles list --format="table(name,title,stage)"
 ### Custom Role Optimization
 
 ```bash
-# Analyze custom roles
+# Analyze custom roles — correct field: .roles[].stage, not .[].stage
 gcloud iam roles list --format="json" | \
-  jq '.[] | select(.stage == "GA")' | \
+  jq '.roles[] | select(.stage == "GA")' | \
   jq '{name: .name, permissions: (.includedPermissions | length)}'
 ```
 
@@ -210,7 +203,7 @@ bq query --use_legacy_sql=false \
 ```bash
 # Create IAM budget alert
 gcloud billing budgets create \
-  --billing-account=$BILLING_ACCOUNT_ID \
+  --billing-account="$BILLING_ACCOUNT_ID" \
   --display-name="IAM Audit Log Budget" \
   --budget-amount=100 \
   --threshold-rule=percent=80 \

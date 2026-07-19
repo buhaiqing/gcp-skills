@@ -1,16 +1,7 @@
 # Integration
 
-## Go Runtime Bootstrap
-
-```bash
-if ! command -v go &> /dev/null; then
-    OS=$(uname -s | tr '[:upper:]' '[:lower:]')
-    ARCH=$(uname -m); [ "$ARCH" = "x86_64" ] && ARCH="amd64"; [ "$ARCH" = "aarch64" ] && ARCH="arm64"
-    mkdir -p /tmp/go-runtime
-    curl -fsSL "https://go.dev/dl/go1.24.0.${OS}-${ARCH}.tar.gz" | tar -xz -C /tmp/go-runtime
-    export PATH="/tmp/go-runtime/go/bin:$PATH"
-fi
-```
+### Go Runtime Bootstrap (JIT SDK fallback)
+> See AGENTS.md §0.2 — Go JIT bootstrap is defined once at repo level, not duplicated here.
 
 ## Environment Variables
 
@@ -24,7 +15,7 @@ SA_EMAIL=my-sa@my-project.iam.gserviceaccount.com
 
 ```bash
 # Install required packages
-pip install --quiet --user google-cloud-iam google-cloud-resource-manager google-cloud-asset
+pip install --quiet --user google-cloud-iam google-cloud-resourcemanager google-cloud-asset
 ```
 
 ## Go SDK Script Template (IAM Roles)

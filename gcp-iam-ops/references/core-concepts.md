@@ -96,24 +96,13 @@ if ! command -v gcloud &> /dev/null; then
     exec -l $SHELL
     gcloud init
 fi
+gcloud config list
+gcloud auth application-default print-access-token --quiet &>/dev/null && echo "Auth OK"
+gcloud iam service-accounts list --limit=1 --format="json" &>/dev/null && echo "IAM API OK"
 ```
 
 ### 2. Bootstrap Go Runtime (JIT SDK fallback)
-```bash
-if ! command -v go &> /dev/null; then
-    OS=$(uname -s | tr '[:upper:]' '[:lower:]')
-    ARCH=$(uname -m); [ "$ARCH" = "x86_64" ] && ARCH="amd64"; [ "$ARCH" = "aarch64" ] && ARCH="arm64"
-    mkdir -p /tmp/go-runtime
-    curl -fsSL "https://go.dev/dl/go1.24.0.${OS}-${ARCH}.tar.gz" | tar -xz -C /tmp/go-runtime 2>/dev/null \
-    || curl -fsSL "https://go.dev/dl/go1.24.0.linux-${ARCH}.tar.gz" | tar -xz -C /tmp/go-runtime
-    if [ -f /tmp/go-runtime/go/bin/go ]; then
-        export PATH="/tmp/go-runtime/go/bin:$PATH"
-    else
-        echo "Go download failed. Using Python SDK as fallback."
-        pip install --quiet --user google-cloud-iam google-cloud-resource-manager
-    fi
-fi
-```
+> See AGENTS.md §0.2 — Go JIT bootstrap is defined once at repo level, not duplicated here.
 
 ### 3. Configure Credentials
 ```bash
@@ -127,13 +116,6 @@ gcloud config set project "$CLOUDSDK_CORE_PROJECT"
 ### 4. Enable Required APIs
 ```bash
 gcloud services enable iam.googleapis.com cloudresourcemanager.googleapis.com cloudasset.googleapis.com
-```
-
-### 5. Verify Configuration
-```bash
-gcloud config list
-gcloud auth application-default print-access-token --quiet &>/dev/null && echo "Auth OK"
-gcloud iam service-accounts list --limit=1 --format="json" &>/dev/null && echo "IAM API OK"
 ```
 
 > **Security:** Never commit service account keys to version control. All credentials use `{{env.*}}` placeholders.
