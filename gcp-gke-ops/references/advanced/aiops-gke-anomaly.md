@@ -294,13 +294,13 @@ kubectl patch deployment DEPLOYMENT_NAME -p '{"spec":{"template":{"spec":{"conta
 
 ### Playbook 1 — Node NotReady
 
-**Detection**
+#### Detection
 ```bash
 kubectl get nodes -o json | jq -r '.items[] | select(.status.conditions[] | select(.type=="Ready" and .status!="True")) | .metadata.name'
 ```
 **Threshold**: trigger if node `Ready=Unknown/False` sustained **> 5m** (not transient — ignore < 5m flaps from rolling upgrades).
 
-**DRY-RUN preview**
+#### DRY-RUN Preview
 ```bash
 # Would enable autorepair and (if still NotReady after grace) cordon+drain
 echo "DRY-RUN: gcloud container node-pools update {{user.node_pool_name}} --cluster={{user.cluster_name}} --location={{user.location}} --enable-autorepair"
@@ -309,7 +309,7 @@ echo "DRY-RUN: kubectl cordon NODE_NAME && kubectl drain NODE_NAME --ignore-daem
 
 **Gate**: Safe-apply (autorepair enable). Drain is safe-apply only if workloads are replicated; single-replica workloads → HALT.
 
-**Idempotent apply**
+#### Idempotent Apply
 ```bash
 # Probe: already autorepairing?
 if ! gcloud container node-pools describe "{{user.node_pool_name}}" --cluster="{{user.cluster_name}}" --location="{{user.location}}" --format="value(management.autoRepair)" | grep -q "true"; then
@@ -321,7 +321,7 @@ fi
 
 ### Playbook 2 — Node Pool Scale-Up Failed
 
-**Detection**
+#### Detection
 ```bash
 gcloud container operations list --filter="operationType=UPGRADE_NODE_POOL OR operationType=REPAIR_CLUSTER" --format="json" | jq -r '.[] | select(.status=="FAILED") | .name'
 # Or autoscaler stuck:
@@ -329,14 +329,14 @@ kubectl get events --field-selector reason=FailedScheduling -A
 ```
 **Threshold**: trigger if a scale-up operation stays `FAILED` **> 10m**, or `FailedScheduling` events persist **> 10m** (transient scheduling delays excluded).
 
-**DRY-RUN preview**
+#### DRY-RUN Preview
 ```bash
 echo "DRY-RUN: gcloud container clusters resize {{user.cluster_name}} --node-pool={{user.node_pool_name}} --num-nodes=TARGET --zone={{user.location}}"
 ```
 
 **Gate**: Safe-apply if target ≤ max-nodes of autoscaling config. Exceeds max-nodes → HALT (raises quota/cost; needs human raise of `--max-nodes`).
 
-**Idempotent apply**
+#### Idempotent Apply
 ```bash
 CURRENT=$(gcloud container node-pools describe "{{user.node_pool_name}}" --cluster="{{user.cluster_name}}" --location="{{user.location}}" --format="value(currentNodeCount)")
 if [ "$CURRENT" -lt "$TARGET" ]; then
@@ -348,14 +348,14 @@ fi
 
 ### Playbook 3 — Workload CrashLoopBackOff
 
-**Detection**
+#### Detection
 ```bash
 kubectl get pods --all-namespaces -o json | jq -r '.items[] | select(.status.phase!="Running") | .metadata.namespace + "/" + .metadata.name'
 kubectl get pods --all-namespaces | grep -i crashloop
 ```
 **Threshold**: trigger if `restartCount > 5` within **10m**, or pod stuck in `CrashLoopBackOff`/`Error` phase **> 5m** (ignore one-off OOM during deploy).
 
-**DRY-RUN preview**
+#### DRY-RUN Preview
 ```bash
 echo "DRY-RUN: kubectl rollout restart deployment/DEPLOYMENT -n NAMESPACE"
 echo "DRY-RUN: kubectl describe pod POD -n NAMESPACE   # inspect lastState.terminated.reason"
@@ -363,7 +363,7 @@ echo "DRY-RUN: kubectl describe pod POD -n NAMESPACE   # inspect lastState.termi
 
 **Gate**: Safe-apply (rollout restart) for stateless deployments. StatefulSet with volume-bound single replica → HALT (risk data loss / disruption).
 
-**Idempotent apply**
+#### Idempotent Apply
 ```bash
 # Only restart if not already progressing
 if ! kubectl rollout status deployment/DEPLOYMENT -n NAMESPACE --timeout=5s >/dev/null 2>&1; then
@@ -375,21 +375,21 @@ fi
 
 ### Playbook 4 — HPA Hit Max Replicas
 
-**Detection**
+#### Detection
 ```bash
 # Scaling limited at max: ScalingLimited=MaxReplicasReached is True, OR desired already at/above max
 kubectl get hpa --all-namespaces -o json | jq -r '.items[] | select((.status.conditions[] | select(.type=="ScalingLimited" and .reason=="MaxReplicasReached" and .status=="True")) or (.status.desiredReplicas >= .spec.maxReplicas)) | .metadata.namespace + "/" + .metadata.name'
 ```
 **Threshold**: trigger if `ScalingLimited=MaxReplicasReached` is `True` sustained **> 10m** (brief spikes during rollout excluded).
 
-**DRY-RUN preview**
+#### DRY-RUN Preview
 ```bash
 echo "DRY-RUN: kubectl patch hpa HPA -n NAMESPACE --patch '{\"spec\":{\"maxReplicas\":NEW_MAX}}'"
 ```
 
 **Gate**: Safe-apply if NEW_MAX within quota budget. Exceeds project quota or cost guardrail → HALT (request human quota/cost approval).
 
-**Idempotent apply**
+#### Idempotent Apply
 ```bash
 CUR_MAX=$(kubectl get hpa HPA -n NAMESPACE -o jsonpath='{.spec.maxReplicas}')
 if [ "$CUR_MAX" -lt "$NEW_MAX" ]; then
