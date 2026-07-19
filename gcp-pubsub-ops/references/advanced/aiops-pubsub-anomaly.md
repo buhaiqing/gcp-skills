@@ -11,11 +11,12 @@
 5. [Subscription Backlog Growth](#subscription-backlog-growth)
 6. [Ordering Violations](#ordering-violations)
 7. [Dead Letter Queue Spike Detection](#dead-letter-queue-spike-detection)
-8. [Real-Time Alerting](#real-time-alerting)
-9. [Automated Remediation](#automated-remmediation)
-10. [Best Practices](#best-practices)
-11. [Troubleshooting](#troubleshooting)
-12. [See Also](#see-also)
+ 8. [Real-Time Alerting](#real-time-alerting)
+ 9. [Automated Remediation](#automated-remediation)
+ 10. [Self-Healing Playbook](#self-healing-playbook)
+ 11. [Best Practices](#best-practices)
+ 12. [Troubleshooting](#troubleshooting)
+ 13. [See Also](#see-also)
 
 ## Overview
 
@@ -269,6 +270,151 @@ gcloud pubsub subscriptions pull $SUBSCRIPTION --limit=100 --auto-ack | \
       echo "Cancelling stuck message: $(echo $message | jq '.messageId')"
     fi
   done
+```
+
+## Self-Healing Playbook
+
+> **Scope:** Closed-loop remediation for the three highest-frequency Pub/Sub anomalies. Every playbook follows the same four-phase contract: **detection → DRY-RUN preview → gate → idempotent apply**.
+>
+> **Cross-references (do not redefine, only reference):**
+> - Error classification → [docs/error-taxonomy.md](../../../docs/error-taxonomy.md) (map each failure to a root-cause dimension; recovery verb `HALT`/`RETRY`/`REMEDIATE`/`ESCALATE`).
+> - Blast-radius gating → [docs/cross-skill-blast-radius.md](../../../docs/cross-skill-blast-radius.md) (R1 auto-apply, R2 gate, R3/R4 HALT).
+> - Closed-loop feedback → [gcp-gcl-runner-ops/trace_feedback.py](../../../gcp-gcl-runner-ops/trace_feedback.py) (emit a GCL trace per remediation so failures aggregate back into skill quality).
+> - Credential masking → AGENTS.md §0.1 (never log `GOOGLE_APPLICATION_CREDENTIALS` content; verify existence only).
+
+### Contract (mandatory for every playbook)
+
+| Phase | Rule |
+|-------|------|
+| #### Detection | Query Cloud Monitoring / `gcloud` metrics; emit a structured `DIAG` line with the measured value and threshold. |
+| #### DRY-RUN preview | Print the exact mutation command with `--dry-run` / `--format=json` describe-only; **no mutation**. |
+| #### Gate | Classify blast radius (R1–R4). R1 → auto-apply; R2 → gate; **R3/R4 → HALT** (delete subscription / modify IAM are HALT). |
+| #### Idempotent apply | Apply only if `idempotent_safe=true`; re-run must be a no-op. Record `trace_id` for `trace_feedback.py`. |
+
+> **HALT by policy:** deleting a subscription, deleting a topic, and any IAM binding change are **never** auto-applied. Surface to human with the exact resource identifier.
+
+### Playbook 1 — Subscription Backlog Growth
+
+#### Detection
+```bash
+# DIAG: measure backlog vs threshold
+SUB="{{user.subscription_id}}"
+UNACKED=$(gcloud pubsub subscriptions describe "$SUB" --format="value(numUndeliveredMessages)")
+THRESH=10000
+echo "DIAG sub=$SUB unacked=$UNACKED threshold=$THRESH"
+[ "$UNACKED" -gt "$THRESH" ] && echo "RESULT backlog_anomaly=true"
+```
+Maps to `RESOURCE_STATE` / `QUOTA_EXCEEDED` (consumer lag) in error-taxonomy. Radius: **R2** (affects consumers) unless the fix is a single-subscription config bump (R1).
+
+#### DRY-RUN preview — safe R1 fix is to raise ack-deadline (no message loss)
+```bash
+# DRY-RUN: show current ack deadline, propose new value (idempotent: re-applying same value is no-op)
+gcloud pubsub subscriptions describe "$SUB" --format="value(ackDeadlineSeconds)"
+echo "PREVIEW: gcloud pubsub subscriptions update $SUB --ack-deadline=60"
+```
+
+#### Gate — R1 (ack-deadline bump) auto-apply; R2 (scale consumers / seek) requires gate
+
+#### Idempotent apply
+```bash
+# EXEC: idempotent — setting an already-set value is a no-op
+gcloud pubsub subscriptions update "$SUB" --ack-deadline=60 --format="json" \
+  | jq '{name, ackDeadlineSeconds}'
+# RESULT: emit trace for trace_feedback.py
+echo "RESULT remediation=ack_deadline_bumped sub=$SUB idempotent=true"
+```
+> Seek-to-snapshot (R2) and delete-subscription (R4) are **NOT** in this playbook — seek requires a gate, delete is HALT.
+
+### Playbook 2 — Dead-Letter Topic Pileup
+
+#### Detection
+```bash
+# DIAG: count messages in the DLQ topic
+DLQ="{{user.dead_letter_topic}}"
+DLQ_COUNT=$(gcloud pubsub topics describe "$DLQ" --format="value(numUndeliveredMessages)" 2>/dev/null || echo "n/a")
+echo "DIAG dlq=$DLQ count=$DLQ_COUNT"
+[ "${DLQ_COUNT:-0}" -gt 100 ] && echo "RESULT dlq_pileup=true"
+```
+Maps to `RESOURCE_STATE` in error-taxonomy. Radius: **R2** (replay re-injects to consumers).
+
+#### DRY-RUN preview — replay DLQ into the original subscription via a temporary subscription on the DLQ topic
+```bash
+# DRY-RUN: show DLQ topic + proposed replay subscription (no create yet)
+gcloud pubsub topics describe "$DLQ" --format="json" | jq '{name}'
+echo "PREVIEW: gcloud pubsub subscriptions create dlq-replay-$SUB --topic=$DLQ"
+```
+
+#### Gate — R2: replay re-delivers failed messages to live consumers; require gate (confirm consumers can absorb re-delivery)
+
+#### Idempotent apply
+```bash
+# EXEC: create replay sub (ALREADY_EXISTS on re-run = safe no-op), pull+ack to redeliver
+gcloud pubsub subscriptions create "dlq-replay-$SUB" --topic="$DLQ" --format="json" 2>/dev/null \
+  || echo "RESULT replay_sub_exists=true idempotent=true"
+gcloud pubsub subscriptions pull "dlq-replay-$SUB" --auto-ack --limit=1000 --format="json" \
+  | jq 'length' | xargs -I{} echo "RESULT redelivered={}"
+```
+> Deleting the DLQ topic (R4) is **HALT**. Modifying the source subscription's IAM to grant DLQ publisher (R3) is **HALT** — surface to human.
+
+### Playbook 3 — Push Endpoint 4xx / 5xx
+
+#### Detection
+```bash
+# DIAG: pull push endpoint + recent delivery error ratio from Monitoring
+SUB="{{user.subscription_id}}"
+ENDPOINT=$(gcloud pubsub subscriptions describe "$SUB" --format="value(pushConfig.pushEndpoint)")
+echo "DIAG sub=$SUB endpoint=$ENDPOINT"
+gcloud monitoring time-series list \
+  --filter='metric.type="pubsub.googleapis.com/subscription/push_request_count" AND resource.labels.subscription_id="'$SUB'"' \
+  --format="json" | jq '[.[]?.points[]?.value.int64Value] | add // 0' \
+  | xargs -I{} echo "RESULT push_errors_total={}"
+```
+Maps to `NETWORK` (`UNAVAILABLE`/`TIMEOUT`) or `CONFIGURATION` (`INVALID_ARGUMENT`) in error-taxonomy. Radius: **R2** (changing push endpoint alters delivery target).
+
+#### DRY-RUN preview — safe R1 fix is to raise retry backoff (no endpoint change)
+```bash
+# DRY-RUN: show current retry policy, propose wider backoff (idempotent)
+gcloud pubsub subscriptions describe "$SUB" --format="json" | jq '.retryPolicy'
+echo "PREVIEW: gcloud pubsub subscriptions update $SUB --min-retry-delay=10s --max-retry-delay=600s"
+```
+
+#### Gate — R1 (retry backoff bump) auto-apply; R2 (change `--push-endpoint`) requires gate (transient 4xx/5xx risk during cutover)
+
+#### Idempotent apply
+```bash
+# EXEC: idempotent — re-applying same backoff is a no-op
+gcloud pubsub subscriptions update "$SUB" --min-retry-delay=10s --max-retry-delay=600s --format="json" \
+  | jq '{name, retryPolicy}'
+echo "RESULT remediation=retry_backoff_widened sub=$SUB idempotent=true"
+```
+> Changing `--push-endpoint` (R2) requires a gate; deleting the subscription (R4) is HALT.
+
+### Closed-Loop Feedback
+
+After any apply (or HALT), emit a GCL trace so `trace_feedback.py` can aggregate:
+```bash
+# Emit trace (consumed by gcp-gcl-runner-ops/trace_feedback.py --trace-dir ./audit-results)
+cat > "./audit-results/gcl-trace-pubsub-$(date +%s).json" <<EOF
+{
+  "skill": "gcp-pubsub-ops",
+  "op": "self_heal",
+  "anomaly": "<backlog|dlq|push_4xx_5xx>",
+  "radius": "<R1|R2|R3|R4>",
+  "gate": "<auto|gate|HALT>",
+  "result": "<PASS|HALT>",
+  "idempotent_safe": <true|false>,
+  "trace_id": "pubsub-$(date +%s)-$$"
+}
+EOF
+```
+Then aggregate: `python3 ../../../gcp-gcl-runner-ops/trace_feedback.py --trace-dir ./audit-results`
+
+### Credential Masking (AGENTS.md §0.1)
+
+All commands above read credentials via `GOOGLE_APPLICATION_CREDENTIALS` (auto by `gcloud`). **Never** echo the key content. Verify existence only:
+```bash
+test -f "$GOOGLE_APPLICATION_CREDENTIALS" && echo "✅ SA exists (masked)"
+# UNSAFE — never do this: cat $GOOGLE_APPLICATION_CREDENTIALS
 ```
 
 ## Best Practices

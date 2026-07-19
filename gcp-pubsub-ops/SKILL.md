@@ -442,3 +442,12 @@ gcloud alpha monitoring policies create \
 - **Exactly-once**: Enable for critical workloads; adds deduplication overhead
 - **Backlog**: Monitor `num_undelivered_messages` and `oldest_unacked_message_age`
 - **Naming**: `{project}-{env}-{purpose}-{sequence}` — lowercase, hyphenated
+
+## AIOps 自愈 (Self-Healing)
+
+Pub/Sub 异常自愈闭环（订阅积压增长 / 死信主题堆积 / 推送端点 4xx·5xx）的完整 playbook，含 detection → DRY-RUN preview → 门禁 → 幂等 apply 四阶段契约，以及 HALT 策略（删订阅 / 改 IAM 标 HALT）、凭证遮蔽（AGENTS.md §0.1）、跨 skill 爆炸半径评估与闭环反馈：
+
+- **Self-Healing Playbook**: [references/advanced/aiops-pubsub-anomaly.md](references/advanced/aiops-pubsub-anomaly.md) §Self-Healing Playbook
+- 错误分类 → [docs/error-taxonomy.md](../../docs/error-taxonomy.md)
+- 爆炸半径门禁 → [docs/cross-skill-blast-radius.md](../../docs/cross-skill-blast-radius.md)
+- 闭环反馈 → [gcp-gcl-runner-ops/trace_feedback.py](../../gcp-gcl-runner-ops/trace_feedback.py)
