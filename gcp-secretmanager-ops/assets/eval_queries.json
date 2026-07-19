@@ -1,20 +1,111 @@
 [
-  {"query": "Create a secret named 'test-api-key' with automatic replication in project 'test-project'", "should_trigger": true, "expected_cmd_pattern": "gcloud secrets create", "dry_run_supported": false},
-  {"query": "List all secrets in project 'my-project' with label environment=production", "should_trigger": true, "expected_cmd_pattern": "gcloud secrets list", "dry_run_supported": false},
-  {"query": "Access the latest version of secret 'db-password'", "should_trigger": true, "expected_cmd_pattern": "gcloud secrets versions access", "dry_run_supported": false},
-  {"query": "Delete secret 'old-api-key' in project 'my-project'", "should_trigger": true, "expected_cmd_pattern": "gcloud secrets delete", "dry_run_supported": false, "safety_check": true},
-  {"query": "Rotate secret 'payment-key' by adding a new version", "should_trigger": true, "expected_cmd_pattern": "gcloud secrets versions add", "dry_run_supported": false},
-  {"query": "Set rotation schedule for secret 'tls-cert' to rotate every 90 days", "should_trigger": true, "expected_cmd_pattern": "gcloud secrets update.*--rotation-period", "dry_run_supported": false},
-  {"query": "Grant secret accessor role to service account 'app-sa' for secret 'db-password'", "should_trigger": true, "expected_cmd_pattern": "gcloud secrets add-iam-policy-binding", "dry_run_supported": false},
-  {"query": "create a GKE cluster", "should_trigger": false},
-  {"query": "deploy to Cloud Run", "should_trigger": false},
-  {"query": "create a BigQuery dataset", "should_trigger": false},
-  {"query": "create a Cloud SQL instance", "should_trigger": false},
-  {"query": "create a Cloud Storage bucket", "should_trigger": false},
-  {"query": "set up a VPC network", "should_trigger": false},
-  {"query": "create a Pub/Sub topic", "should_trigger": false},
-  {"query": "set up Cloud Monitoring alerts", "should_trigger": false},
-  {"query": "configure a VPC firewall rule", "should_trigger": false},
-  {"query": "create a VM in GCE", "should_trigger": false},
-  {"query": "create an IAM custom role", "should_trigger": false}
+  {
+    "query": "Create a secret named 'test-api-key' with automatic replication in project 'test-project'",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud secrets create",
+    "dry_run_supported": false
+  },
+  {
+    "query": "List all secrets in project 'my-project' with label environment=production",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud secrets list",
+    "dry_run_supported": false
+  },
+  {
+    "query": "Access the latest version of secret 'db-password'",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud secrets versions access",
+    "dry_run_supported": false
+  },
+  {
+    "query": "Delete secret 'old-api-key' in project 'my-project'",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud secrets delete",
+    "dry_run_supported": false,
+    "safety_check": true
+  },
+  {
+    "query": "Rotate secret 'payment-key' by adding a new version",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud secrets versions add",
+    "dry_run_supported": false
+  },
+  {
+    "query": "Set rotation schedule for secret 'tls-cert' to rotate every 90 days",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud secrets update.*--rotation-period",
+    "dry_run_supported": false
+  },
+  {
+    "query": "Grant secret accessor role to service account 'app-sa' for secret 'db-password'",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud secrets add-iam-policy-binding",
+    "dry_run_supported": false
+  },
+  {
+    "query": "create a GKE cluster",
+    "should_trigger": false
+  },
+  {
+    "query": "deploy to Cloud Run",
+    "should_trigger": false
+  },
+  {
+    "query": "create a BigQuery dataset",
+    "should_trigger": false
+  },
+  {
+    "query": "create a Cloud SQL instance",
+    "should_trigger": false
+  },
+  {
+    "query": "create a Cloud Storage bucket",
+    "should_trigger": false
+  },
+  {
+    "query": "set up a VPC network",
+    "should_trigger": false
+  },
+  {
+    "query": "create a Pub/Sub topic",
+    "should_trigger": false
+  },
+  {
+    "query": "set up Cloud Monitoring alerts",
+    "should_trigger": false
+  },
+  {
+    "query": "configure a VPC firewall rule",
+    "should_trigger": false
+  },
+  {
+    "query": "create a VM in GCE",
+    "should_trigger": false
+  },
+  {
+    "query": "create an IAM custom role",
+    "should_trigger": false
+  },
+  {
+    "query": "secret db-password version 2 is disabled, re-enable it",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud secrets versions enable",
+    "dry_run_supported": true
+  },
+  {
+    "query": "service account app-sa is denied access to secret db-password, grant secretAccessor",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud secrets add-iam-policy-binding",
+    "dry_run_supported": true
+  },
+  {
+    "query": "secret tls-cert version 3 is scheduled for destruction, restore it",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud secrets versions restore",
+    "dry_run_supported": true
+  },
+  {
+    "query": "create a Compute Engine VM",
+    "should_trigger": false
+  }
 ]

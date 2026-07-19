@@ -78,5 +78,27 @@
     "expected_operation": "Update CDN Configuration",
     "expected_command_pattern": "gcloud compute backend-services update.*--negative-caching",
     "expected_validation": "negativeCaching is true, negativeCachingPolicy has correct TTLs"
+  },
+  {
+    "query": "CDN origin backend web-bs is returning 5xx, drain the failing origin group via capacityScaler=0",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud compute backend-services update.*--backend",
+    "dry_run_supported": true
+  },
+  {
+    "query": "CDN cache hit ratio dropped below 80 percent, raise default TTL to 86400",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud compute backend-services update.*--default-ttl",
+    "dry_run_supported": true
+  },
+  {
+    "query": "bad deploy on CDN, purge cache for example.com /images/* via url-map",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud compute url-maps invalidate-cache",
+    "dry_run_supported": true
+  },
+  {
+    "query": "create a Cloud SQL instance",
+    "should_trigger": false
   }
 ]

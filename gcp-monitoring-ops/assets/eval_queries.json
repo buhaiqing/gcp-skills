@@ -18,5 +18,9 @@
   {"query": "deploy a Cloud Function", "should_trigger": false},
   {"query": "create a Cloud Run service", "should_trigger": false},
   {"query": "configure a VPN tunnel", "should_trigger": false},
-  {"query": "create an IAM service account", "should_trigger": false}
+  {"query": "create an IAM service account", "should_trigger": false},
+  {"query": "A single alert policy fired more than 10 open incidents in the last 5 minutes — detect the alert storm and preview silencing it", "should_trigger": true, "expected_cmd_pattern": "gcloud monitoring policies list-incidents", "dry_run_supported": true},
+  {"query": "An alert policy is flapping with open/close cycles every few seconds — dry-run silence it for 30 minutes before any human review gate", "should_trigger": true, "expected_cmd_pattern": "gcloud monitoring policies update.*--no-enabled", "dry_run_supported": true},
+  {"query": "Re-enable the previously silenced alert policy after the storm window passed", "should_trigger": true, "expected_cmd_pattern": "gcloud monitoring policies update.*--enabled", "dry_run_supported": true},
+  {"query": "Show me the CPU utilization metric for my GCE instance over the last hour", "should_trigger": false}
 ]

@@ -18,5 +18,9 @@
   {"query": "create a Pub/Sub topic", "should_trigger": false},
   {"query": "set up Cloud Monitoring alerts", "should_trigger": false},
   {"query": "configure a VPC firewall rule", "should_trigger": false},
-  {"query": "create an IAM service account", "should_trigger": false}
+  {"query": "create an IAM service account", "should_trigger": false},
+  {"query": "Memorystore Redis memory usage ratio is above 0.85 with an eviction storm, scale up and set allkeys-lru", "should_trigger": true, "expected_cmd_pattern": "gcloud redis instances update.*--memory-size", "dry_run_supported": true},
+  {"query": "Redis is throwing OOM and evicting keys, switch maxmemory-policy to allkeys-lru", "should_trigger": true, "expected_cmd_pattern": "gcloud redis instances update.*--redis-config", "dry_run_supported": true},
+  {"query": "Memorystore Standard tier just failed over, verify replica health and idempotent reconnect", "should_trigger": true, "expected_cmd_pattern": "gcloud redis instances describe", "dry_run_supported": true},
+  {"query": "show me the current SLOWLOG entries on my Redis instance", "should_trigger": false}
 ]

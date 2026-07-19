@@ -1,22 +1,124 @@
 [
-  {"query": "Help me set up Cloud DNS for my project — managed zones and record sets", "should_trigger": true, "expected_cmd_pattern": "gcloud dns managed-zones create", "dry_run_supported": false},
-  {"query": "创建 Cloud DNS 的 managed zone 和 DNS 记录", "should_trigger": true, "expected_cmd_pattern": "gcloud dns managed-zones create", "dry_run_supported": false},
-  {"query": "I need a new gcp-dns-ops skill for DNS zone and record management", "should_trigger": true, "expected_cmd_pattern": "gcloud dns", "dry_run_supported": false},
-  {"query": "Add ops skill for Cloud DNS: zones, record sets, policies", "should_trigger": true, "expected_cmd_pattern": "gcloud dns managed-zones", "dry_run_supported": false},
-  {"query": "Create gcp-dns-ops for DNS zone lifecycle and DNSSEC management", "should_trigger": true, "expected_cmd_pattern": "gcloud dns", "dry_run_supported": false},
-  {"query": "Scaffold a skill for Cloud DNS, the docs are at cloud.google.com/dns", "should_trigger": true, "expected_cmd_pattern": "gcloud dns", "dry_run_supported": false},
-  {"query": "Regenerate the DNS skill — gcloud API changed and we have gaps", "should_trigger": true, "expected_cmd_pattern": "gcloud dns managed-zones", "dry_run_supported": false},
-  {"query": "The Cloud DNS skill is missing DNSSEC operations", "should_trigger": true, "expected_cmd_pattern": "gcloud dns managed-zones update.*--dnssec", "dry_run_supported": false},
-  {"query": "Add a new skill for Google Cloud DNS management", "should_trigger": true, "expected_cmd_pattern": "gcloud dns", "dry_run_supported": false},
-  {"query": "The GCP skill for Cloud DNS needs an update after the latest API changes", "should_trigger": true, "expected_cmd_pattern": "gcloud dns", "dry_run_supported": false},
-  {"query": "create a GKE cluster", "should_trigger": false},
-  {"query": "deploy to Cloud Run", "should_trigger": false},
-  {"query": "create a BigQuery dataset", "should_trigger": false},
-  {"query": "create a Cloud SQL instance", "should_trigger": false},
-  {"query": "create a Cloud Storage bucket", "should_trigger": false},
-  {"query": "set up a VPC network", "should_trigger": false},
-  {"query": "create a Pub/Sub topic", "should_trigger": false},
-  {"query": "set up Cloud Monitoring alerts", "should_trigger": false},
-  {"query": "configure a VPC firewall rule", "should_trigger": false},
-  {"query": "create an IAM service account", "should_trigger": false}
+  {
+    "query": "Help me set up Cloud DNS for my project \u2014 managed zones and record sets",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud dns managed-zones create",
+    "dry_run_supported": false
+  },
+  {
+    "query": "\u521b\u5efa Cloud DNS \u7684 managed zone \u548c DNS \u8bb0\u5f55",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud dns managed-zones create",
+    "dry_run_supported": false
+  },
+  {
+    "query": "I need a new gcp-dns-ops skill for DNS zone and record management",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud dns",
+    "dry_run_supported": false
+  },
+  {
+    "query": "Add ops skill for Cloud DNS: zones, record sets, policies",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud dns managed-zones",
+    "dry_run_supported": false
+  },
+  {
+    "query": "Create gcp-dns-ops for DNS zone lifecycle and DNSSEC management",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud dns",
+    "dry_run_supported": false
+  },
+  {
+    "query": "Scaffold a skill for Cloud DNS, the docs are at cloud.google.com/dns",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud dns",
+    "dry_run_supported": false
+  },
+  {
+    "query": "Regenerate the DNS skill \u2014 gcloud API changed and we have gaps",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud dns managed-zones",
+    "dry_run_supported": false
+  },
+  {
+    "query": "The Cloud DNS skill is missing DNSSEC operations",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud dns managed-zones update.*--dnssec",
+    "dry_run_supported": false
+  },
+  {
+    "query": "Add a new skill for Google Cloud DNS management",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud dns",
+    "dry_run_supported": false
+  },
+  {
+    "query": "The GCP skill for Cloud DNS needs an update after the latest API changes",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud dns",
+    "dry_run_supported": false
+  },
+  {
+    "query": "create a GKE cluster",
+    "should_trigger": false
+  },
+  {
+    "query": "deploy to Cloud Run",
+    "should_trigger": false
+  },
+  {
+    "query": "create a BigQuery dataset",
+    "should_trigger": false
+  },
+  {
+    "query": "create a Cloud SQL instance",
+    "should_trigger": false
+  },
+  {
+    "query": "create a Cloud Storage bucket",
+    "should_trigger": false
+  },
+  {
+    "query": "set up a VPC network",
+    "should_trigger": false
+  },
+  {
+    "query": "create a Pub/Sub topic",
+    "should_trigger": false
+  },
+  {
+    "query": "set up Cloud Monitoring alerts",
+    "should_trigger": false
+  },
+  {
+    "query": "configure a VPC firewall rule",
+    "should_trigger": false
+  },
+  {
+    "query": "create an IAM service account",
+    "should_trigger": false
+  },
+  {
+    "query": "A record www.example.com is pointing at the wrong IP, correct it via transaction",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud dns record-sets transaction",
+    "dry_run_supported": true
+  },
+  {
+    "query": "lower TTL on zone example-zone to 60s before the IP change, then restore",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud dns record-sets transaction",
+    "dry_run_supported": true
+  },
+  {
+    "query": "DNSSEC is off on example-zone but should be on, enable signing",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud dns managed-zones update.*--dnssec-state=on",
+    "dry_run_supported": true
+  },
+  {
+    "query": "create a Cloud Storage bucket",
+    "should_trigger": false
+  }
 ]

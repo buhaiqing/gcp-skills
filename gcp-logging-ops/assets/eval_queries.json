@@ -18,5 +18,9 @@
   {"query": "create a Pub/Sub topic", "should_trigger": false},
   {"query": "set up Cloud Monitoring alerts", "should_trigger": false},
   {"query": "configure a VPC firewall rule", "should_trigger": false},
-  {"query": "create an IAM service account", "should_trigger": false}
+  {"query": "create an IAM service account", "should_trigger": false},
+  {"query": "A log sink drifted from its desired config — detect the drift and dry-run re-creating it to restore the known-good state", "should_trigger": true, "expected_cmd_pattern": "gcloud logging sinks describe", "dry_run_supported": true},
+  {"query": "Re-create the broken log sink from the known-good desired config after the gate passes", "should_trigger": true, "expected_cmd_pattern": "gcloud logging sinks create", "dry_run_supported": false},
+  {"query": "A log router exclusion filter changed unexpectedly — restore it via the dry-run then apply flow", "should_trigger": true, "expected_cmd_pattern": "gcloud logging exclusions create", "dry_run_supported": false},
+  {"query": "Write a one-off log entry to Cloud Logging for debugging", "should_trigger": false}
 ]

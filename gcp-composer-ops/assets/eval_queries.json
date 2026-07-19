@@ -78,5 +78,27 @@
   {
     "query": "Create Cloud Functions",
     "should_trigger": false
+  },
+  {
+    "query": "Composer worker pods are stuck Pending and the task queue is backing up, scale the worker node pool",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud container node-pools resize",
+    "dry_run_supported": true
+  },
+  {
+    "query": "A Composer DAG failed 5 task instances in the last hour, pause the DAG and notify on-call",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud composer environments run.*dags pause",
+    "dry_run_supported": true
+  },
+  {
+    "query": "Composer environment upgrade has been RUNNING past SLA with no progress, diagnose and recommend rollback",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud composer operations list",
+    "dry_run_supported": false
+  },
+  {
+    "query": "Show me the list of DAGs currently scheduled in my Composer environment",
+    "should_trigger": false
   }
 ]

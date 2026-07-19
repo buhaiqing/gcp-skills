@@ -1,22 +1,124 @@
 [
-  {"query": "create a VM in us-central1-a", "should_trigger": true, "expected_cmd_pattern": "gcloud compute instances create", "dry_run_supported": false},
-  {"query": "my instance won't start, help me debug", "should_trigger": true, "expected_cmd_pattern": "gcloud compute instances describe", "dry_run_supported": false},
-  {"query": "resize my disk from 20GB to 50GB", "should_trigger": true, "expected_cmd_pattern": "gcloud compute disks resize", "dry_run_supported": false},
-  {"query": "snapshot my boot disk", "should_trigger": true, "expected_cmd_pattern": "gcloud compute disks snapshot", "dry_run_supported": false},
-  {"query": "SSH into my-instance", "should_trigger": true, "expected_cmd_pattern": "gcloud compute ssh", "dry_run_supported": false},
-  {"query": "create a managed instance group with autoscaling", "should_trigger": true, "expected_cmd_pattern": "gcloud compute instance-groups managed create", "dry_run_supported": false},
-  {"query": "list all running instances", "should_trigger": true, "expected_cmd_pattern": "gcloud compute instances list", "dry_run_supported": false},
-  {"query": "my disk is full, what do I do?", "should_trigger": true, "expected_cmd_pattern": "gcloud compute disks describe", "dry_run_supported": false},
-  {"query": "create a machine image from my-prod-vm", "should_trigger": true, "expected_cmd_pattern": "gcloud compute machine-images create", "dry_run_supported": false},
-  {"query": "scale up my instance group to 5 replicas", "should_trigger": true, "expected_cmd_pattern": "gcloud compute instance-groups managed resize", "dry_run_supported": false},
-  {"query": "create a load balancer for my instances", "should_trigger": false},
-  {"query": "set up a VPC with subnets", "should_trigger": false},
-  {"query": "how much does my GCP project cost?", "should_trigger": false},
-  {"query": "create a GKE cluster", "should_trigger": false},
-  {"query": "add a DNS A record for my domain", "should_trigger": false},
-  {"query": "create a Cloud SQL instance", "should_trigger": false},
-  {"query": "deploy a service to Cloud Run", "should_trigger": false},
-  {"query": "create an IAM policy binding", "should_trigger": false},
-  {"query": "create a monitoring alert for CPU", "should_trigger": false},
-  {"query": "set up a VPN tunnel to on-premises", "should_trigger": false}
+  {
+    "query": "create a VM in us-central1-a",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud compute instances create",
+    "dry_run_supported": false
+  },
+  {
+    "query": "my instance won't start, help me debug",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud compute instances describe",
+    "dry_run_supported": false
+  },
+  {
+    "query": "resize my disk from 20GB to 50GB",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud compute disks resize",
+    "dry_run_supported": false
+  },
+  {
+    "query": "snapshot my boot disk",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud compute disks snapshot",
+    "dry_run_supported": false
+  },
+  {
+    "query": "SSH into my-instance",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud compute ssh",
+    "dry_run_supported": false
+  },
+  {
+    "query": "create a managed instance group with autoscaling",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud compute instance-groups managed create",
+    "dry_run_supported": false
+  },
+  {
+    "query": "list all running instances",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud compute instances list",
+    "dry_run_supported": false
+  },
+  {
+    "query": "my disk is full, what do I do?",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud compute disks describe",
+    "dry_run_supported": false
+  },
+  {
+    "query": "create a machine image from my-prod-vm",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud compute machine-images create",
+    "dry_run_supported": false
+  },
+  {
+    "query": "scale up my instance group to 5 replicas",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud compute instance-groups managed resize",
+    "dry_run_supported": false
+  },
+  {
+    "query": "create a load balancer for my instances",
+    "should_trigger": false
+  },
+  {
+    "query": "set up a VPC with subnets",
+    "should_trigger": false
+  },
+  {
+    "query": "how much does my GCP project cost?",
+    "should_trigger": false
+  },
+  {
+    "query": "create a GKE cluster",
+    "should_trigger": false
+  },
+  {
+    "query": "add a DNS A record for my domain",
+    "should_trigger": false
+  },
+  {
+    "query": "create a Cloud SQL instance",
+    "should_trigger": false
+  },
+  {
+    "query": "deploy a service to Cloud Run",
+    "should_trigger": false
+  },
+  {
+    "query": "create an IAM policy binding",
+    "should_trigger": false
+  },
+  {
+    "query": "create a monitoring alert for CPU",
+    "should_trigger": false
+  },
+  {
+    "query": "set up a VPN tunnel to on-premises",
+    "should_trigger": false
+  },
+  {
+    "query": "MIG web-mig in us-central1-a has UNHEALTHY instances, recreate them via self-healing",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud compute instance-groups managed recreate-instances",
+    "dry_run_supported": true
+  },
+  {
+    "query": "boot disk data-disk is full, resize it from 50GB to 200GB",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud compute disks resize",
+    "dry_run_supported": true
+  },
+  {
+    "query": "instance app-1 is stuck in PROVISIONING for 10 minutes, reset it",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud compute instances reset",
+    "dry_run_supported": true
+  },
+  {
+    "query": "create a Cloud SQL instance",
+    "should_trigger": false
+  }
 ]

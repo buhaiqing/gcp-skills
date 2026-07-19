@@ -1,22 +1,124 @@
 [
-  {"query": "Help me set up Cloud KMS for key management — key rings and crypto keys", "should_trigger": true, "expected_cmd_pattern": "gcloud kms keyrings create", "dry_run_supported": false},
-  {"query": "创建 Cloud KMS 的 key ring 和 encryption key", "should_trigger": true, "expected_cmd_pattern": "gcloud kms keyrings create", "dry_run_supported": false},
-  {"query": "I need a new gcp-kms-ops skill for cryptographic key management", "should_trigger": true, "expected_cmd_pattern": "gcloud kms", "dry_run_supported": false},
-  {"query": "Add ops skill for Cloud KMS: key rings, keys, versions, encrypt, decrypt", "should_trigger": true, "expected_cmd_pattern": "gcloud kms keyrings", "dry_run_supported": false},
-  {"query": "Create gcp-kms-ops for key rotation and encryption/decryption operations", "should_trigger": true, "expected_cmd_pattern": "gcloud kms", "dry_run_supported": false},
-  {"query": "Scaffold a skill for Cloud KMS, the docs are at cloud.google.com/kms", "should_trigger": true, "expected_cmd_pattern": "gcloud kms", "dry_run_supported": false},
-  {"query": "Regenerate the KMS skill — gcloud API changed and we have gaps", "should_trigger": true, "expected_cmd_pattern": "gcloud kms keyrings", "dry_run_supported": false},
-  {"query": "The Cloud KMS skill is missing key version operations like enable/disable", "should_trigger": true, "expected_cmd_pattern": "gcloud kms keys versions", "dry_run_supported": false},
-  {"query": "Add a new skill for Google Cloud KMS key management", "should_trigger": true, "expected_cmd_pattern": "gcloud kms", "dry_run_supported": false},
-  {"query": "The GCP skill for Cloud KMS needs an update after the latest API changes", "should_trigger": true, "expected_cmd_pattern": "gcloud kms", "dry_run_supported": false},
-  {"query": "create a GKE cluster", "should_trigger": false},
-  {"query": "deploy to Cloud Run", "should_trigger": false},
-  {"query": "create a BigQuery dataset", "should_trigger": false},
-  {"query": "create a Cloud SQL instance", "should_trigger": false},
-  {"query": "create a Cloud Storage bucket", "should_trigger": false},
-  {"query": "set up a VPC network", "should_trigger": false},
-  {"query": "create a Pub/Sub topic", "should_trigger": false},
-  {"query": "set up Cloud Monitoring alerts", "should_trigger": false},
-  {"query": "configure a VPC firewall rule", "should_trigger": false},
-  {"query": "create an IAM service account", "should_trigger": false}
+  {
+    "query": "Help me set up Cloud KMS for key management \u2014 key rings and crypto keys",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud kms keyrings create",
+    "dry_run_supported": false
+  },
+  {
+    "query": "\u521b\u5efa Cloud KMS \u7684 key ring \u548c encryption key",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud kms keyrings create",
+    "dry_run_supported": false
+  },
+  {
+    "query": "I need a new gcp-kms-ops skill for cryptographic key management",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud kms",
+    "dry_run_supported": false
+  },
+  {
+    "query": "Add ops skill for Cloud KMS: key rings, keys, versions, encrypt, decrypt",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud kms keyrings",
+    "dry_run_supported": false
+  },
+  {
+    "query": "Create gcp-kms-ops for key rotation and encryption/decryption operations",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud kms",
+    "dry_run_supported": false
+  },
+  {
+    "query": "Scaffold a skill for Cloud KMS, the docs are at cloud.google.com/kms",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud kms",
+    "dry_run_supported": false
+  },
+  {
+    "query": "Regenerate the KMS skill \u2014 gcloud API changed and we have gaps",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud kms keyrings",
+    "dry_run_supported": false
+  },
+  {
+    "query": "The Cloud KMS skill is missing key version operations like enable/disable",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud kms keys versions",
+    "dry_run_supported": false
+  },
+  {
+    "query": "Add a new skill for Google Cloud KMS key management",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud kms",
+    "dry_run_supported": false
+  },
+  {
+    "query": "The GCP skill for Cloud KMS needs an update after the latest API changes",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud kms",
+    "dry_run_supported": false
+  },
+  {
+    "query": "create a GKE cluster",
+    "should_trigger": false
+  },
+  {
+    "query": "deploy to Cloud Run",
+    "should_trigger": false
+  },
+  {
+    "query": "create a BigQuery dataset",
+    "should_trigger": false
+  },
+  {
+    "query": "create a Cloud SQL instance",
+    "should_trigger": false
+  },
+  {
+    "query": "create a Cloud Storage bucket",
+    "should_trigger": false
+  },
+  {
+    "query": "set up a VPC network",
+    "should_trigger": false
+  },
+  {
+    "query": "create a Pub/Sub topic",
+    "should_trigger": false
+  },
+  {
+    "query": "set up Cloud Monitoring alerts",
+    "should_trigger": false
+  },
+  {
+    "query": "configure a VPC firewall rule",
+    "should_trigger": false
+  },
+  {
+    "query": "create an IAM service account",
+    "should_trigger": false
+  },
+  {
+    "query": "crypto key app-key rotation is overdue, enable automatic rotation with 90d period",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud kms keys update.*--rotation-period",
+    "dry_run_supported": true
+  },
+  {
+    "query": "crypto key app-key has no rotation scheduled, rotate it now",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud kms keys rotate",
+    "dry_run_supported": true
+  },
+  {
+    "query": "service account app-sa gets permission denied on app-key, grant encrypterDecrypter",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud kms keys add-iam-policy-binding",
+    "dry_run_supported": true
+  },
+  {
+    "query": "create a Cloud SQL instance",
+    "should_trigger": false
+  }
 ]

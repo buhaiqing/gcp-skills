@@ -28,5 +28,10 @@
   {"query": "create a Cloud Run service", "should_trigger": false},
   {"query": "configure a VPC firewall rule", "should_trigger": false},
   {"query": "deploy a Cloud Function", "should_trigger": false},
-  {"query": "set up Cloud Monitoring alerts", "should_trigger": false}
+  {"query": "set up Cloud Monitoring alerts", "should_trigger": false},
+  {"query": "subscription backlog is growing, raise the ack deadline to 60s", "should_trigger": true, "expected_cmd_pattern": "gcloud pubsub subscriptions update.*--ack-deadline", "dry_run_supported": false},
+  {"query": "dead letter topic is piling up, replay it into the original subscription", "should_trigger": true, "expected_cmd_pattern": "gcloud pubsub subscriptions create.*dlq-replay", "dry_run_supported": false},
+  {"query": "push endpoint returning 5xx, widen the retry backoff", "should_trigger": true, "expected_cmd_pattern": "gcloud pubsub subscriptions update.*--min-retry-delay", "dry_run_supported": false},
+  {"query": "detect Pub/Sub subscription backlog growth anomaly", "should_trigger": true, "expected_cmd_pattern": "gcloud pubsub subscriptions describe.*numUndeliveredMessages", "dry_run_supported": false},
+  {"query": "delete the subscription to clear the backlog anomaly", "should_trigger": false}
 ]

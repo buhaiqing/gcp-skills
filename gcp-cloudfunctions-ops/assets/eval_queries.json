@@ -1,22 +1,125 @@
 [
-  {"query": "deploy a new Cloud Function", "should_trigger": true, "expected_cmd_pattern": "gcloud functions deploy", "dry_run_supported": false},
-  {"query": "list all my Cloud Functions", "should_trigger": true, "expected_cmd_pattern": "gcloud functions list", "dry_run_supported": false},
-  {"query": "invoke a Cloud Function", "should_trigger": true, "expected_cmd_pattern": "gcloud functions call", "dry_run_supported": false},
-  {"query": "delete a Cloud Function", "should_trigger": true, "expected_cmd_pattern": "gcloud functions delete", "dry_run_supported": false, "safety_check": true},
-  {"query": "view Cloud Function logs", "should_trigger": true, "expected_cmd_pattern": "gcloud functions logs read", "dry_run_supported": false},
-  {"query": "set environment variables on a Cloud Function", "should_trigger": true, "expected_cmd_pattern": "gcloud functions deploy.*--set-env-vars", "dry_run_supported": false},
-  {"query": "check Cloud Function memory usage", "should_trigger": true, "expected_cmd_pattern": "gcloud functions describe.*jq", "dry_run_supported": false},
-  {"query": "set up a Cloud Scheduler trigger for my function", "should_trigger": true, "expected_cmd_pattern": "gcloud scheduler jobs create http", "dry_run_supported": false},
-  {"query": "update Cloud Function timeout", "should_trigger": true, "expected_cmd_pattern": "gcloud functions deploy.*--timeout", "dry_run_supported": false},
-  {"query": "set IAM policy on Cloud Function", "should_trigger": true, "expected_cmd_pattern": "gcloud functions add-iam-policy-binding", "dry_run_supported": false},
-  {"query": "create a GKE cluster", "should_trigger": false},
-  {"query": "create a BigQuery dataset", "should_trigger": false},
-  {"query": "deploy to Cloud Run", "should_trigger": false},
-  {"query": "create a Cloud SQL instance", "should_trigger": false},
-  {"query": "set up a VPC network", "should_trigger": false},
-  {"query": "create a Pub/Sub topic", "should_trigger": false},
-  {"query": "create a Cloud Storage bucket", "should_trigger": false},
-  {"query": "set up Cloud Monitoring alerts", "should_trigger": false},
-  {"query": "configure a VPC firewall rule", "should_trigger": false},
-  {"query": "create an IAM service account", "should_trigger": false}
+  {
+    "query": "deploy a new Cloud Function",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud functions deploy",
+    "dry_run_supported": false
+  },
+  {
+    "query": "list all my Cloud Functions",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud functions list",
+    "dry_run_supported": false
+  },
+  {
+    "query": "invoke a Cloud Function",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud functions call",
+    "dry_run_supported": false
+  },
+  {
+    "query": "delete a Cloud Function",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud functions delete",
+    "dry_run_supported": false,
+    "safety_check": true
+  },
+  {
+    "query": "view Cloud Function logs",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud functions logs read",
+    "dry_run_supported": false
+  },
+  {
+    "query": "set environment variables on a Cloud Function",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud functions deploy.*--set-env-vars",
+    "dry_run_supported": false
+  },
+  {
+    "query": "check Cloud Function memory usage",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud functions describe.*jq",
+    "dry_run_supported": false
+  },
+  {
+    "query": "set up a Cloud Scheduler trigger for my function",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud scheduler jobs create http",
+    "dry_run_supported": false
+  },
+  {
+    "query": "update Cloud Function timeout",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud functions deploy.*--timeout",
+    "dry_run_supported": false
+  },
+  {
+    "query": "set IAM policy on Cloud Function",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud functions add-iam-policy-binding",
+    "dry_run_supported": false
+  },
+  {
+    "query": "create a GKE cluster",
+    "should_trigger": false
+  },
+  {
+    "query": "create a BigQuery dataset",
+    "should_trigger": false
+  },
+  {
+    "query": "deploy to Cloud Run",
+    "should_trigger": false
+  },
+  {
+    "query": "create a Cloud SQL instance",
+    "should_trigger": false
+  },
+  {
+    "query": "set up a VPC network",
+    "should_trigger": false
+  },
+  {
+    "query": "create a Pub/Sub topic",
+    "should_trigger": false
+  },
+  {
+    "query": "create a Cloud Storage bucket",
+    "should_trigger": false
+  },
+  {
+    "query": "set up Cloud Monitoring alerts",
+    "should_trigger": false
+  },
+  {
+    "query": "configure a VPC firewall rule",
+    "should_trigger": false
+  },
+  {
+    "query": "create an IAM service account",
+    "should_trigger": false
+  },
+  {
+    "query": "function api-fn cold-starts and times out, raise timeout to 120s and set min-instances 1",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud functions deploy.*--timeout",
+    "dry_run_supported": true
+  },
+  {
+    "query": "function api-fn is throttling with 429s, raise max-instances to 100",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud functions deploy.*--max-instances",
+    "dry_run_supported": true
+  },
+  {
+    "query": "function api-fn deploy is broken, roll back to last good revision",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud functions deploy.*--source",
+    "dry_run_supported": true
+  },
+  {
+    "query": "create a GKE cluster",
+    "should_trigger": false
+  }
 ]
