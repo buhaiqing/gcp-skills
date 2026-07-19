@@ -10,5 +10,4 @@
 | AIOps Anomaly Detection | `aiops-gke-anomaly.md` | Cluster health, node pool, workload, and cost anomaly detection |
 | Workload Identity Federation | `workload-identity-deep-dive.md` | Deep dive on WIF setup, IAM bindings, and troubleshooting |
 | Private Cluster Setup | `private-cluster-setup.md` | Complete guide for private GKE cluster configuration |
-
-> Topics marked ⬜ in [TODO.md](../../../TODO.md) are planned but not yet authored.
+| FinOps Cost Optimization | `finops-gke-cost.md` | GKE cost visibility, rightsizing, committed-use discounts, and autoscaling cost levers |

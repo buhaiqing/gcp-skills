@@ -8,7 +8,7 @@
   {"query": "get credentials for kubectl", "should_trigger": true, "expected_cmd_pattern": "gcloud container clusters get-credentials", "dry_run_supported": false},
   {"query": "describe my GKE cluster", "should_trigger": true, "expected_cmd_pattern": "gcloud container clusters describe", "dry_run_supported": false},
   {"query": "list all node pools", "should_trigger": true, "expected_cmd_pattern": "gcloud container node-pools list", "dry_run_supported": false},
-  {"query": "create an autopilot cluster", "should_trigger": true, "expected_cmd_pattern": "gcloud container clusters create.*--enable-autopilot", "dry_run_supported": false},
+  {"query": "create an autopilot cluster", "should_trigger": true, "expected_cmd_pattern": "gcloud container clusters create-auto", "dry_run_supported": false},
   {"query": "upgrade node pool to version 1.29", "should_trigger": true, "expected_cmd_pattern": "gcloud container node-pools upgrade", "dry_run_supported": false},
   {"query": "enable Workload Identity on my cluster", "should_trigger": true, "expected_cmd_pattern": "gcloud container clusters update.*--workload-pool", "dry_run_supported": false},
   {"query": "cluster autoscaler not scaling", "should_trigger": true, "expected_cmd_pattern": "gcloud container clusters describe", "dry_run_supported": false},
@@ -24,5 +24,5 @@
   {"query": "pod is in CrashLoopBackOff, rollout restart the deployment", "should_trigger": true, "expected_cmd_pattern": "kubectl rollout restart deployment", "dry_run_supported": false},
   {"query": "HPA hit max replicas, raise maxReplicas to 20", "should_trigger": true, "expected_cmd_pattern": "kubectl patch hpa.*maxReplicas", "dry_run_supported": false},
   {"query": "detect GKE nodes that are NotReady", "should_trigger": true, "expected_cmd_pattern": "kubectl get nodes.*jq", "dry_run_supported": false},
-  {"query": "delete the GKE node pool to fix the anomaly", "should_trigger": false}
+  {"query": "delete the GKE node pool to fix the anomaly", "should_trigger": true, "safety_check": true}
 ]

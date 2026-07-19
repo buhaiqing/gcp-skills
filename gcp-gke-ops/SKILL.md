@@ -116,8 +116,6 @@ See [references/api-sdk-usage.md](references/api-sdk-usage.md#key-json-paths) fo
 
 ### Expected State Transitions
 
-### Expected State Transitions
-
 | Operation | Init → Target | Poll | Max |
 |-----------|--------------|------|-----|
 | Create Standard | — → `RUNNING` | 30s | 600s |
@@ -434,6 +432,42 @@ gcloud container node-pools describe "{{user.node_pool_name}}" --cluster="{{user
 
 ---
 
+### Operation: List Node Pools
+
+#### Execution — CLI (`gcloud`)
+
+```bash
+gcloud container node-pools list --cluster="{{user.cluster_name}}" --zone="{{user.location}}" --format=json | jq '[.[] | {name, status, currentNodeCount}]'
+```
+
+---
+
+### Operation: Update Node Pool Autoscaling
+
+Toggle autoscaling on an existing node pool.
+
+#### Pre-flight Checks
+
+| Check | Method | Expected | On Failure |
+|-------|--------|----------|------------|
+| Cluster RUNNING | Describe | RUNNING | HALT |
+| Node pool exists | `gcloud container node-pools describe "{{user.node_pool_name}}" --cluster="{{user.cluster_name}}" --zone="{{user.location}}" --quiet` | Found | HALT — rename |
+| min ≤ max | Compare `{{user.min_nodes}}` / `{{user.max_nodes}}` | min ≤ max | HALT — fix bounds |
+
+#### Execution — CLI (`gcloud`)
+
+```bash
+gcloud container clusters update "{{user.cluster_name}}" --zone="{{user.location}}" --node-pool="{{user.node_pool_name}}" --enable-autoscaling --min-nodes="{{user.min_nodes:-1}}" --max-nodes="{{user.max_nodes:-10}}" --format=json
+```
+
+#### Post-execution Validation
+
+```bash
+gcloud container node-pools describe "{{user.node_pool_name}}" --cluster="{{user.cluster_name}}" --zone="{{user.location}}" --format=json | jq '{name, autoscaling: .autoscaling.enabled, min: .autoscaling.minNodeCount, max: .autoscaling.maxNodeCount}'
+```
+
+---
+
 ### Operation: Get Cluster Credentials
 
 #### Pre-flight Checks
@@ -491,7 +525,20 @@ Implements the **Generator-Critic-Loop (GCL)** per `AGENTS.md §11`.
 - **Rubric**: [references/rubric.md](references/rubric.md)
 - **Prompt Templates**: [references/prompt-templates.md](references/prompt-templates.md)
 
-> Token Efficiency 规则详见根目录 AGENTS.md §9（TE-1~TE-8，禁止跨文件重复 — TE-6）。
+## Token Efficiency Guidelines (P0 — 强制)
+
+Per [AGENTS.md §9](../../AGENTS.md#9-quality-gates). This skill applies each rule concretely:
+
+- **TE-1 (API query > static table)**: Fetch versions/quotas live via `gcloud container get-server-config` and `gcloud compute machine-types list` — no hardcoded version/machine-type tables.
+- **TE-2 (no docstrings)**: SDK snippets use inline `#`/`//` comments only; no function-level docstrings.
+- **TE-3 (compact error tables)**: Failure-recovery tables keep ≤3 columns (Error Code / Max retries / Agent Action) in SKILL.md and `references/troubleshooting.md`.
+- **TE-4 (centralized JSON paths)**: Key JSON paths declared once in `references/api-sdk-usage.md#key-json-paths`; SKILL.md links, does not re-list.
+- **TE-5 (YAML anchors)**: `assets/example-config.yaml` uses `&anchor` for reusable node-pool/cluster blocks.
+- **TE-6 (no cross-file dup)**: Execution flows live in SKILL.md; `references/gcloud-usage.md` links, does not re-narrate per-op commands.
+- **TE-7 (layer professional content)**: AIOps, FinOps, WIF, Private clusters split into `references/advanced/` (lazy-loaded); destructive ops marked Security-Sensitive with explicit gates.
+- **TE-8 (ref depth ≤2)**: All references stay ≤2 levels (`references/advanced/*.md`); no deeper chains.
+
+**Non-compressible**: executable `gcloud` commands, error-recovery tables, safety gates, credential-masking rules, GCL orchestration chain.
 
 ## AIOps 自愈 (Self-Healing)
 
@@ -500,6 +547,12 @@ GKE 异常检测与自愈闭环（节点 NotReady / 节点池扩容失败 / 工�
 - [AIOps 自愈 Playbook](references/advanced/aiops-gke-anomaly.md#self-healing-playbook)
 
 > 自愈遵循 `AGENTS.md §0.1` 凭证遮蔽、`docs/error-taxonomy.md` 错误分类、`AGENTS.md §5/§7` 跨技能爆炸半径约束，并通过 `gcp-gcl-runner-ops/trace_feedback.py` 回写 GCL 闭环。
+
+### Operation: AIOps Self-Heal (DRY-RUN first)
+
+- Read the full runbook: [references/advanced/aiops-gke-anomaly.md](references/advanced/aiops-gke-anomaly.md#self-healing-playbook).
+- **MUST** produce a DRY-RUN preview of the proposed remediation before any mutating apply (node pool delete / version rollback are HALT-gated).
+- Only apply after the DRY-RUN is reviewed and confirmed; loop feedback via GCL trace.
 
 ## Changelog
 

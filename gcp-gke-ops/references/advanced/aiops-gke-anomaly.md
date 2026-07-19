@@ -115,6 +115,7 @@ def detect_cluster_anomalies(project_id, cluster_name):
         if anomalies:
             print(f"Anomaly detected: {result.metric.labels}")
 ```
+→ routes to Playbook 1 (Node NotReady) / Playbook 2 (Node Pool Scale-Up Failed) when sustained node-level pressure is confirmed.
 
 ## Node Pool Anomaly Detection
 
@@ -146,6 +147,7 @@ kubectl top nodes | awk '$5 > 80 {print $1, $5}'
 # Detect nodes with disk pressure
 kubectl get nodes -o json | jq -r '.items[] | select(.status.conditions[] | select(.type=="DiskPressure" and .status=="True")) | .metadata.name'
 ```
+→ routes to Playbook 1 (Node NotReady) for NotReady/DiskPressure conditions; Playbook 2 (Node Pool Scale-Up Failed) for autoscaler-stuck signals.
 
 ## Workload Performance Anomalies
 
@@ -161,75 +163,52 @@ kubectl top pods --all-namespaces | awk '$4 > 256Mi {print $1, $2, $4}'
 # Detect pods in CrashLoopBackOff
 kubectl get pods --all-namespaces | grep -i crashloop
 ```
+→ routes to Playbook 3 (Workload CrashLoopBackOff) for restart/CrashLoopBackOff signals; Playbook 4 (HPA Hit Max Replicas) for scaling-limited signals.
 
 ### Detect Workload Anomalies
 
-```python
-# Detect abnormal pod restarts
-def detect_pod_anomalies(namespace=None):
-    import subprocess
-    import json
-    
-    cmd = ["kubectl", "get", "pods", "--all-namespaces", "-o", "json"]
-    if namespace:
-        cmd = ["kubectl", "get", "pods", "-n", namespace, "-o", "json"]
-    
-    output = subprocess.check_output(cmd)
-    pods = json.loads(output)
-    
-    anomalies = []
-    for pod in pods["items"]:
-        for container in pod["status"].get("containerStatuses", []):
-            restart_count = container.get("restartCount", 0)
-            if restart_count > 5:
-                anomalies.append({
-                    "pod": pod["metadata"]["name"],
-                    "namespace": pod["metadata"]["namespace"],
-                    "restart_count": restart_count,
-                    "reason": container.get("lastState", {}).get("terminated", {}).get("reason")
-                })
-    
-    return anomalies
+```bash
+# Pods with restartCount > 5 (abnormal restart loop)
+kubectl get pods --all-namespaces -o json | jq -r '.items[] | .metadata.namespace as $ns | .metadata.name as $pod | .status.containerStatuses[]? | select(.restartCount > 5) | "\($ns)/\($pod) restartCount=\(.restartCount) reason=\(.lastState.terminated.reason // "n/a")"'
 ```
 
 ## Cost Anomaly Detection
 
-### Monitor Cluster Costs
+> **Cost waste detection, idle-node detection, rightsizing, and CUD recommendations are covered by [`finops-gke-cost.md`](finops-gke-cost.md).** This AIOps runbook does NOT re-narrate those — route cost-optimization signals there.
+
+### Monitor Budget (minimal)
 
 ```bash
-# Query cluster cost metrics
+# List configured budgets and their cap (units = currency amount)
 gcloud billing budgets list \
   --billing-account=ACCOUNT_ID \
-  --format="table(name,budgetAmount)"
-
-# Check node pool costs
-gcloud container node-pools list \
-  --cluster=CLUSTER_NAME \
-  --location=LOCATION \
-  --format="table(name,config.machineType,config.diskSizeGb,autoscaling.enabled)"
+  --format="table(name,budgetAmount.units)"
 ```
 
-### Detect Cost Anomalies
+### Detect Cost Anomalies (Cloud Billing SDK)
 
 ```python
-# Detect cost spikes
+# Detect budgets where actual spend exceeds 1.2x the cap.
+# Defensive: guard against missing fields so a partial budget object never raises.
 def detect_cost_anomalies(billing_account_id):
     from google.cloud import billing_v1
-    
+
     client = billing_v1.BudgetServiceClient()
     parent = f"billingAccounts/{billing_account_id}"
-    
-    budgets = client.list_budgets(request={"parent": parent})
-    
+
     anomalies = []
-    for budget in budgets:
-        if budget.amount.specified_amount.units > budget.budget_amount * 1.2:
+    for budget in client.list_budgets(request={"parent": parent}):
+        actual = getattr(getattr(budget.amount, "specified_amount", None), "units", None)
+        cap = getattr(budget.budget_amount, "units", None)
+        if actual is None or cap is None:
+            continue  # skip budgets without comparable amount fields
+        if float(actual) > float(cap) * 1.2:
             anomalies.append({
                 "budget": budget.display_name,
-                "actual": budget.amount.specified_amount.units,
-                "budgeted": budget.budget_amount
+                "actual": actual,
+                "budgeted": cap,
             })
-    
+
     return anomalies
 ```
 
@@ -239,7 +218,7 @@ def detect_cost_anomalies(billing_account_id):
 
 ```bash
 # Create alert for high CPU
-gcloud alpha monitoring policies create \
+gcloud monitoring policies create \
   --display-name="GKE High CPU Alert" \
   --condition-display-name="CPU > 80%" \
   --condition-filter='metric.type="kubernetes.io/container/cpu/core_usage_time" AND resource.type="k8s_container"' \
@@ -252,7 +231,7 @@ gcloud alpha monitoring policies create \
 
 ```bash
 # Create alert for node anomalies
-gcloud alpha monitoring policies create \
+gcloud monitoring policies create \
   --display-name="GKE Node Anomaly" \
   --condition-display-name="Node CPU > 90%" \
   --condition-filter='metric.type="kubernetes.io/node/cpu/allocatable_utilization" AND resource.type="k8s_node"' \
@@ -301,12 +280,15 @@ kubectl patch deployment DEPLOYMENT_NAME -p '{"spec":{"template":{"spec":{"conta
 
 | Phase | Action | Gate |
 |-------|--------|------|
-| 1. Detection | Identify anomaly via metric/log query | Signal confidence ≥ threshold |
+| 1. Detection | Identify anomaly via metric/log query | Per-playbook threshold met (see each Playbook) |
 | 2. DRY-RUN preview | Print the exact `gcloud`/`kubectl` command that *would* run, with target resource | Human/Agent reviews preview |
 | 3. Gate | Check risk class (safe-apply vs HALT) + blast radius | HALT → stop and request confirmation |
 | 4. Idempotent apply | Execute only if not already in desired state | Re-validate post-state |
+| 5. Post-apply re-check | Re-run the detection query; if anomaly persists, ESCALATE to HALT | Persists → request human intervention (no silent loop) |
 
 **Idempotency rule**: Probe desired state first; skip apply if already satisfied. Never run a delete/rollback without a prior DRY-RUN and explicit confirmation.
+
+**Fail-escalation (Phase 5)**: After apply, re-run the Playbook's Detection query. If the anomaly is still present (threshold still met), do NOT retry the apply silently — emit a HALT and request human intervention with the DRY-RUN preview and re-check output attached. This prevents infinite self-heal loops on unresolvable conditions (e.g. a node that keeps going NotReady due to underlying hardware fault).
 
 ---
 
@@ -316,6 +298,7 @@ kubectl patch deployment DEPLOYMENT_NAME -p '{"spec":{"template":{"spec":{"conta
 ```bash
 kubectl get nodes -o json | jq -r '.items[] | select(.status.conditions[] | select(.type=="Ready" and .status!="True")) | .metadata.name'
 ```
+**Threshold**: trigger if node `Ready=Unknown/False` sustained **> 5m** (not transient — ignore < 5m flaps from rolling upgrades).
 
 **DRY-RUN preview**
 ```bash
@@ -344,6 +327,7 @@ gcloud container operations list --filter="operationType=UPGRADE_NODE_POOL OR op
 # Or autoscaler stuck:
 kubectl get events --field-selector reason=FailedScheduling -A
 ```
+**Threshold**: trigger if a scale-up operation stays `FAILED` **> 10m**, or `FailedScheduling` events persist **> 10m** (transient scheduling delays excluded).
 
 **DRY-RUN preview**
 ```bash
@@ -369,6 +353,7 @@ fi
 kubectl get pods --all-namespaces -o json | jq -r '.items[] | select(.status.phase!="Running") | .metadata.namespace + "/" + .metadata.name'
 kubectl get pods --all-namespaces | grep -i crashloop
 ```
+**Threshold**: trigger if `restartCount > 5` within **10m**, or pod stuck in `CrashLoopBackOff`/`Error` phase **> 5m** (ignore one-off OOM during deploy).
 
 **DRY-RUN preview**
 ```bash
@@ -392,8 +377,10 @@ fi
 
 **Detection**
 ```bash
-kubectl get hpa --all-namespaces -o json | jq -r '.items[] | select(.status.currentReplicas >= .spec.maxReplicas) | .metadata.namespace + "/" + .metadata.name'
+# Scaling limited at max: ScalingLimited=MaxReplicasReached is True, OR desired already at/above max
+kubectl get hpa --all-namespaces -o json | jq -r '.items[] | select((.status.conditions[] | select(.type=="ScalingLimited" and .reason=="MaxReplicasReached" and .status=="True")) or (.status.desiredReplicas >= .spec.maxReplicas)) | .metadata.namespace + "/" + .metadata.name'
 ```
+**Threshold**: trigger if `ScalingLimited=MaxReplicasReached` is `True` sustained **> 10m** (brief spikes during rollout excluded).
 
 **DRY-RUN preview**
 ```bash
@@ -427,7 +414,8 @@ fi
 After each apply (or HALT), emit a feedback record so the GCL Critic can audit factual accuracy and traceability:
 
 ```bash
-python3 gcp-gcl-runner-ops/trace_feedback.py \
+# Requires being run from within the repo (resolves repo root via git).
+python3 "$(git rev-parse --show-toplevel)/gcp-gcl-runner-ops/trace_feedback.py" \
   --skill gcp-gke-ops \
   --playbook "node-notready" \
   --action "enable-autorepair" \
