@@ -141,8 +141,8 @@ Destructive or cross-skill actions are marked **HALT** and MUST NOT auto-apply. 
 
 This runbook feeds the Generator-Critic-Loop runner for audit + feedback:
 
-- **Runner:** [`gcp-gcl-runner-ops/scripts/gcl_runner_enhanced.py`](../../gcp-gcl-runner-ops/scripts/gcl_runner_enhanced.py) — executes the self-heal as a GCL iteration (Generator = apply action, Critic = verify idempotency + safety gate). Persist the JSON trace to `./audit-results/gcl-trace-*.json`.
-- **Feedback:** [`gcp-gcl-runner-ops/trace_feedback.py`](../../gcp-gcl-runner-ops/trace_feedback.py) — returns each self-heal outcome (trigger, action, tier, gate result, idempotency verified) into the GCL scoring + knowledge base, closing the detect → heal → feedback loop referenced by `docs/cross-skill-blast-radius.md` §与其他 AIOps 资产的关系.
+- **Runner:** [`gcp-gcl-runner-ops/scripts/gcl_runner_enhanced.py`](../../../gcp-gcl-runner-ops/scripts/gcl_runner_enhanced.py) — executes the self-heal as a GCL iteration (Generator = apply action, Critic = verify idempotency + safety gate). Persist the JSON trace to `./audit-results/gcl-trace-*.json`.
+- **Feedback:** [`gcp-gcl-runner-ops/trace_feedback.py`](../../../gcp-gcl-runner-ops/trace_feedback.py) — returns each self-heal outcome (trigger, action, tier, gate result, idempotency verified) into the GCL scoring + knowledge base, closing the detect → heal → feedback loop referenced by `docs/cross-skill-blast-radius.md` §与其他 AIOps 资产的关系.
 
 > The recovery action emitted (`HALT` / `RETRY` / `REMEDIATE` / `ESCALATE`) is the classification handed to the GCL Critic so cross-skill aggregation in `docs/error-taxonomy.md` stays consistent.
 
@@ -161,5 +161,5 @@ This runbook feeds the Generator-Critic-Loop runner for audit + feedback:
 - [Bot Management](bot-management.md)
 - [Unified Error Taxonomy](../../../docs/error-taxonomy.md)
 - [Cross-Skill Blast Radius](../../../docs/cross-skill-blast-radius.md)
-- [GCL Runner](../../gcp-gcl-runner-ops/scripts/gcl_runner_enhanced.py)
-- [GCL Trace Feedback](../../gcp-gcl-runner-ops/trace_feedback.py)
+- [GCL Runner](../../../gcp-gcl-runner-ops/scripts/gcl_runner_enhanced.py)
+- [GCL Trace Feedback](../../../gcp-gcl-runner-ops/trace_feedback.py)
