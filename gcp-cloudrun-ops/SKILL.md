@@ -695,6 +695,14 @@ If conditions show `Ready: False`, check `.status.conditions[] | select(.status=
 - **Cost:** Set `min-instances=0` for idle cost savings; right-size CPU/memory; tune concurrency.
 - **Security:** Mount secrets via Secret Manager, use VPC connector for private access, restrict ingress to internal or LB-only.
 
+## AIOps 自愈
+
+Cloud Run 常见故障（冷启动/延迟突增、并发与内存超限 OOM、健康检查失败）的自愈 runbook，覆盖 dry-run + 幂等 + 门禁原则、blast-radius 分析与凭证遮蔽：
+
+- [AIOps Self-Healing Runbook](references/advanced/aiops-cloudrun-anomaly.md) — 异常目录、自愈 playbook（min-instances 调整 / 资源 right-sizing / 回滚稳定 revision）、跨产品影响范围
+
+> 自愈动作遵循 AGENTS.md §0.1 凭证遮蔽；回滚 revision 类动作强制 HALT 人工确认。错误分类见 `docs/error-taxonomy.md`，级联影响见 `docs/cross-skill-blast-radius.md`。
+
 ## See Also
 
 [gcp-skill-generator](../gcp-skill-generator/SKILL.md) | [gcp-gke-ops](../gcp-gke-ops/SKILL.md) | [gcp-cloudfunctions-ops](../gcp-cloudfunctions-ops/SKILL.md) | [gcp-iam-ops](../gcp-iam-ops/SKILL.md) | [gcp-vpc-ops](../gcp-vpc-ops/SKILL.md) | [gcp-monitoring-ops](../gcp-monitoring-ops/SKILL.md) | [gcp-secretmanager-ops](../gcp-secretmanager-ops/SKILL.md) | [gcp-gcl-runner-ops](../gcp-gcl-runner-ops/SKILL.md)
