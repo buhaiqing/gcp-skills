@@ -258,31 +258,7 @@ This skill uses the **Generator-Critic-Loop (GCL)** adversarial quality gate.
 **Rubric:** See [references/rubric.md](references/rubric.md)
 **Prompt templates:** See [references/prompt-templates.md](references/prompt-templates.md)
 
-## Token Efficiency Guidelines (P0 — 强制)
-
-### TE-1: API Query > Static Tables
-Use `gcloud monitoring metrics list` to fetch metric descriptors instead of hardcoding.
-
-### TE-2: No docstrings in code
-Inline `#` comments only. No function-level docstrings.
-
-### TE-3: Compact error tables
-See [troubleshooting.md](references/troubleshooting.md) for compact error table format.
-
-### TE-4: Centralized JSON paths
-JSON paths declared at file top under [Common JSON Paths](#common-json-paths).
-
-### TE-5: YAML anchors in example-config.yaml
-See [assets/example-config.yaml](assets/example-config.yaml) for YAML anchor patterns.
-
-### TE-6: Eliminate cross-file duplicate flows
-Detailed execution flows are in [references/gcloud-usage.md](references/gcloud-usage.md); SKILL.md only contains operation summary table with links.
-
-### TE-7: Advanced content in references/advanced/
-Advanced topics (custom metrics, SLO-based alerting, multi-project monitoring) are in [references/advanced/](references/advanced/). Core operations remain in the main references/ files.
-
-### TE-8: Reference depth ≤ 2 layers
-All references use ≤2 path segments (e.g., `references/gcloud-usage.md`). Avoid referencing `references/advanced/some-file.md` directly from SKILL.md — intermediate index in references/ is preferred.
+> Token Efficiency 规则详见根目录 AGENTS.md §9（TE-1~TE-8，禁止跨文件重复 — TE-6）。
 
 ## AIOps 自愈 (Self-Healing)
 

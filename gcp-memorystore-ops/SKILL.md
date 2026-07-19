@@ -650,29 +650,7 @@ gcloud redis instances list \
 - **Rubric**: [references/rubric.md](references/rubric.md) — 5 core dimensions + 3 GCP extensions
 - **Prompt Templates**: [references/prompt-templates.md](references/prompt-templates.md) — Generator + Critic templates
 
-## Token Efficiency Guidelines (P0 — 强制)
-
-### TE-1: API Query > Static Tables
-Use gcloud to fetch live data:
-```bash
-gcloud redis instances list --region=REGION --format="json"
-gcloud redis regions list --format="json"
-```
-
-### TE-2: No docstrings in code
-Inline comments only; no function-level docstrings in SDK snippets.
-
-### TE-3: Compact error tables
-Error tables use 1 row per code, ≤ 3 columns.
-
-### TE-4: Centralized JSON paths
-See [Key JSON Paths](#key-json-paths-centralized-per-te-4) at top of Execution Flows section.
-
-### TE-5: YAML anchors
-See `assets/example-config.yaml` for anchor usage.
-
-### TE-6: Eliminate cross-file duplication
-SKILL.md has full flow; references do not repeat SKILL.md content.
+> Token Efficiency 规则详见根目录 AGENTS.md §9（TE-1~TE-8，禁止跨文件重复 — TE-6）。
 
 ## AIOps 自愈 (Self-Healing)
 

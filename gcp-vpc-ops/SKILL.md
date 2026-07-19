@@ -921,25 +921,7 @@ This skill uses the **Generator-Critic-Loop (GCL)** adversarial quality gate.
 **Prompt templates:** See [references/prompt-templates.md](references/prompt-templates.md)
 **Best Practices:** See [references/advanced/operational-best-practices.md](references/advanced/operational-best-practices.md)
 
-## Token Efficiency Guidelines (P0 — 强制)
-
-### TE-1: API Query > Static Tables
-Use `gcloud compute machine-types list`, `gcloud compute regions describe` to fetch runtime data instead of hardcoding.
-
-### TE-2: No docstrings in code
-Inline `#` comments only. No function-level docstrings.
-
-### TE-3: Compact error tables
-See [troubleshooting.md](references/troubleshooting.md) for compact error table format.
-
-### TE-4: Centralized JSON paths
-JSON paths are declared at the top of this file under [Common JSON Paths](#common-json-paths).
-
-### TE-5: YAML anchors in example-config.yaml
-See [assets/example-config.yaml](assets/example-config.yaml) for YAML anchor patterns.
-
-### TE-6: Eliminate cross-file duplicate flows
-SKILL.md has full execution flows; references do not repeat them.
+> Token Efficiency 规则详见根目录 AGENTS.md §9（TE-1~TE-8，禁止跨文件重复 — TE-6）。
 
 ## See Also
 

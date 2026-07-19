@@ -150,6 +150,21 @@ Every skill MUST pass 5 gates: (1) Clear Boundaries (SHOULD/SHOULD NOT + delegat
 
 **Token Efficiency (P0 — MANDATORY)**: every `gcp-*-ops` SKILL.md MUST include a `## Token Efficiency Guidelines (P0 — 强制)` section (TE-1..TE-8). Full TE table + audit methodology at [docs/token-efficiency-strategy.md](docs/token-efficiency-strategy.md). Summary: TE-1 API-query>static-tables · TE-2 no docstrings · TE-3 compact error tables (≤3 cols) · TE-4 centralized JSON paths · TE-5 YAML anchors · TE-6 no cross-file dup · TE-7 layer AIOps/FinOps in `references/advanced/` · TE-8 refs depth ≤2. **Non-compressible**: executable commands, error recovery, safety gates, credential rules, orchestration chains.
 
+Full TE-1..TE-8 table (single source of truth — do NOT inline this in `gcp-*-ops/SKILL.md`; use the pointer line instead):
+
+| Rule | Key Point | Application |
+|------|-----------|-------------|
+| **TE-1** API query > static table | Use `gcloud` to fetch versions/quotas, no hardcoding | Replace hardcoded machine-type/version tables with live queries |
+| **TE-2** Omit unnecessary docstrings | Inline comments only, no function-level docstring | Python/Go SDK snippets use `#`/`//` inline comments |
+| **TE-3** Compact error tables | 1 error code per row, ≤3 columns | Error taxonomy tables in `references/troubleshooting.md` stay compact |
+| **TE-4** Centralized JSON paths | Declare at file top, don't repeat | Resource JSON paths declared once in `variables-and-conventions.md` |
+| **TE-5** YAML anchors | `example-config.yaml` use `&anchor` | Reusable config blocks use anchors to eliminate duplication |
+| **TE-6** Eliminate cross-file duplication | SKILL.md has full flow, references/ don't repeat | Execution flows live in SKILL.md; references/ link, don't re-narrate |
+| **TE-7** Layer professional content | AIOps/FinOps in `references/advanced/`; destructive ops marked Security-Sensitive | Advanced content split out; confirmations gated explicitly |
+| **TE-8** Reference depth ≤ 2 layers | `references/` nested max 2 levels; no `references/advanced/deep/` chains | ~100-500/file |
+
+**Non-compressible**: Agent-executable commands (params, JSON paths), error recovery logic, safety gates, credential rules, cross-skill orchestration chains.
+
 ---
 
 ## 10. Post-Update Self-Review (MANDATORY)
