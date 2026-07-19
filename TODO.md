@@ -12,6 +12,7 @@
 | Advanced WAF rule patterns | ✅ | references/advanced/advanced-waf-rules.md |
 | Bot management deep-dive | ✅ | references/advanced/bot-management.md |
 | Adaptive protection tuning | ✅ | references/advanced/adaptive-protection.md |
+| AIOps self-healing runbook (维度二 B2) | ✅ | references/advanced/self-healing-runbook.md — detect→classify→dry-run→gate→idempotent apply→validate, GCL-connected |
 | Token Efficiency section (P0 — 强制) | ✅ | Added per AGENTS.md §9.1 / §10.5 CADL |
 
 ---
@@ -152,7 +153,9 @@ No planned items.
 
 ## gcp-logging-ops
 
-No planned items.
+| Planned Feature | Status | Notes |
+|----------------|--------|-------|
+| AIOps self-healing runbook (维度二 B2) | ✅ | references/advanced/self-healing-runbook.md, references/advanced/log-anomaly-detection.md — gated, idempotent, GCL-connected |
 
 ---
 
@@ -164,7 +167,9 @@ No planned items.
 
 ## gcp-monitoring-ops
 
-No planned items.
+| Planned Feature | Status | Notes |
+|----------------|--------|-------|
+| AIOps self-healing runbook (维度二 B2) | ✅ | references/advanced/self-healing-runbook.md, references/advanced/slo-error-budget.md, references/advanced/alert-noise-reduction.md — gated, idempotent, GCL-connected |
 
 ---
 
@@ -192,6 +197,7 @@ No planned items.
 | Advanced FinOps/AIOps references | ✅ | references/advanced/aiops-scc-anomaly.md |
 | Event Threat Detection deep-dive | ✅ | references/advanced/event-threat-detection.md |
 | SCC Enterprise tier specifics | ✅ | references/advanced/scc-enterprise.md |
+| AIOps self-healing runbook (维度二 B2) | ✅ | references/advanced/self-healing-runbook.md — mainlined auto-mute flow, gated/idempotent, cross-domain pointer to docs/cross-skill-blast-radius.md |
 | SDK-only operations with code snippets | ✅ | references/advanced/sdk-operations.md |
 | Token Efficiency section (P0 — 强制) | ✅ | Added per AGENTS.md §9.1 / §10.5 CADL |
 
