@@ -179,3 +179,18 @@ Adversarial gate: Generator executes, Hallucination Detector pre-checks validity
 ## Appendix A: Product → Directory Mapping
 
 Full mapping at [docs/gcp-product-mapping.md](docs/gcp-product-mapping.md).
+
+---
+
+## 13. Parallel Subagent Dispatch (MANDATORY for batch work)
+
+When a task fans out into multiple independent subagent units (e.g. one skill per worktree, one doc per product), dispatch them **all in parallel** and start consuming results **as soon as each individual unit completes** — do NOT wait for the entire batch to finish before beginning the next batch or follow-up work.
+
+**Rules:**
+- Fire all independent `task(run_in_background=true)` calls in one message; do not serialize what can run concurrently.
+- On receiving a single `<system-reminder>` for one completed unit, immediately `background_output` that unit and act on it (merge, verify, fix) — do not block on siblings still running.
+- New follow-up subagents MAY be dispatched the moment a prerequisite unit lands, without waiting for the rest of its batch.
+- Only serialize when a later step has a hard dependency on an earlier unit's output (e.g. a shared cross-cutting doc that other units reference must merge FIRST so their links resolve).
+- Exception: if there is genuinely no pending/queued work, end the turn and wait for the ALL-COMPLETE notification.
+
+**Anti-pattern (forbidden):** holding completed work idle while polling for a full batch to close, then starting the next batch all at once. That wastes wall-clock time with no token benefit.
