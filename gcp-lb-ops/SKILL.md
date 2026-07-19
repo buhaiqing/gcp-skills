@@ -478,37 +478,10 @@ On `FAILED` → check `.managed.domainStatuses` for specific domain errors.
 > **Self-Healing:** Installation flows include multi-path recovery per the enhanced-self-healing-framework (gcp-skill-generator). Each step has ≥ 3 error-handling strategies.
 
 1. **Install gcloud CLI**:
-   ```bash
-   # Primary: official installer
-   if ! command -v gcloud &> /dev/null; then
-       curl https://sdk.cloud.google.com | bash 2>/dev/null \
-       || (echo "⚠️ Installer failed, trying apt..." \
-           && sudo apt-get update && sudo apt-get install -y google-cloud-sdk) \
-       || (echo "⚠️ apt failed, trying manual..." \
-           && wget -q https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-cli-linux-x86_64.tar.gz \
-           && tar -xf google-cloud-cli-*.tar.gz && ./google-cloud-sdk/install.sh --quiet)
-       exec -l $SHELL
-       gcloud init
-   fi
-   ```
+   > See AGENTS.md §0.3 — embedded gcloud install script (do not duplicate here).
 
 2. **Bootstrap Go runtime** (JIT fallback):
-   ```bash
-   if ! command -v go &> /dev/null; then
-       OS=$(uname -s | tr '[:upper:]' '[:lower:]')
-       ARCH=$(uname -m); [ "$ARCH" = "x86_64" ] && ARCH="amd64"; [ "$ARCH" = "aarch64" ] && ARCH="arm64"
-       mkdir -p /tmp/go-runtime
-       # Primary: official tarball; fallback: compressed tarball
-       curl -fsSL "https://go.dev/dl/go1.24.0.${OS}-${ARCH}.tar.gz" | tar -xz -C /tmp/go-runtime 2>/dev/null \
-       || curl -fsSL "https://go.dev/dl/go1.24.0.linux-${ARCH}.tar.gz" | tar -xz -C /tmp/go-runtime
-       if [ -f /tmp/go-runtime/go/bin/go ]; then
-           export PATH="/tmp/go-runtime/go/bin:$PATH"
-       else
-           echo "⚠️ Go download failed. Using Python SDK as fallback."
-           pip install --quiet --user google-cloud-compute
-       fi
-   fi
-   ```
+   > See AGENTS.md §0.2 — embedded Go JIT bootstrap (do not duplicate here).
 
 3. **Configure Credentials**:
    ```bash

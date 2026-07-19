@@ -8,19 +8,7 @@
 
 ### Go Runtime Bootstrap
 
-```bash
-if ! command -v go &> /dev/null; then
-    OS=$(uname -s | tr '[:upper:]' '[:lower:]')
-    ARCH=$(uname -m); [ "$ARCH" = "x86_64" ] && ARCH="amd64"; [ "$ARCH" = "aarch64" ] && ARCH="arm64"
-    mkdir -p /tmp/go-runtime
-    curl -fsSL "https://go.dev/dl/go1.24.0.${OS}-${ARCH}.tar.gz" | tar -xz -C /tmp/go-runtime
-    export PATH="/tmp/go-runtime/go/bin:$PATH"
-    export GOPATH="/tmp/go-workspace"
-    export GOCACHE="/tmp/go-cache"
-fi
-```
-
-> **Go version strategy:** JIT download Go 1.24+; script compatibility Go 1.21+
+> See AGENTS.md §0.2 — embedded Go JIT bootstrap (do not duplicate here).
 
 ### JIT Go SDK Workflow
 
@@ -100,3 +88,7 @@ func main() {
 
 > **Security:** All credentials use `{{env.*}}` placeholders. Never hardcode secrets.
 > Prohibit `log.Printf("%+v", ...)` on client config or `fmt.Println(config)` — these can leak credential values.
+
+## Token Efficiency (TE-6)
+
+Go JIT bootstrap in §0.2 is authoritative; it is not duplicated here. See AGENTS.md §9 for the full TE-1~TE-8 ruleset.

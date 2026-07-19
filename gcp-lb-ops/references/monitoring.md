@@ -52,11 +52,13 @@ gcloud monitoring dashboards create \
 ```bash
 gcloud alpha monitoring policies create \
   --display-name="LB-Zero-Healthy-Backends" \
-  --condition-filter='metric.type="loadbalancing.googleapis.com/https/backend_latencies"' \
+  --condition-filter='metric.type="compute.googleapis.com/loadbalancing/passthrough/forwarding_rule/backend_healthy_count" AND resource.labels.backend_service_name="{{user.backend_service_name}}"' \
   --condition-threshold-value=0 \
   --condition-duration=300s \
   --notification-channels="{{user.notification_channel}}"
 ```
+
+> For HTTPS/SSL proxy LB: use `gcloud compute backend-services get-health` per [aiops-lb-anomaly.md](references/advanced/aiops-lb-anomaly.md) FM-1. The `backend_healthy_count` metric applies to passthrough LB; proxy LB uses a similar metric under `compute.googleapis.com/loadbalancing/proxy/`.
 
 **High backend latency (P99 > 5s):**
 - Metric: `loadbalancing.googleapis.com/https/backend_latencies`
