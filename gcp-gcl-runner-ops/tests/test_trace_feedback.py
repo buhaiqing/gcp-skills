@@ -21,6 +21,7 @@ from trace_feedback import (  # noqa: E402
     aggregate,
     build_report,
     main,
+    parse_args,
     scan_traces,
 )
 
@@ -175,3 +176,33 @@ class TestMain:
         rc = main(["--trace-dir", str(tmp_path / "nope")])
         assert rc == 0  # empty scan is not an error
         assert "No traces found" in capsys.readouterr().out
+
+
+class TestParseArgs:
+    """CLI argument parsing boundaries."""
+
+    def test_defaults(self) -> None:
+        args = parse_args([])
+        assert args.trace_dir == "./audit-results"
+        assert args.report_path is None
+
+    def test_trace_dir_override(self, tmp_path: Path) -> None:
+        args = parse_args(["--trace-dir", str(tmp_path)])
+        assert args.trace_dir == str(tmp_path)
+
+    def test_report_path_override(self, tmp_path: Path) -> None:
+        target = tmp_path / "out.md"
+        args = parse_args(["--report-path", str(target)])
+        assert args.report_path == str(target)
+
+    def test_both_overrides(self, tmp_path: Path) -> None:
+        d = tmp_path / "traces"
+        p = tmp_path / "report.md"
+        args = parse_args(["--trace-dir", str(d), "--report-path", str(p)])
+        assert args.trace_dir == str(d)
+        assert args.report_path == str(p)
+
+    def test_unknown_arg_exits(self) -> None:
+        with pytest.raises(SystemExit):
+            parse_args(["--no-such-flag"])
+
