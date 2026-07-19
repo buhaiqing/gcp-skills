@@ -283,3 +283,11 @@ Advanced topics (custom metrics, SLO-based alerting, multi-project monitoring) a
 
 ### TE-8: Reference depth ≤ 2 layers
 All references use ≤2 path segments (e.g., `references/gcloud-usage.md`). Avoid referencing `references/advanced/some-file.md` directly from SKILL.md — intermediate index in references/ is preferred.
+
+## AIOps 自愈 (Self-Healing)
+
+Cloud Monitoring 是自愈的天然触发器。当检测到**告警风暴**（同策略短时间大量 firing）或**策略抖动**（flapping）时，本 skill 提供带 **dry-run + 幂等 + 人工复核门禁** 的静默/抑制自愈能力；破坏性动作（删除策略、改阈值、批量静默）一律标 **HALT**。监控只静默自身告警面，底层资源修复委托给对应 skill 的 AIOps runbook。
+
+- 完整 runbook：[references/advanced/aiops-alert-anomaly.md](references/advanced/aiops-alert-anomaly.md)
+- 跨 skill 触发与爆炸半径：[docs/cross-skill-blast-radius.md](docs/cross-skill-blast-radius.md)
+- 错误分类（仓库级）：[docs/error-taxonomy.md](docs/error-taxonomy.md)
