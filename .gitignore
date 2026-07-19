@@ -223,3 +223,5 @@ __marimo__/
 .omo/
 .terraform/.worktrees
 /gcp-terraform-ops/environments
+# GCL traces — ephemeral, generated per-run
+audit-results/
