@@ -427,9 +427,149 @@ bq query --use_legacy_sql=false \
   ORDER BY total_logical_bytes DESC"
 ```
 
+## Self-Healing Playbook
+
+> **Scope**: This playbook converts the detections above into closed-loop remediation. Every action follows **detect → DRY-RUN preview → gate → idempotent apply**. No mutation is applied without a preview and a gate decision. See blast-radius rules in [docs/cross-skill-blast-radius.md](../../../docs/cross-skill-blast-radius.md) and error taxonomy in [docs/error-taxonomy.md](../../../docs/error-taxonomy.md).
+
+### Safety Invariants (apply to ALL playbooks)
+
+| Invariant | Rule |
+|-----------|------|
+| **Credential masking** | Never print SA key / token. Verify only: `test -f "$GOOGLE_APPLICATION_CREDENTIALS" && echo "✅ SA exists"`. See AGENTS.md §0.1. |
+| **Dry-run first** | Every mutating command MUST emit a preview (`--dry_run`, `bq show` before `bq update`, IAM `--dry-run` policy diff) before apply. |
+| **Idempotency** | Re-run produces no extra effect: use `--replace` on loads, check existence before create, cancel only RUNNING jobs. |
+| **Gate** | Auto-apply only for Low/Medium reversible ops. **HALT** on dataset delete / IAM change / any cross-project effect — require explicit human confirmation. |
+| **Blast radius** | Before apply, compute affected datasets/tables/users; if >1 project or >10 tables, escalate to HALT. |
+
+### Playbook 1 — Slot Quota Exhausted
+
+**Detection**
+```bash
+bq query --use_legacy_sql=false --format=prettyjson \
+  "SELECT SUM(total_slot_ms)/3600000 AS used_slot_hours
+   FROM \`region-us\`.INFORMATION_SCHEMA.JOBS_BY_ORGANIZATION
+   WHERE creation_time >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 5 MINUTE)"
+# Compare used_slot_hours*3600000 against reservation .slots; flag if ratio > 0.95
+```
+
+**DRY-RUN preview**
+```bash
+CURRENT_SLOTS=$(bq show --format=json my_reservation | jq -r '.slots')
+NEW_SLOTS=$((CURRENT_SLOTS + 100))
+echo "PREVIEW: scale my_reservation $CURRENT_SLOTS -> $NEW_SLOTS (dry-run, not applied)"
+```
+
+**Gate**: Medium / reversible → auto-apply allowed (reservation scale-up is non-destructive).
+
+**Idempotent apply**
+```bash
+# Re-check before apply to avoid double-scaling on repeated triggers
+if [ "$(bq show --format=json my_reservation | jq -r '.slots')" -lt "$NEW_SLOTS" ]; then
+  bq update --reservation_id=my_reservation --slots="$NEW_SLOTS"
+fi
+```
+
+### Playbook 2 — Long-Running Query Blocking Slots
+
+**Detection**
+```bash
+bq query --use_legacy_sql=false --format=prettyjson \
+  "SELECT job_id, user_email,
+          TIMESTAMP_DIFF(CURRENT_TIMESTAMP(), start_time, MINUTE) AS age_min
+   FROM \`region-us\`.INFORMATION_SCHEMA.JOBS_BY_ORGANIZATION
+   WHERE job_type='QUERY' AND state='RUNNING'
+     AND TIMESTAMP_DIFF(CURRENT_TIMESTAMP(), start_time, MINUTE) > 60
+   ORDER BY age_min DESC"
+```
+
+**DRY-RUN preview**
+```bash
+echo "PREVIEW: would cancel job_id=$job_id (user=$user_email, age=${age_min}m) — dry-run, not applied"
+```
+
+**Gate**: Low / reversible (cancel is non-destructive, job can be re-submitted) → auto-apply allowed. Still notify the job owner via alert channel.
+
+**Idempotent apply**
+```bash
+# Cancel only if still RUNNING — second trigger finds it DONE and no-ops
+STATE=$(bq show -j "$job_id" --format=json | jq -r '.status.state')
+[ "$STATE" = "RUNNING" ] && bq cancel "$job_id"
+```
+
+### Playbook 3 — Storage Anomaly Growth
+
+**Detection**
+```bash
+bq query --use_legacy_sql=false --format=prettyjson \
+  "SELECT table_schema AS dataset_id, table_name,
+          total_logical_bytes/1073741824 AS logical_gb,
+          last_modified_time
+   FROM \`region-us\`.INFORMATION_SCHEMA.TABLE_STORAGE
+   WHERE total_logical_bytes > 107374182400   -- >100GB
+   ORDER BY total_logical_bytes DESC"
+```
+
+**DRY-RUN preview** (set/extend expiration — non-destructive)
+```bash
+echo "PREVIEW: set expiration 30d on ${dataset_id}.${table_name} (dry-run, not applied)"
+```
+
+**Gate**: Medium / reversible → auto-apply allowed **only** for expiration/lifecycle changes. **HALT** if the proposed fix is table deletion or dataset deletion.
+
+**Idempotent apply**
+```bash
+# Idempotent: setting same expiration twice is a no-op
+bq update --expiration=$((30*24*3600*1000)) "${dataset_id}.${table_name}"
+```
+
+### Playbook 4 — Export Failure
+
+**Detection**
+```bash
+bq query --use_legacy_sql=false --format=prettyjson \
+  "SELECT job_id, error_result.reason, error_result.message
+   FROM \`region-us\`.INFORMATION_SCHEMA.JOBS_BY_ORGANIZATION
+   WHERE job_type='EXTRACT' AND error_result IS NOT NULL
+   ORDER BY creation_time DESC LIMIT 10"
+```
+
+**DRY-RUN preview** (re-extract to a verified GCS URI)
+```bash
+echo "PREVIEW: re-extract ${table_id} -> gs://${bucket}/${prefix}/ (dry-run, not applied)"
+gsutil -q stat "gs://${bucket}/" && echo "✅ destination bucket reachable"
+```
+
+**Gate**: Low / reversible → auto-apply allowed **only** if destination bucket exists and SA has `roles/storage.objectAdmin`. **HALT** if export would overwrite an existing object without `--destination_format` append strategy.
+
+**Idempotent apply**
+```bash
+# bq extract is naturally idempotent for full overwrite; guard with existence probe
+bq extract --destination_format=CSV --compression=GZIP \
+  "${table_id}" "gs://${bucket}/${prefix}/part-*.csv.gz"
+```
+
+### Closed-Loop Feedback
+
+Every self-healing action is logged and fed back into the GCL runner for continuous scoring:
+- Emit structured log: `[HH:MM:SS] [SELF_HEAL] playbook=<id> action=<op> result=<ok|halt> blast_radius=<n>`
+- Push outcome to [gcp-gcl-runner-ops/trace_feedback.py](../../../gcp-gcl-runner-ops/trace_feedback.py) so the Critic can down-score false-positive remediations.
+- If a playbook HALTs 3× for the same signature, suppress auto-apply and open a human ticket.
+
+### HALT Matrix (never auto-apply)
+
+| Operation | Decision |
+|-----------|----------|
+| Delete dataset / table | **HALT** — explicit human confirmation with exact resource ID |
+| Modify IAM binding (add/remove member/role) | **HALT** — preview policy diff, require sign-off |
+| Cross-project slot reassignment | **HALT** — blast radius >1 project |
+| Scale-up reservation / cancel job / set expiration / re-extract | Auto-apply (reversible, Low/Medium) |
+
 ## See Also
 
 - [BigQuery Monitoring](../monitoring.md)
 - [BigQuery Core Concepts](../core-concepts.md)
 - [Troubleshooting](../troubleshooting.md)
+- [Error Taxonomy](../../../docs/error-taxonomy.md)
+- [Cross-Skill Blast Radius](../../../docs/cross-skill-blast-radius.md)
+- [GCL Runner — trace_feedback](../gcp-gcl-runner-ops/trace_feedback.py)
 - [Google Cloud Architecture Framework — Performance](https://cloud.google.com/architecture/framework/performance)
