@@ -364,3 +364,14 @@ gcloud composer environments run {{user.environment_name}} \
 - **Version management:** Use stable Airflow versions; test upgrades in non-prod.
 - **DAG management:** Store DAGs in version control; use CI/CD for deployment.
 - **Monitoring:** Enable Cloud Monitoring for environment health and performance.
+
+## AIOps 自愈 (Self-Healing)
+
+Composer 故障（worker 池耗尽/卡死、DAG task 连续失败、环境升级挂起）需自愈。所有自愈动作遵循 **dry-run → 门禁 → 幂等 apply** 纪律，凭证遮蔽见 AGENTS.md §0.1。
+
+- 完整 runbook：[references/advanced/aiops-composer-anomaly.md](references/advanced/aiops-composer-anomaly.md)
+  - Worker 池耗尽/卡死 → 扩容 worker（dry-run + 门禁，幂等）
+  - DAG task 连续失败 → 暂停 DAG + 通知（幂等）
+  - 环境升级挂起 → 诊断 + 回滚建议（`HALT` 人工，不自动变更）
+  - Blast radius：Composer 依赖 GKE / GCS / BigQuery / Cloud SQL，故障影响数据管道
+  - 错误码映射与恢复动词见 [docs/error-taxonomy.md](docs/error-taxonomy.md)
