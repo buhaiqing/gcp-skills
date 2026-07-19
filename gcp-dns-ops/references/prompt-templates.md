@@ -36,8 +36,8 @@ Execute the following Cloud DNS operation:
 4. Any warnings or next steps (e.g., DNS propagation time, name server delegation)
 
 ## Safety Rules Reference
-- Per-op safety sub-rules: [references/rubric.md](../rubric.md) §Per-Op Safety Sub-Rules
-- Detection patterns: [references/rubric.md](../rubric.md) §Detection Regex
+- Per-op safety sub-rules: [references/rubric.md](rubric.md) §Per-Op Safety Sub-Rules
+- Detection patterns: [references/rubric.md](rubric.md) §Detection Regex
 - DNS extensions: DNS Propagation, Record-set Consistency, Zone Visibility
 ```
 

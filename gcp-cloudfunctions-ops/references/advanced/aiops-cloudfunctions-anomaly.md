@@ -141,6 +141,6 @@ gcloud functions deploy "{{user.function_name}}" --gen2 \
 
 ## Cross-Skill References
 
-- Error taxonomy: [../../docs/error-taxonomy.md](../../docs/error-taxonomy.md)
-- Blast radius map: [../../docs/cross-skill-blast-radius.md](../../docs/cross-skill-blast-radius.md)
-- Related skills: [gcp-secretmanager-ops](../gcp-secretmanager-ops/SKILL.md) · [gcp-vpc-ops](../gcp-vpc-ops/SKILL.md) · [gcp-lb-ops](../gcp-lb-ops/SKILL.md) · [gcp-cloudbuild-ops](../gcp-cloudbuild-ops/SKILL.md)
+- Error taxonomy: [../../docs/error-taxonomy.md](../../../docs/error-taxonomy.md)
+- Blast radius map: [../../docs/cross-skill-blast-radius.md](../../../docs/cross-skill-blast-radius.md)
+- Related skills: [gcp-secretmanager-ops](../../../gcp-secretmanager-ops/SKILL.md) · [gcp-vpc-ops](../../../gcp-vpc-ops/SKILL.md) · [gcp-lb-ops](../../../gcp-lb-ops/SKILL.md) · [gcp-cloudbuild-ops](../../../gcp-cloudbuild-ops/SKILL.md)

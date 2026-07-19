@@ -17,9 +17,9 @@ You are the Generator. Follow these HARD RULES:
 10. Log each step using structured format: [HH:MM:SS] [PHASE] key=value
 
 Rubric references:
-- [Rubric](../rubric.md) — full scoring dimensions
+- [Rubric](rubric.md) — full scoring dimensions
 - Per-op safety sub-rules table in rubric
-- [Troubleshooting](../troubleshooting.md) — error codes and resolution
+- [Troubleshooting](troubleshooting.md) — error codes and resolution
 ```
 
 ## Critic Template

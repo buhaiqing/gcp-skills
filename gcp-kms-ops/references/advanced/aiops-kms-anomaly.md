@@ -142,6 +142,6 @@ gcloud kms keys versions restore "{{user.version_name}}" \
 
 ## Cross-Skill References
 
-- Error taxonomy: [../../docs/error-taxonomy.md](../../docs/error-taxonomy.md)
-- Blast radius map: [../../docs/cross-skill-blast-radius.md](../../docs/cross-skill-blast-radius.md)
-- Related skills: [gcp-iam-ops](../gcp-iam-ops/SKILL.md) · [gcp-secretmanager-ops](../gcp-secretmanager-ops/SKILL.md) · [gcp-gce-ops](../gcp-gce-ops/SKILL.md) · [gcp-filestore-ops](../gcp-filestore-ops/SKILL.md)
+- Error taxonomy: [../../docs/error-taxonomy.md](../../../docs/error-taxonomy.md)
+- Blast radius map: [../../docs/cross-skill-blast-radius.md](../../../docs/cross-skill-blast-radius.md)
+- Related skills: [gcp-iam-ops](../../../gcp-iam-ops/SKILL.md) · [gcp-secretmanager-ops](../../../gcp-secretmanager-ops/SKILL.md) · [gcp-gce-ops](../../../gcp-gce-ops/SKILL.md) · [gcp-filestore-ops](../../../gcp-filestore-ops/SKILL.md)

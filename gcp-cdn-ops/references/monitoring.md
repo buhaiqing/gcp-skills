@@ -134,4 +134,4 @@ jsonPayload.statusDetails="denied_by_security_policy"
 
 ## Integration with gcp-monitoring-ops
 
-For comprehensive monitoring setup, dashboards, and alert management, delegate to [gcp-monitoring-ops](../gcp-monitoring-ops/SKILL.md).
+For comprehensive monitoring setup, dashboards, and alert management, delegate to [gcp-monitoring-ops](../../gcp-monitoring-ops/SKILL.md).

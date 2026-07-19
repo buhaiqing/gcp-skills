@@ -134,6 +134,6 @@ gcloud secrets versions restore "{{user.version_name}}" \
 
 ## Cross-Skill References
 
-- Error taxonomy: [../../docs/error-taxonomy.md](../../docs/error-taxonomy.md)
-- Blast radius map: [../../docs/cross-skill-blast-radius.md](../../docs/cross-skill-blast-radius.md)
-- Related skills: [gcp-kms-ops](../gcp-kms-ops/SKILL.md) · [gcp-iam-ops](../gcp-iam-ops/SKILL.md) · [gcp-cloudfunctions-ops](../gcp-cloudfunctions-ops/SKILL.md) · [gcp-gce-ops](../gcp-gce-ops/SKILL.md) · [gcp-lb-ops](../gcp-lb-ops/SKILL.md)
+- Error taxonomy: [../../docs/error-taxonomy.md](../../../docs/error-taxonomy.md)
+- Blast radius map: [../../docs/cross-skill-blast-radius.md](../../../docs/cross-skill-blast-radius.md)
+- Related skills: [gcp-kms-ops](../../../gcp-kms-ops/SKILL.md) · [gcp-iam-ops](../../../gcp-iam-ops/SKILL.md) · [gcp-cloudfunctions-ops](../../../gcp-cloudfunctions-ops/SKILL.md) · [gcp-gce-ops](../../../gcp-gce-ops/SKILL.md) · [gcp-lb-ops](../../../gcp-lb-ops/SKILL.md)

@@ -11,4 +11,4 @@
 | Workload Identity Federation | `workload-identity-deep-dive.md` | Deep dive on WIF setup, IAM bindings, and troubleshooting |
 | Private Cluster Setup | `private-cluster-setup.md` | Complete guide for private GKE cluster configuration |
 
-> Topics marked ⬜ in [TODO.md](../../TODO.md) are planned but not yet authored.
+> Topics marked ⬜ in [TODO.md](../../../TODO.md) are planned but not yet authored.

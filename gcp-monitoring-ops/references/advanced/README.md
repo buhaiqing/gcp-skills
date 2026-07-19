@@ -8,4 +8,4 @@
 |-------|------|-------------|
 | AIOps Alert Anomaly & Self-Healing | `aiops-alert-anomaly.md` | Alert storm detection, silence/suppression self-healing with dry-run + idempotent + human-review gates |
 
-> Topics marked ⬜ in [TODO.md](../../TODO.md) are planned but not yet authored.
+> Topics marked ⬜ in [TODO.md](../../../TODO.md) are planned but not yet authored.

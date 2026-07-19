@@ -9,4 +9,4 @@
 | AIOps Anomaly Detection | `aiops-storage-anomaly.md` | Access pattern anomalies, storage growth prediction, lifecycle policy violations |
 | FinOps Cost Optimization | `finops-storage-cost.md` | Storage class optimization, lifecycle policy cost reduction, egress analysis |
 
-> Topics marked ⬜ in [TODO.md](../../TODO.md) are planned but not yet authored.
+> Topics marked ⬜ in [TODO.md](../../../TODO.md) are planned but not yet authored.

@@ -285,5 +285,5 @@ done
 
 - [Workload Identity Federation](https://cloud.google.com/iam/docs/workload-identity-federation)
 - [GKE Workload Identity](https://cloud.google.com/kubernetes-engine/docs/how-to/workload-identity)
-- [Workload Identity Deep Dive (GKE)](../gcp-gke-ops/references/advanced/workload-identity-deep-dive.md)
+- [Workload Identity Deep Dive (GKE)](../../../gcp-gke-ops/references/advanced/workload-identity-deep-dive.md)
 - [IAM Troubleshooting](../troubleshooting.md)

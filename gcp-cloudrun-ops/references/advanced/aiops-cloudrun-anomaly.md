@@ -231,8 +231,8 @@ Cloud Run 故障的级联影响（详见 [`docs/cross-skill-blast-radius.md`](..
 
 ## See Also
 
-- [Cloud Run Operations SKILL](../SKILL.md)
-- [Troubleshooting](../../troubleshooting.md)
+- [Cloud Run Operations SKILL](../../SKILL.md)
+- [Troubleshooting](../troubleshooting.md)
 - [Error Taxonomy](../../../docs/error-taxonomy.md)
 - [Cross-Skill Blast Radius](../../../docs/cross-skill-blast-radius.md)
-- [VPC AIOps Anomaly](../gcp-vpc-ops/references/advanced/aiops-network-anomaly.md)
+- [VPC AIOps Anomaly](../../../gcp-vpc-ops/references/advanced/aiops-network-anomaly.md)

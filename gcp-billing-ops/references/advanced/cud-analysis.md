@@ -311,6 +311,6 @@ gcloud monitoring policies create \
 
 ## See Also
 
-- [FinOps Cost Analysis](../finops-cost-analysis.md)
-- [AIOps Billing Anomaly Detection](../aiops-billing-anomaly.md)
+- [FinOps Cost Analysis](finops-cost-analysis.md)
+- [AIOps Billing Anomaly Detection](aiops-billing-anomaly.md)
 - [Google Cloud CUD Documentation](https://cloud.google.com/compute/docs/instances/signing-up-committed-use-discounts)
