@@ -348,3 +348,11 @@ Poll describe until `NOT_FOUND` or status indicates deleted.
 - **Pre-configured rules:** Use WAF pre-configured rules for common attacks.
 - **Logging:** Enable security policy logging for audit and diagnostics.
 - **Adaptive protection:** Enable adaptive DDoS protection for automatic tuning.
+
+## AIOps 自愈 (Self-Healing)
+
+When adaptive protection triggers an auto-deploy rule, this skill supports a **closed-loop self-healing** flow: detect → classify (via `docs/error-taxonomy.md`) → **dry-run preview** → **human review gate** → idempotent apply → validate. All mutating actions are dry-run-first, idempotent, and credential-masked (root `AGENTS.md` §0.1); T2/T3 blast-radius actions are gated or **HALT**ed.
+
+- **Attack Mitigation Self-Healing runbook:** [references/advanced/adaptive-protection.md](references/advanced/adaptive-protection.md) §Attack Mitigation Self-Healing
+- **Blast radius (Armor → LB → GCE/VPC/CDN):** [docs/cross-skill-blast-radius.md](docs/cross-skill-blast-radius.md)
+- **Unified error taxonomy / recovery actions:** [docs/error-taxonomy.md](docs/error-taxonomy.md)

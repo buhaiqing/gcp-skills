@@ -466,6 +466,108 @@ gcloud compute security-policies describe {{user.policy_name}} \
   --project="{{env.CLOUDSDK_CORE_PROJECT}}"
 ```
 
+## Attack Mitigation Self-Healing (自愈闭环)
+
+> Adaptive protection auto-deploys rules, but **auto-deploy is not auto-hardening**. This section closes the loop: when adaptive protection triggers, the agent proposes a **permanent** security-policy hardening, previews it (dry-run), and waits for a **human review gate** before applying. All actions are idempotent and credential-masked (root `AGENTS.md` §0.1).
+
+### Blast Radius First
+
+Armor sits **in front of** the Load Balancer backend enforcement. A hardened rule can impact `gcp-gce-ops` (backend VMs/MIGs), `gcp-vpc-ops` (VPC firewall), and `gcp-cdn-ops` (origin cache fills). Compute the blast radius **before** any preview — see [`docs/cross-skill-blast-radius.md`](../../../docs/cross-skill-blast-radius.md) (T1/T2/T3 tiers).
+
+### Self-Healing Flow
+
+```
+Adaptive trigger ──► 1. Detect auto-deploy event
+       │
+       ▼
+  2. Classify error via docs/error-taxonomy.md (Recovery Action Vocabulary)
+       │
+       ▼
+  3. DRY-RUN preview of proposed hardening (no mutation)
+       │
+       ▼
+  4. Human review gate (T2/T3 = HALT until explicit confirm)
+       │
+       ▼
+  5. Idempotent APPLY (converge to target state)
+       │
+       ▼
+  6. Validate + monitor; auto-expired auto-deploy rule may be retired
+```
+
+### Step 1 — Detect Auto-Deploy Event
+
+```bash
+# List recent adaptive protection auto-deploy rule creations
+gcloud logging read \
+  'resource.type="http_load_balancer" AND jsonPayload.method="GOOGLE_ARMOR_ADAPTIVE_PROTECTION_AUTO_DEPLOY_RULE_CREATED"' \
+  --limit=20 --order=desc \
+  --project="{{env.CLOUDSDK_CORE_PROJECT}}"
+```
+
+### Step 2 — Classify (error-taxonomy)
+
+Map the trigger to a recovery action from [`docs/error-taxonomy.md`](../../../docs/error-taxonomy.md):
+- `PREVIEW` → emit dry-run, no apply.
+- `RETRY` → re-read policy fingerprint, then preview.
+- `HALT` → cross-skill impact (T3) or destructive; stop and request confirmation.
+
+### Step 3 — DRY-RUN Preview (no mutation)
+
+Propose a permanent rule mirroring the auto-deployed expression, but **do not apply**. Use `--format=json` and show the diff against the current policy fingerprint.
+
+```bash
+# Preview: show current rules + the proposed priority/expression WITHOUT creating it
+gcloud compute security-policies rules list {{user.policy_name}} \
+  --format="json" \
+  --project="{{env.CLOUDSDK_CORE_PROJECT}}" | jq '.[] | {priority, expression, action}'
+
+# Proposed hardening (shown to human, NOT executed):
+#   gcloud compute security-policies rules create <priority> \
+#     --security-policy={{user.policy_name}} \
+#     --expression="<mirrored auto-deploy expression>" \
+#     --action="deny-403" --project="{{env.CLOUDSDK_CORE_PROJECT}}"
+```
+
+> **Idempotency:** The proposed priority is derived deterministically from the attack signature hash, so re-running the self-heal converges to the same rule (no duplicate creation).
+
+### Step 4 — Human Review Gate
+
+| Blast-radius tier | Gate |
+|-------------------|------|
+| T1 (single rule) | Dry-run log only; auto-approve after preview |
+| T2 (policy-wide, e.g. enable auto-deploy) | **Human gate** — present preview, await confirm |
+| T3 (cross-skill: fail-closed / delete) | **HALT** — explicit resource-identifier confirmation required |
+
+Destructive or cross-skill actions are marked **HALT** and MUST NOT auto-apply.
+
+### Step 5 — Idempotent Apply (after gate)
+
+```bash
+# Only after human confirmation (T2) or never for T3 without explicit assent
+gcloud compute security-policies rules create {{user.rule_priority}} \
+  --security-policy={{user.policy_name}} \
+  --expression="<mirrored auto-deploy expression>" \
+  --action="deny-403" \
+  --project="{{env.CLOUDSDK_CORE_PROJECT}}" \
+  --format="json"
+```
+
+### Step 6 — Validate & Monitor
+
+```bash
+gcloud compute security-policies rules list {{user.policy_name}} \
+  --format="json" | jq '.[] | select(.priority == {{user.rule_priority}})'
+# Confirm no legitimate traffic blocked via monitoring metrics
+# compute.googleapis.com/security_policy/adaptive_protection_blocked_requests
+```
+
+### Safety Constraints
+
+- **Credential masking (§0.1):** Never log `GOOGLE_APPLICATION_CREDENTIALS` or SA key content; verify existence only.
+- **No silent apply:** T2/T3 require human gate; auto-deploy rule retirement is the only unattended step (it is a no-op when already expired).
+- **Rollback:** To revert, delete the hardened rule by its deterministic priority (idempotent).
+
 ## See Also
 
 - [Advanced WAF Rules](advanced-waf-rules.md)
