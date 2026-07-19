@@ -13,5 +13,10 @@
   {"query": "set up Cloud Monitoring alerts", "should_trigger": false},
   {"query": "configure a VPC firewall rule", "should_trigger": false},
   {"query": "create an IAM service account", "should_trigger": false},
-  {"query": "create a Cloud Storage bucket", "should_trigger": false}
+  {"query": "create a Cloud Storage bucket", "should_trigger": false},
+  {"query": "Run GCL in dry-run mode on the gcp-lb-ops delete url-map command", "should_trigger": true, "expected_cmd_pattern": "gcl.*--dry-run.*delete.*url-map", "dry_run_supported": true},
+  {"query": "Analyze the GCL audit trace at ./audit-results/gcl-trace-2026.json for failures", "should_trigger": true, "expected_cmd_pattern": "gcl.*audit.*trace", "dry_run_supported": false},
+  {"query": "Generate the GCL pass-rate report for the gcp-iam-ops skill run", "should_trigger": true, "expected_cmd_pattern": "gcl.*report.*pass-rate", "dry_run_supported": false},
+  {"query": "Cross-check the GCL critic output against the generator plan for the delete snapshot op", "should_trigger": true, "expected_cmd_pattern": "gcl.*cross-check", "dry_run_supported": false},
+  {"query": "Run the GCL critic only without executing the generator for the Cloud SQL failover", "should_trigger": true, "expected_cmd_pattern": "gcl.*--critic-only", "dry_run_supported": false}
 ]
