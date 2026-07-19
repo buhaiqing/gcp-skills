@@ -735,3 +735,7 @@ This skill includes delete operations (Delete Managed Zone, Delete Record-Set) t
 - **Safety dimension MUST pass**: Destructive operations must have explicit user confirmation.
 - **SAFETY_FAIL triggers immediate ABORT**: No partial result if safety check fails.
 - **Trace audit**: Every GCL run persists JSON trace to `./audit-results/gcl-trace-*.json`.
+
+## AIOps 自愈 (Self-Healing)
+
+> Cloud DNS 异常检测与自愈锚点（记录解析失败、传播延迟、DNSSEC 签名失败）见 [references/advanced/aiops-dns-anomaly.md](references/advanced/aiops-dns-anomaly.md)。所有自愈动作均带 **dry-run + 幂等 + 人工复核门禁**，破坏性操作标 **HALT**，绝不自动执行。

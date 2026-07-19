@@ -707,3 +707,7 @@ SKILL.md has full flow; references do not repeat SKILL.md content.
 - **Secret Manager**: [gcp-secretmanager-ops](../gcp-secretmanager-ops/SKILL.md) — Store encrypted values
 - **Monitoring**: [gcp-monitoring-ops](../gcp-monitoring-ops/SKILL.md) — Dashboards and alerts
 - **GCL Runner**: [gcp-gcl-runner-ops](../gcp-gcl-runner-ops/SKILL.md) — Execution quality gate
+
+## AIOps 自愈 (Self-Healing)
+
+> Cloud KMS 异常检测与自愈锚点（密钥轮转逾期、加解密权限漂移、密钥误销毁）见 [references/advanced/aiops-kms-anomaly.md](references/advanced/aiops-kms-anomaly.md)。所有自愈动作均带 **dry-run + 幂等 + 人工复核门禁**，破坏性操作标 **HALT**，绝不自动执行。
