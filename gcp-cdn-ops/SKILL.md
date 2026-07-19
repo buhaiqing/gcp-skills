@@ -714,3 +714,14 @@ SKILL.md has full flow; references do not repeat execution steps.
 - **Cloud Storage**: [gcp-gcs-ops](../gcp-gcs-ops/SKILL.md) — Cloud Storage as CDN origin
 - **Monitoring**: [gcp-monitoring-ops](../gcp-monitoring-ops/SKILL.md) — Dashboards and alerts for CDN metrics
 - **GCL Runner**: [gcp-gcl-runner-ops](../gcp-gcl-runner-ops/SKILL.md) — Execution quality gate
+
+## AIOps 自愈 (Self-Healing)
+
+CDN 异常检测、容量预测与自动修复 runbook（含 dry-run + 幂等 + 人工复核门禁，破坏性动作标 HALT）：
+
+- [AIOps Anomaly Detection](references/advanced/aiops-cdn-anomaly-detection.md) — 回源失败率 / 缓存命中率骤降 / 5xx 突增
+- [AIOps Prediction](references/advanced/aiops-cdn-prediction.md) — 容量/流量预测与预热
+- [AIOps Auto-Remediation](references/advanced/aiops-cdn-auto-remediation.md) — origin failover / TTL 调整 / cache purge
+- [FinOps Cost Analysis](references/advanced/finops-cdn-cost-analysis.md) — 带宽成本拆解与优化
+
+错误分类见 [docs/error-taxonomy.md](docs/error-taxonomy.md)；跨域爆炸半径见 [docs/cross-skill-blast-radius.md](docs/cross-skill-blast-radius.md)。
