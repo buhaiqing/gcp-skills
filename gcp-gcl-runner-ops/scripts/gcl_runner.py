@@ -271,7 +271,7 @@ def main():
     parser.add_argument("--op", required=True, help="Operation name (e.g., DeleteInstance)")
     parser.add_argument("--command", required=True, help="Full CLI command to execute")
     parser.add_argument("--user-request", help="Original natural-language user request")
-    parser.add_argument("--max-iter", type=int, default=DEFAULT_MAX_ITER)
+    parser.add_argument("--max-iter", type=int, default=DEFAULT_MAX_ITER, help="Max critic iterations (default: %(default)s)")
     parser.add_argument("--rubric", help="Custom rubric path")
     parser.add_argument("--output-dir", help="Output directory for traces")
     parser.add_argument("--dry-run", action="store_true", help="Skip subprocess; run Critic only")

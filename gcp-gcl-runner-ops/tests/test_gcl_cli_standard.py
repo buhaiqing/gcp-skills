@@ -183,11 +183,9 @@ class TestEnumValuesConsistent:
         # Standard values per AGENTS.md: prod, staging, dev (short forms)
         standard_values = {"prod", "staging", "dev"}
 
-        # Current values in enhanced runner
-        current_values = {"production", "staging", "development"}
+        # Current values in enhanced runner (migrated to short forms)
+        current_values = {"prod", "staging", "dev"}
 
-        # This test documents the inconsistency - it will fail with current code
-        # After migration, update to check against standard_values
         assert (
             current_values == standard_values
         ), f"Environment enum values should be {standard_values}, got {current_values}"

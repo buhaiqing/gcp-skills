@@ -172,7 +172,13 @@ Any substantial task (multi-step / cross-skill / review-fix loop / repo pitfall 
 
 ## 12. Generator-Critic-Loop (GCL)
 
-Adversarial gate: Generator executes, Hallucination Detector pre-checks validity, Critic independently audits (no resource mutation, verifies factual accuracy), Orchestrator controls loop. Rubric ≥5 dims (Correctness, Safety [=0 → ABORT], Idempotency, Traceability, Spec Compliance, Factual Accuracy). Levels: required (max_iter 2, destructive) / recommended (3, delete/config) / optional (5, read-only). Persist JSON trace to `./audit-results/gcl-trace-*.json` (gitignored). Full spec at [docs/gcl-spec.md](docs/gcl-spec.md).
+Adversarial gate with three components:
+
+- **Generator**: Executes the operation (subprocess for `gcloud` CLI, SDK fallback).
+- **Hallucination Detector**: Pre-checks validity of Generator output before the Critic — blocks fabricated command flags, malformed resource identifiers, and out-of-scope mutations.
+- **Critic**: Independently audits (no resource mutation, verifies factual accuracy) against the rubric.
+
+Orchestrator controls loop. Rubric ≥5 dims (Correctness, Safety [=0 → ABORT], Idempotency, Traceability, Spec Compliance, Factual Accuracy). Levels: required (max_iter 2, destructive) / recommended (3, delete/config) / optional (5, read-only). Persist JSON trace to `./audit-results/gcl-trace-*.json` (gitignored). Full spec at [docs/gcl-spec.md](docs/gcl-spec.md).
 
 ---
 

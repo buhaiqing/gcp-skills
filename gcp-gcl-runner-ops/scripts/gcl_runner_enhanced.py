@@ -797,10 +797,31 @@ def main():
     parser.add_argument("--op", required=True, help="Operation name (e.g., DeleteInstance)")
     parser.add_argument("--command", required=True, help="Full CLI command to execute")
     parser.add_argument("--user-request", help="Original natural-language user request")
-    parser.add_argument("--max-iter", type=int, default=DEFAULT_MAX_ITER)
+    parser.add_argument("--max-iter", type=int, default=DEFAULT_MAX_ITER, help="Max critic iterations (default: %(default)s)")
     parser.add_argument("--rubric", help="Custom rubric path")
     parser.add_argument("--output-dir", help="Output directory for traces")
     parser.add_argument("--dry-run", action="store_true", help="Skip subprocess; run Critic only")
+    parser.add_argument(
+        "--format",
+        default="json",
+        help="Machine parsing output format (default: json)",
+    )
+    parser.add_argument(
+        "--project",
+        default=None,
+        help="GCP project id (CLOUDSDK_CORE_PROJECT); falls back to GOOGLE_APPLICATION_CREDENTIALS project",
+    )
+    parser.add_argument(
+        "--credential-file",
+        default=None,
+        help="Path to service account key file for GOOGLE_APPLICATION_CREDENTIALS (never logged, masked as ****)",
+    )
+    parser.add_argument(
+        "--timeout",
+        type=int,
+        default=0,
+        help="Per-attempt timeout in seconds for long-running ops (0 = no timeout)",
+    )
 
     # New flags
     parser.add_argument(
@@ -818,9 +839,9 @@ def main():
     parser.add_argument(
         "--environment",
         type=str,
-        default="production",
-        choices=["production", "staging", "development"],
-        help="Environment (default: production)",
+        default="prod",
+        choices=["prod", "staging", "dev"],
+        help="Environment (default: prod)",
     )
     parser.add_argument(
         "--trace-only",
@@ -833,9 +854,9 @@ def main():
 
     # Parse environment
     env_map = {
-        "production": Environment.PRODUCTION,
+        "prod": Environment.PRODUCTION,
         "staging": Environment.STAGING,
-        "development": Environment.DEVELOPMENT,
+        "dev": Environment.DEVELOPMENT,
     }
     environment = env_map.get(args.environment, Environment.PRODUCTION)
 

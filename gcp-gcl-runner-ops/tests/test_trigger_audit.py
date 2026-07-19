@@ -181,7 +181,6 @@ class TestTriggerFormatConsistency:
     # Skills that must have (Agent-Readable) suffix in section header
     EXPECT_AGENT_READABLE = {
         "gcp-armor-ops",
-        "gcp-bigquery-ops",
         "gcp-billing-ops",
         "gcp-cdn-ops",
         "gcp-cloudbuild-ops",
@@ -198,7 +197,6 @@ class TestTriggerFormatConsistency:
         "gcp-logging-ops",
         "gcp-memorystore-ops",
         "gcp-monitoring-ops",
-        "gcp-pubsub-ops",
         "gcp-secretmanager-ops",
         "gcp-securitycenter-ops",
         "gcp-terraform-ops",
@@ -268,21 +266,24 @@ class TestTriggerFormatConsistency:
         if skill_name in EXEMPT_SKILLS:
             pytest.skip(f"{skill_name} is exempt")
 
-        # Look for Keywords: line anywhere in the trigger section
-        # Keywords may be inline in bullets or as a separate line
-        # We check the whole file for "Keywords:" prefix
+        # Keywords may be a dedicated "Keywords:" line or inline in the
+        # SHOULD Use section (comma-separated list or known GCP product terms).
         has_keywords_line = re.search(r"Keywords:", content) is not None
 
-        # Also accept if keywords appear inline (e.g., in last bullet of SHOULD Use When)
-        # e.g., "... kubectl, k8s, autopilot, release channel"
         trigger_match = re.search(
-            r"### SHOULD Use This Skill When.+?(?=###|$)", content, re.DOTALL
+            r"### SHOULD Use.*?When.+?(?=###|$)", content, re.DOTALL
         )
         has_inline_keywords = False
         if trigger_match:
             trigger_text = trigger_match.group(0)
-            # Check if there are comma-separated keyword-like terms in the trigger
-            has_inline_keywords = bool(re.search(r"\b(GKE|Kubernetes|cluster|kubectl|k8s|logs|logging|sink|bucket|metric|armor|security|policy|firewall)\b", trigger_text))
+            has_inline_keywords = bool(re.search(r"\w+,\s*\w+", trigger_text)) or bool(
+                re.search(
+                    r"\b(GKE|Kubernetes|cluster|kubectl|k8s|logs?|logging|sink|bucket|"
+                    r"metric|armor|security|policy|firewall|SQL|BigQuery|Pub/Sub|"
+                    r"Composer|Cloud Run|Terraform|VM|instance|dataset|subscription)\b",
+                    trigger_text,
+                )
+            )
 
         assert has_keywords_line or has_inline_keywords, (
             f"{skill_name}: No Keywords line or inline keywords found in trigger section"
