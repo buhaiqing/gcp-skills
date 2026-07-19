@@ -208,6 +208,7 @@ No planned items.
 | Planned Feature | Status | Notes |
 |----------------|--------|-------|
 | P4-1.1 Trajectory auto-classification (SUCCESS/FAILURE/ANOMALY) | ✅ | trajectory_classifier.py — classify_trace + classify_directory over local JSON traces, 13 tests |
+| P4-1.2 Failure-pattern clustering (readable) | ✅ | failure_clusterer.py — cluster_failures + cluster_traces over classifications, 10 tests |
 
 ---
 
