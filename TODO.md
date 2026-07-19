@@ -247,3 +247,19 @@ No planned items.
 | lb SKILL.md slim (807→601) | ✅ | Same pattern |
 | cloudfunctions SKILL.md slim (790→595) | ✅ | Same pattern |
 | Total lines saved in SKILL.md | ✅ | ~1,050 lines |
+
+---
+
+## Known Gaps (Pre-existing, Out of Scope)
+
+> 16 pre-existing test failures in `gcp-gcl-runner-ops/tests/` confirmed at baseline (before AIOps layer). NOT introduced by AIOps work. Decision: leave as-is (option C), tracked here.
+
+| Failure | Test | Root Cause | Status |
+|---------|------|-----------|--------|
+| CLI arg missing | `test_gcl_cli_standard.py::test_credential_file_argument_exists` | `gcl_runner_enhanced.py` has no `--credential-file` flag (creds via `GOOGLE_APPLICATION_CREDENTIALS` env, AGENTS.md §0.1) | ⬜ planned |
+| CLI arg missing | `test_gcl_cli_standard.py::test_timeout_argument_exists` | `gcl_runner_enhanced.py` has no `--timeout` flag | ⬜ planned |
+| Trigger format | `test_trigger_audit.py` ×14 | 14 skills use non-standard trigger header (e.g. `## Trigger & Scope (Agent-Readable)`) vs expected `### SHOULD Use This Skill When` + `Keywords:` | ⬜ planned |
+
+**Affected skills (trigger audit):** gcp-bigquery-ops, gcp-pubsub-ops, gcp-billing-ops, gcp-cloudrun-ops, gcp-composer-ops, gcp-gcs-ops, gcp-terraform-ops, and 7 more.
+
+**Resolution options (future):** (A) migrate 14 SKILL.md trigger sections to standard format; (B) relax test assertions to accept current format; (C) keep as known gap. Chosen: C.
