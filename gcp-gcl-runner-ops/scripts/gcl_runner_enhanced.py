@@ -49,6 +49,16 @@ from gcl_trace_schema import (
     IterationTrace,
 )
 
+# ── AIOps primitive modules (wired into the runner, not decorative) ──
+from self_correction_mechanism import (
+    StateSnapshot,
+    CorrectionFeedbackLoop,
+    DegradationDetector,
+)
+from autonomy_ratio import AutonomyRatioTracker, AutonomyRatioAlert
+from knowledge_auto_update import KnowledgeAutoUpdater
+from knowledge_query import KnowledgeQueryAPI
+
 # ── Constants ──────────────────────────────────────────────────────────────
 
 TRACE_DIR = os.environ.get(
@@ -245,7 +255,7 @@ def generate(
     Returns:
         Dictionary with command execution trace
     """
-    logger = get_gcl_logger("gcl-generator", use_cloud_logging=False)
+    logger = get_gcl_logger("gcl-runner", use_cloud_logging=False)
 
     trace = {
         "command": sanitize(command),
@@ -829,8 +839,20 @@ def main():
     }
     environment = env_map.get(args.environment, Environment.PRODUCTION)
 
+    # Runner logger (name matches create_log_metrics.py filter: logger="gcl-runner")
+    runner_logger = get_gcl_logger("gcl-runner", use_cloud_logging=False)
+
     # Phase 0: Pre-flight
     if has_inline_secret(args.command):
+        log_gcl_event(
+            runner_logger,
+            "Command contains inlined secrets, refusing to execute",
+            severity="ERROR",
+            skill=args.skill,
+            op=args.op,
+            result="SAFETY_FAIL",
+            extra={"gcl_safety_failures": 1, "reason": "inline_secret"},
+        )
         print("[ERROR] Command contains inlined secrets. Refusing to execute.", file=sys.stderr)
         sys.exit(3)
 
@@ -872,6 +894,20 @@ def main():
     consecutive_failures = 0
     autonomy_decisions: list[AutonomyDecision] = []
 
+    # ── Wire AIOps primitive modules into the runner ──
+    state_snapshot = StateSnapshot()
+    correction_loop = CorrectionFeedbackLoop()
+    degradation_detector = DegradationDetector(threshold=args.degrade_threshold)
+    history_file = os.path.join(args.output_dir or TRACE_DIR, "autonomy_ratio_history.json")
+    autonomy_tracker = AutonomyRatioTracker(history_file=history_file)
+    autonomy_alert = AutonomyRatioAlert(threshold=0.9)
+    knowledge_updater = KnowledgeAutoUpdater()
+    knowledge_api = KnowledgeQueryAPI(graph=None)
+
+    # Pre-flight knowledge dependency probe (graph=None → safe empty result)
+    skill_deps = knowledge_api.query_skill_dependencies(args.skill)
+    trace_dict_deps = skill_deps
+
     # Capture pre-state snapshot
     pre_state = generate_state_snapshot(args.command)
 
@@ -896,8 +932,28 @@ def main():
 
     # Main loop
     for i in range(actual_max_iter):
+        # Capture pre-execution state before running the (possibly destructive) command
+        state_snapshot.capture_pre(args.command)
+
         gen_trace = generate(args.command, dry_run=args.dry_run, skill=args.skill, op=args.op)
         crit = critique(args.op, gen_trace, rubric)
+
+        # Capture post-execution state and compare for unexpected drift
+        state_snapshot.capture_post(args.command)
+        try:
+            state_diff = state_snapshot.compare()
+            if state_diff["has_changes"]:
+                log_gcl_event(
+                    runner_logger,
+                    f"State drift detected after iteration {i}",
+                    severity="WARNING",
+                    skill=args.skill,
+                    op=args.op,
+                    result="STATE_DRIFT",
+                    extra={"differences": state_diff["differences"]},
+                )
+        except RuntimeError:
+            pass
 
         # Classify error
         error_type = classify_error(gen_trace.get("stderr", ""))
@@ -922,8 +978,14 @@ def main():
         print(f"[ITER {i}] Verdict: {verdict}")
 
         # Track consecutive failures
-        if crit.get("correctness", 1.0) < SAFETY_THRESHOLD or crit.get("safety", 1.0) == 0.0:
+        failed = crit.get("correctness", 1.0) < SAFETY_THRESHOLD or crit.get("safety", 1.0) == 0.0
+        if failed:
             consecutive_failures += 1
+            # Feed DegradationDetector with the failure pattern
+            degradation_detector.record_failure(
+                error_type.value if error_type else "UNKNOWN",
+                context={"iteration": i, "command": gen_trace["command"]},
+            )
             # Record autonomous rejection
             autonomy_decisions.append(
                 AutonomyDecision(
@@ -947,6 +1009,34 @@ def main():
 
         trace.autonomy_decisions = autonomy_decisions
 
+        # DegradationDetector cross-check (independent of should_degrade)
+        if degradation_detector.is_degraded():
+            report = degradation_detector.generate_report()
+            log_gcl_event(
+                runner_logger,
+                f"Degradation detected: {report.failure_pattern} x{report.consecutive_failures}",
+                severity="ERROR",
+                skill=args.skill,
+                op=args.op,
+                result="DEGRADED",
+                extra={"requires_human_review": report.requires_human_review},
+            )
+            trace.degraded_to_human = True
+            trace.degradation_reason = (
+                f"DegradationDetector: {report.failure_pattern} reached threshold {report.threshold}"
+            )
+            trace.result = GCLResult.ERROR
+            autonomy_decisions.append(
+                AutonomyDecision(
+                    type="DEGRADE_TO_HUMAN",
+                    reason=trace.degradation_reason,
+                    timestamp=datetime.now(UTC).isoformat(),
+                    approved=True,
+                )
+            )
+            print(f"[DEGRADED] {trace.degradation_reason}")
+            break
+
         # Check for degradation
         if should_degrade(consecutive_failures, args.degrade_threshold):
             trace.degraded_to_human = True
@@ -966,6 +1056,16 @@ def main():
         if verdict in ("PASS", "SAFETY_FAIL", "MAX_ITER"):
             trace.result = GCLResult(verdict)
             trace.final_verdict = verdict if hasattr(trace, "final_verdict") else verdict
+            if verdict == "SAFETY_FAIL":
+                log_gcl_event(
+                    runner_logger,
+                    f"Safety gate failed at iteration {i}, aborting",
+                    severity="ERROR",
+                    skill=args.skill,
+                    op=args.op,
+                    result="SAFETY_FAIL",
+                    extra={"gcl_safety_failures": 1, "iteration": i},
+                )
             break
 
     # Calculate final metrics
@@ -982,6 +1082,26 @@ def main():
         trace.safety_score = avg_safety
         trace.safety_failures = sum(1 for it in trace.iterations if it.critique.get("safety", 1.0) == 0.0)
 
+    # Update AutonomyRatioTracker with this execution's outcome
+    recorded_ratio = autonomy_tracker.record_execution(
+        total_ops=trace.iterations_count,
+        degraded=1 if trace.degraded_to_human else 0,
+        safety_fails=trace.safety_failures,
+        timestamp=trace.timestamp,
+    )
+    # Alert when autonomy ratio exceeds review threshold
+    alert = autonomy_alert.check_ratio(recorded_ratio, execution_id=trace.trace_id)
+    if alert:
+        log_gcl_event(
+            runner_logger,
+            f"Autonomy ratio {alert['autonomy_ratio']:.2f} exceeds threshold {alert['threshold']}, review required",
+            severity="WARNING",
+            skill=args.skill,
+            op=args.op,
+            result="AUTONOMY_ALERT",
+            extra={"requires_review": alert["requires_review"]},
+        )
+
     # Capture post-state snapshot
     post_state = generate_state_snapshot(args.command)
 
@@ -989,6 +1109,7 @@ def main():
     trace_dict = trace.to_dict()
     trace_dict["pre_state"] = pre_state
     trace_dict["post_state"] = post_state
+    trace_dict["skill_dependencies"] = trace_dict_deps
 
     # Persist
     trace_path = persist_trace(trace_dict, args.output_dir)
