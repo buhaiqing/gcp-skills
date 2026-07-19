@@ -1,5 +1,7 @@
 # Troubleshooting — GKE
 
+> 错误码遵循 docs/error-taxonomy.md — product-specific codes MUST map to a root-cause dimension above.
+
 ## Error Codes
 
 | gRPC/HTTP | Meaning | Agent Action |

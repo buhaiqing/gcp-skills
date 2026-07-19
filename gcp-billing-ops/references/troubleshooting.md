@@ -11,6 +11,8 @@ dependencies: []
 
 # Troubleshooting — Cloud Billing
 
+> 错误码遵循 docs/error-taxonomy.md — product-specific codes MUST map to a root-cause dimension above.
+
 ## Diagnostic Flow
 
 1. Identify the operation that failed (list accounts, create budget, link project, etc.).
