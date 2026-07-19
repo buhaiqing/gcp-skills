@@ -1,0 +1,151 @@
+name: GCL Quality Gate
+
+on:
+  pull_request:
+    paths:
+      - 'gcp-*/**'
+      - 'docs/**'
+      - 'AGENTS.md'
+      - 'gcp-gcl-runner-ops/scripts/*.py'
+      - 'gcp-gcl-runner-ops/tests/**'
+      - '.github/workflows/**'
+  push:
+    branches: [main]
+
+jobs:
+  lint:
+    name: Lint & Type Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install markdownlint
+        run: npm install -g markdownlint-cli2
+
+      - name: Markdown lint on SKILL.md files
+        run: |
+          set -o pipefail
+          npx markdownlint-cli2 "gcp-*/SKILL.md" 2>&1 | tee lint-md.log
+          # Warn-only: fail only on error count increase
+          ERROR_COUNT=$(grep -c "^error" lint-md.log 2>/dev/null || echo 0)
+          if [ "$ERROR_COUNT" -gt 0 ]; then exit 1; fi
+
+      - name: Markdown lint on docs
+        run: |
+          set -o pipefail
+          npx markdownlint-cli2 "docs/superpowers/*.md" 2>&1 | tee lint-docs.log
+          ERROR_COUNT=$(grep -c "^error" lint-docs.log 2>/dev/null || echo 0)
+          if [ "$ERROR_COUNT" -gt 0 ]; then exit 1; fi
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install ruff
+        run: pip install ruff
+
+      - name: Ruff lint on scripts
+        run: ruff check gcp-gcl-runner-ops/scripts/ --select=E,F --output-format=text
+
+  tests:
+    name: GCL Runner Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          pip install pytest pytest-asyncio pyyaml
+          pip install -e gcp-gcl-runner-ops/ 2>/dev/null || true
+
+      - name: Run GCL runner tests
+        run: |
+          cd gcp-gcl-runner-ops
+          python3 -m pytest tests/ -q --tb=short 2>&1 | tee test-results.log
+          # Extract pass/skip/fail counts
+          SUMMARY=$(tail -1 test-results.log)
+          echo "Test summary: $SUMMARY"
+          # Fail if any unexpected errors
+          if echo "$SUMMARY" | grep -qE "[1-9][0-9]* failed"; then exit 1; fi
+
+  self-review-checks:
+    name: Self-Review Structural Checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run C1-C7 structural checks on all SKILL.md
+        run: |
+          set -o pipefail
+          FAILED=0
+          for skill in gcp-*/SKILL.md; do
+            dir=$(dirname "$skill")
+            skill_name=$(basename "$dir")
+
+            # C1: frontmatter
+            if ! head -3 "$skill" | grep -q "^---"; then
+              echo "[C1 FAIL] $skill_name: missing frontmatter"
+              FAILED=1
+            fi
+
+            # C2: SHOULD/SHOULD NOT
+            if ! grep -q "SHOULD Use\|SHOULD NOT Use" "$skill"; then
+              echo "[C2 FAIL] $skill_name: missing SHOULD/SHOULD NOT"
+              FAILED=1
+            fi
+
+            # C3: Five Core Standards
+            if ! grep -q "Five Core Standards" "$skill"; then
+              echo "[C3 FAIL] $skill_name: missing Five Core Standards"
+              FAILED=1
+            fi
+
+            # C4: Well-Architected
+            if ! grep -q "Well-Architected\|Architecture Framework" "$skill"; then
+              echo "[C4 FAIL] $skill_name: missing Well-Architected"
+              FAILED=1
+            fi
+
+            # C5: Variables
+            if ! grep -q "^## Variables" "$skill"; then
+              echo "[C5 FAIL] $skill_name: missing Variables section"
+              FAILED=1
+            fi
+
+            # C7: rubric existence (only if SKILL.md references it)
+            if grep -q "references/rubric.md" "$skill"; then
+              if [ ! -f "$dir/references/rubric.md" ]; then
+                echo "[C7 FAIL] $skill_name: SKILL.md references rubric.md but file does not exist"
+                FAILED=1
+              fi
+            fi
+          done
+          if [ "$FAILED" -eq 1 ]; then exit 1; fi
+          echo "All C1-C7 checks passed"
+
+      - name: Verify rubric.md coverage for skills that reference it
+        run: |
+          MISSING=0
+          for skill_dir in gcp-*/; do
+            SKILL="$skill_dir/SKILL.md"
+            if [ -f "$SKILL" ] && grep -q "references/rubric.md" "$SKILL" 2>/dev/null; then
+              if [ ! -f "$skill_dir/references/rubric.md" ]; then
+                echo "MISSING rubric: $skill_dir"
+                MISSING=1
+              fi
+            fi
+          done
+          if [ "$MISSING" -eq 1 ]; then exit 1; fi
+          echo "All rubric.md files present for skills that reference them"

@@ -22,6 +22,7 @@ After every skill update, auto-run 2 rounds of self-review and fix all discovere
 | **C4** | Well-Architected | `grep -c "Well-Architected Framework\|Google Cloud Architecture Framework" SKILL.md` | ≥ 1 match |
 | **C5** | Variables | `grep -c "^## Variables" SKILL.md` | ≥ 1 match with `{{env.*}}`/`{{user.*}}`/`{{output.*}}` |
 | **C6** | **Token Efficiency** | See §Token Efficiency Requirements | All 6 TE rules applied (MUST PASS) |
+| **C7** | **Rubric 存在性** | `grep -q "references/rubric.md" SKILL.md && test -f "references/rubric.md"` | Both true: SKILL.md references AND file exists | Add `references/rubric.md` link to SKILL.md OR create the rubric file per `gcp-skill-generator/references/template-gcl-gate.md` |
 
 ---
 
@@ -45,7 +46,7 @@ After every skill update, auto-run 2 rounds of self-review and fix all discovere
 ```bash
 # R1: Structural
 echo "=== R1 Structural ==="
-for check in C1 C2 C3 C4 C5 C6; do
+for check in C1 C2 C3 C4 C5 C6 C7; do
     echo "[ ] $check"
 done
 

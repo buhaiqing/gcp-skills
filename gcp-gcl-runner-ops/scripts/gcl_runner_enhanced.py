@@ -49,14 +49,15 @@ from gcl_trace_schema import (
     IterationTrace,
 )
 
-# ── AIOps primitive modules (wired into the runner, not decorative) ──
 from self_correction_mechanism import (
     StateSnapshot,
     DegradationDetector,
 )
-from autonomy_ratio import AutonomyRatioTracker, AutonomyRatioAlert
+from autonomy_ratio import AutonomyRatioTracker, AutonomyRatioAlert, AutonomyRatioCalculator
 from knowledge_auto_update import KnowledgeAutoUpdater
 from knowledge_query import KnowledgeQueryAPI
+from trajectory_classifier import classify_directory
+from failure_clusterer import cluster_failures
 
 # ── Constants ──────────────────────────────────────────────────────────────
 
@@ -949,9 +950,36 @@ def main():
     for i in range(actual_max_iter):
         # Capture pre-execution state before running the (possibly destructive) command
         state_snapshot.capture_pre(args.command)
-
         gen_trace = generate(args.command, dry_run=args.dry_run, skill=args.skill, op=args.op)
+        log_gcl_event(
+            runner_logger,
+            f"[ITER {i}] Generate complete",
+            severity="INFO",
+            skill=args.skill,
+            op=args.op,
+            result="GENERATE_SUCCESS",
+            extra={
+                "iteration": i,
+                "exit_code": gen_trace.get("exit_code", -1),
+                "duration_ms": gen_trace.get("duration_ms", 0),
+                "stderr_preview": (gen_trace.get("stderr", "") or "")[:200],
+            },
+        )
         crit = critique(args.op, gen_trace, rubric)
+        log_gcl_event(
+            runner_logger,
+            f"[ITER {i}] Critique complete",
+            severity="INFO",
+            skill=args.skill,
+            op=args.op,
+            result="CRITIQUE_COMPLETE",
+            extra={
+                "iteration": i,
+                "correctness": crit.get("correctness", 0.0),
+                "safety": crit.get("safety", 0.0),
+                "verdict_preview": decide(i, crit, rubric, actual_max_iter),
+            },
+        )
 
         # Capture post-execution state and compare for unexpected drift
         state_snapshot.capture_post(args.command)
@@ -996,6 +1024,21 @@ def main():
         verdict = decide(i, crit, rubric, actual_max_iter)
         iteration_trace.verdict = verdict
         trace.iterations.append(iteration_trace)
+        log_gcl_event(
+            runner_logger,
+            f"[ITER {i}] Decide: {verdict}",
+            severity="WARNING" if verdict in ("SAFETY_FAIL", "MAX_ITER") else "INFO",
+            skill=args.skill,
+            op=args.op,
+            result=f"DECIDE_{verdict}",
+            extra={
+                "iteration": i,
+                "verdict": verdict,
+                "autonomy_ratio_preview": calculate_autonomy_ratio(
+                    [asdict(it) for it in trace.iterations], autonomy_decisions
+                ) if autonomy_decisions else None,
+            },
+        )
 
         print(f"[ITER {i}] Verdict: {verdict}")
 
@@ -1124,6 +1167,26 @@ def main():
             extra={"requires_review": alert["requires_review"]},
         )
 
+    # ── Phase 4: Report — final structured log ─────────────────────────────
+    log_gcl_event(
+        runner_logger,
+        f"GCL run complete: {trace.result.value}",
+        severity="INFO",
+        skill=args.skill,
+        op=args.op,
+        result=f"REPORT_{trace.result.value}",
+        extra={
+            "trace_id": trace.trace_id,
+            "final_verdict": trace.result.value,
+            "total_iters": trace.iterations_count,
+            "autonomy_ratio": round(trace.autonomy_ratio, 3),
+            "safety_score": round(trace.safety_score, 3) if trace.safety_score else None,
+            "safety_failures": trace.safety_failures,
+            "degraded_to_human": trace.degraded_to_human,
+            "latency_ms": trace.latency_ms,
+        },
+    )
+
     # Capture post-state snapshot
     post_state = generate_state_snapshot(args.command)
 
@@ -1136,6 +1199,19 @@ def main():
     # Persist
     trace_path = persist_trace(trace_dict, args.output_dir)
     print(f"[TRACE] Saved to {trace_path}")
+
+    # ── Auto-analysis: classify + cluster recent traces ───────────────────
+    trace_dir = args.output_dir or TRACE_DIR
+    try:
+        classifications = classify_directory(trace_dir)
+        failures = [c for c in classifications if c.category.value != "SUCCESS"]
+        failure_clusters = cluster_failures(classifications) if failures else []
+        if failure_clusters:
+            print(f"[ANALYSIS] {len(failure_clusters)} failure cluster(s):")
+            for cl in failure_clusters[:5]:
+                print(f"  [{cl.category.value}] {cl.label}: {cl.count}x — {', '.join(cl.members[:3])}")
+    except Exception as exc:
+        print(f"[WARN] trace analysis skipped: {exc}", file=sys.stderr)
 
     # Upload to BigQuery if requested (errors are logged but don't fail the run)
     if args.trace_to_bq:
