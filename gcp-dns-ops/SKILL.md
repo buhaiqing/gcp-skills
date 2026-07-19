@@ -701,28 +701,7 @@ gcloud dns policies describe "{{user.policy_name}}" \
 - **Cost:** Minimize the number of managed zones; use a single zone with subdomain record-sets when possible.
 - **Automation:** Use Python SDK for programmatic bulk operations; `gcloud` for interactive or single operations.
 
-## Token Efficiency Guidelines (P0 — Mandatory)
-
-### TE-1: API Query > Static Tables
-Use `gcloud` commands to fetch zone quotas, supported record types, and DNS limits instead of hardcoding.
-```bash
-gcloud dns managed-zones list --project="{{env.CLOUDSDK_CORE_PROJECT}}" --format="json"
-```
-
-### TE-2: No docstrings in code
-Inline comments only. No function-level docstring in SDK scripts.
-
-### TE-3: Compact error tables
-Single row per error code, ≤3 columns.
-
-### TE-4: Centralized JSON paths
-Declared in "API and Response Conventions" section above — not repeated per operation.
-
-### TE-5: YAML anchors in example-config.yaml
-Use `&anchor` to eliminate repeated zone/record definitions.
-
-### TE-6: Eliminate cross-file duplication
-SKILL.md has full execution flow; `references/` files detail SDK/API specifics without repeating CLI commands.
+> Token Efficiency 规则详见根目录 AGENTS.md §9（TE-1~TE-8，禁止跨文件重复 — TE-6）。
 
 ## Quality Gate (GCL)
 

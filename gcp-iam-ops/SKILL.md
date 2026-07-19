@@ -486,11 +486,7 @@ gcloud iam deny-policies delete "{{user.deny_policy_id}}" --format="json"
 
 Rubric: [references/rubric.md](references/rubric.md) | Templates: [references/prompt-templates.md](references/prompt-templates.md)
 
-## Token Efficiency Guidelines
-
-- **TE-1/2**: Use `gcloud` for live data; inline `#` comments only (no docstrings)
-- **TE-3/4**: Error tables ≤3 cols (see [troubleshooting.md](references/troubleshooting.md)); centralized JSON paths above
-- **TE-5/6/7**: YAML anchors in `assets/example-config.yaml`; no cross-file duplication; AIOps in `advanced/`
+> Token Efficiency 规则详见根目录 AGENTS.md §9（TE-1~TE-8，禁止跨文件重复 — TE-6）。
 
 ## See Also
 

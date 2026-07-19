@@ -576,13 +576,7 @@ Report: function names, states, URLs, runtimes. Note: gen1 functions use a diffe
 
 **Classification**: recommended | **max_iter**: 3 | **Most-scrutinized**: Delete Function, Deploy (can cause downtime if misconfigured)
 
-## Token Efficiency Guidelines (P0 — 强制)
-
-| Rule | Practice | Rule | Practice |
-|------|----------|------|----------|
-| TE-1 | `gcloud functions describe` for current config instead of hardcoding | TE-2 | No docstrings; inline comments only |
-| TE-3 | Error tables: 1 row, ≤3 cols | TE-4 | JSON paths centralized above |
-| TE-5 | `example-config.yaml` uses YAML anchors | TE-6 | SKILL.md references/ don't repeat |
+> Token Efficiency 规则详见根目录 AGENTS.md §9（TE-1~TE-8，禁止跨文件重复 — TE-6）。
 
 ## Operational Best Practices
 
