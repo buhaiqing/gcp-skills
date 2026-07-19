@@ -714,3 +714,14 @@ SKILL.md has full flow; references do not repeat SKILL.md content.
 - **IAM**: delegate service-account/permission tasks to `gcp-iam-ops`
 - **BigQuery**: delegate dataset management (log export destination) to `gcp-bigquery-ops`
 - **GCL Runner**: cross-skill Generator-Critic-Loop execution runner
+
+## AIOps 自愈 (Self-Healing)
+
+日志管线（ingestion / sink / log router）故障需自愈能力。完整 runbook 见 [references/advanced/aiops-log-pipeline-anomaly.md](references/advanced/aiops-log-pipeline-anomaly.md)，覆盖：
+
+- **ingestion 延迟/丢弃检测** — 仅诊断，不自动变更（根因多为上游 quota / 项目挂起，需分类并委派）
+- **log sink / log router 配置漂移自愈** — dry-run → 门禁 → 幂等 re-create sink → 校验
+- **自愈动作约束** — 每个变更动作 dry-run 优先、幂等、带门禁；破坏性动作（删 bucket/sink、改 `_Default`/`_Required`、跨项目）标 `HALT`，绝不自动变更
+- **跨 skill 触发** — 异常根因/修复跨边界时委派（BigQuery/Pub/Sub/GCS 目的地、Monitoring alert、Billing、Security Command Center）
+
+错误分类遵循 [docs/error-taxonomy.md](../docs/error-taxonomy.md)，爆炸半径门禁遵循 [docs/cross-skill-blast-radius.md](../docs/cross-skill-blast-radius.md)。凭证遮蔽见 AGENTS.md §0.1。
