@@ -146,7 +146,7 @@
 
 | Task | 描述 | 依赖 | 验收 |
 |------|------|------|------|
-| P4-1.1 | 实现轨迹自动归类（成功/失败/异常） | P0-1.3 | 归类准确率 ≥ 90% |
+| P4-1.1 | 实现轨迹自动归类（成功/失败/异常） | P0-1.3 | 归类准确率 ≥ 90% | ✅ 2026-07-19 (trajectory_classifier.py: SUCCESS/FAILURE/ANOMALY, 13 tests) |
 | P4-1.2 | 实现失败模式聚类分析 | P4-1.1 | 聚类可读 |
 | P4-1.3 | 实现 BigQuery ML 模式识别 | P4-1.2 | 模型可预测 |
 
@@ -288,6 +288,9 @@ P0-3.1 ─▶ P0-3.2 ─▶ P0-3.3 ───────────────
 ---
 
 ## Version History
+
+### PLAN Version 1.4.0 — 2026-07-19
+- P4-1.1: 轨迹自动归类 ✅ (trajectory_classifier.py: classify_trace + classify_directory, SUCCESS/FAILURE/ANOMALY, 13 tests)
 
 ### PLAN Version 1.3.0 — 2026-07-19
 - P1-3: Autonomy Ratio 计算 ✅ (Calculator + Tracker + Alert)
