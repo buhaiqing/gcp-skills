@@ -222,6 +222,20 @@ Every `gcp-*-ops` SKILL.md MUST include this section. Rules TE-1 to TE-7 sourced
 
 **Non-compressible**: Agent-executable commands (params, JSON paths), error recovery logic, safety gates, credential rules, cross-skill orchestration chains.
 
+## AIOps 自愈 (Self-Healing)
+
+> [按需加载 — 异常自愈闭环]
+
+SCC 自愈（自动静音误报、收敛陈旧发现）是 **GCL `required`** 的破坏性/姿态影响操作。完整 runbook（dry-run → 人工复核门禁 → apply → validate → recover）在 [references/advanced/aiops-scc-anomaly.md](references/advanced/aiops-scc-anomaly.md)。
+
+**自愈安全契约（强制）：**
+- **Dry-run 优先**：任何 mute/resolve 前先预览命中发现，不静默执行。
+- **幂等**：mute 通过 **Mute Config**（可撤销、可审计）实现；apply 前检查 config 是否已存在，已存在则跳过。
+- **门禁 (HALT)**：`{{user.confirm_mute}} != "yes"` 时中止；MEDIUM+ 严重度禁止无人值守静音，需人工复核。
+- **凭证遮蔽**：遵循 AGENTS.md §0.1，绝不打印 `GOOGLE_APPLICATION_CREDENTIALS` 内容或 token。
+- **Blast radius**：静音可能中断下游 Pub/Sub / BigQuery 导出 / Monitoring 告警 / 跨 skill 链路，详见 aiops-scc-anomaly.md 的 Blast Radius 段与 [docs/cross-skill-blast-radius.md](docs/cross-skill-blast-radius.md)。
+- **错误分类**：自愈失败按 [docs/error-taxonomy.md](docs/error-taxonomy.md) 的 HALT/retry 处理。
+
 ## Changelog
 
 | Version | Date | Changes |
