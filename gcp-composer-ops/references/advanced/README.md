@@ -9,6 +9,7 @@ Advanced operational guides for Google Cloud Composer / Airflow.
 | [advanced-dag-patterns.md](advanced-dag-patterns.md) | SubDAG patterns, cross-DAG dependencies, dynamic task generation, setup/teardown tasks, SLA monitoring, retry strategies, sensor patterns |
 | [airflow-2x-migration.md](airflow-2x-migration.md) | TaskGroup migration, sensor retirement, PythonVirtualenvOperator changes, HA cluster migration |
 | [private-environment-setup.md](private-environment-setup.md) | VPC-native configuration, Private Service Connect, web server ingress control, DMZ architecture, DNS configuration |
+| [aiops-composer-anomaly.md](aiops-composer-anomaly.md) | AIOps self-healing: worker pool exhaustion, DAG task failures, stuck upgrades — dry-run + idempotent + gate discipline |
 
 ## Usage
 
