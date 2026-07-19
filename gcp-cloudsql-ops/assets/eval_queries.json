@@ -18,5 +18,9 @@
   {"query": "create a VM in GCE", "should_trigger": false},
   {"query": "create a BigQuery dataset", "should_trigger": false},
   {"query": "deploy to Cloud Run", "should_trigger": false},
-  {"query": "create a Cloud Storage bucket", "should_trigger": false}
+  {"query": "create a Cloud Storage bucket", "should_trigger": false},
+  {"query": "Cloud SQL connection pool is exhausted above 90%, raise max_connections flag", "should_trigger": true, "expected_cmd_pattern": "gcloud sql instances patch.*--database-flags", "dry_run_supported": true},
+  {"query": "Cloud SQL has long-running queries over 300s spilling to disk, cancel those operations", "should_trigger": true, "expected_cmd_pattern": "gcloud sql operations cancel", "dry_run_supported": true},
+  {"query": "read replica lag is climbing on my Cloud SQL replica, diagnose and recommend failover", "should_trigger": true, "expected_cmd_pattern": "gcloud monitoring time-series list.*replication", "dry_run_supported": false},
+  {"query": "show me the slow query log for my Cloud SQL instance", "should_trigger": false}
 ]

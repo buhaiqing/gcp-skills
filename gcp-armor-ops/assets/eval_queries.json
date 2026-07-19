@@ -78,5 +78,27 @@
   {
     "query": "Set up VPN tunnels",
     "should_trigger": false
+  },
+  {
+    "query": "Adaptive protection auto-deployed a rule for a DDoS pattern — detect the auto-deploy event and dry-run a permanent hardening rule",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud logging read.*adaptiveProtectionAutoDeploy",
+    "dry_run_supported": true
+  },
+  {
+    "query": "Create a permanent deny-403 rule mirroring the adaptive protection auto-deploy expression after the human review gate",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud compute security-policies rules create",
+    "dry_run_supported": false
+  },
+  {
+    "query": "Enable adaptive protection auto-deploy with a balanced confidence threshold on my security policy",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud compute security-policies update.*--adaptive-protection-auto-deploy-enabled",
+    "dry_run_supported": false
+  },
+  {
+    "query": "Show me the current request count metric for my backend service",
+    "should_trigger": false
   }
 ]

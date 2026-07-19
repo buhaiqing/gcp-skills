@@ -12,7 +12,7 @@
     "dry_run_supported": false
   },
   {
-    "query": "创建 Filestore 实例",
+    "query": "\u521b\u5efa Filestore \u5b9e\u4f8b",
     "should_trigger": true,
     "expected_cmd_pattern": "gcloud filestore instances create",
     "dry_run_supported": false
@@ -139,6 +139,28 @@
   },
   {
     "query": "configure Cloud DNS zone",
+    "should_trigger": false
+  },
+  {
+    "query": "Filestore instance nfs-1 file share is full, expand capacity to 2TB",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud filestore instances update.*--file-share",
+    "dry_run_supported": true
+  },
+  {
+    "query": "Filestore instance nfs-1 is stuck in REPAIRING for 30 minutes, restore from backup",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud filestore instances create.*source-backup",
+    "dry_run_supported": true
+  },
+  {
+    "query": "Filestore backup for nfs-1 failed, retry the backup",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud filestore backups create",
+    "dry_run_supported": true
+  },
+  {
+    "query": "configure a VPC firewall rule",
     "should_trigger": false
   }
 ]

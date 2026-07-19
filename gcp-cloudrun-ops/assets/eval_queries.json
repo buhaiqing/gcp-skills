@@ -18,5 +18,9 @@
   {"query": "create a Cloud Storage bucket", "should_trigger": false},
   {"query": "set up Cloud Monitoring alerts", "should_trigger": false},
   {"query": "configure a VPC firewall rule", "should_trigger": false},
-  {"query": "create an IAM service account", "should_trigger": false}
+  {"query": "create an IAM service account", "should_trigger": false},
+  {"query": "Cloud Run p95 latency spiked 3x and min-instances is 0, auto-tune min-instances to warm up", "should_trigger": true, "expected_cmd_pattern": "gcloud run services deploy.*--min-instances", "dry_run_supported": true},
+  {"query": "Cloud Run revision keeps OOMKilled with memory limit exceeded, right-size memory and cpu", "should_trigger": true, "expected_cmd_pattern": "gcloud run services deploy.*--memory", "dry_run_supported": true},
+  {"query": "Cloud Run health check failed on the new revision, roll back to last stable revision", "should_trigger": true, "expected_cmd_pattern": "gcloud run services update-traffic.*--to-revisions", "dry_run_supported": false},
+  {"query": "just show me the current CPU utilization of my Cloud Run service", "should_trigger": false}
 ]

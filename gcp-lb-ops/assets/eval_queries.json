@@ -1,22 +1,135 @@
 [
-  {"query": "I need to set up an HTTPS load balancer for my web app", "should_trigger": true, "expected_cmd_pattern": "gcloud compute target-https-proxies create", "dry_run_supported": false},
-  {"query": "帮我创建一个负载均衡器，把流量分发到多台服务器", "should_trigger": true, "expected_cmd_pattern": "gcloud compute backend-services create", "dry_run_supported": false},
-  {"query": "Create an external HTTP load balancer with URL map routing", "should_trigger": true, "expected_cmd_pattern": "gcloud compute url-maps create", "dry_run_supported": false},
-  {"query": "My health check is failing for the backend service", "should_trigger": true, "expected_cmd_pattern": "gcloud compute health-checks describe", "dry_run_supported": false},
-  {"query": "Add a new backend to the existing load balancer backend service", "should_trigger": true, "expected_cmd_pattern": "gcloud compute backend-services add-backend", "dry_run_supported": false},
-  {"query": "Delete the forwarding rule my-prod-lb-https-rule", "should_trigger": true, "expected_cmd_pattern": "gcloud compute forwarding-rules delete", "dry_run_supported": false, "safety_check": true},
-  {"query": "Create an internal TCP load balancer for our database cluster", "should_trigger": true, "expected_cmd_pattern": "gcloud compute backend-services create.*--protocol=TCP", "dry_run_supported": false},
-  {"query": "Set up SSL certificate for my load balancer with domain example.com", "should_trigger": true, "expected_cmd_pattern": "gcloud compute ssl-certificates create", "dry_run_supported": false},
-  {"query": "Create a network endpoint group for my Cloud Run service", "should_trigger": true, "expected_cmd_pattern": "gcloud compute network-endpoint-groups create", "dry_run_supported": false},
-  {"query": "帮我配置 URL 映射，让 /api 路径走 api 后端服务", "should_trigger": true, "expected_cmd_pattern": "gcloud compute url-maps add-path-matcher", "dry_run_supported": false},
-  {"query": "Check the health status of my load balancer backend", "should_trigger": true, "expected_cmd_pattern": "gcloud compute backend-services get-health", "dry_run_supported": false},
-  {"query": "I need to expose my internal service through an internal load balancer", "should_trigger": true, "expected_cmd_pattern": "gcloud compute forwarding-rules create.*--load-balancing-scheme=INTERNAL", "dry_run_supported": false},
-  {"query": "Set up traffic splitting between two backend services on the URL map", "should_trigger": true, "expected_cmd_pattern": "gcloud compute url-maps edit", "dry_run_supported": false},
-  {"query": "My external load balancer returns 502 Bad Gateway", "should_trigger": true, "expected_cmd_pattern": "gcloud compute backend-services describe", "dry_run_supported": false},
-  {"query": "How do I create a managed SSL certificate for load balancer?", "should_trigger": true, "expected_cmd_pattern": "gcloud compute ssl-certificates create.*--domains", "dry_run_supported": false},
-  {"query": "create a GKE cluster", "should_trigger": false},
-  {"query": "deploy to Cloud Run", "should_trigger": false},
-  {"query": "create a BigQuery dataset", "should_trigger": false},
-  {"query": "create a Cloud SQL instance", "should_trigger": false},
-  {"query": "create a Cloud Storage bucket", "should_trigger": false}
+  {
+    "query": "I need to set up an HTTPS load balancer for my web app",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud compute target-https-proxies create",
+    "dry_run_supported": false
+  },
+  {
+    "query": "\u5e2e\u6211\u521b\u5efa\u4e00\u4e2a\u8d1f\u8f7d\u5747\u8861\u5668\uff0c\u628a\u6d41\u91cf\u5206\u53d1\u5230\u591a\u53f0\u670d\u52a1\u5668",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud compute backend-services create",
+    "dry_run_supported": false
+  },
+  {
+    "query": "Create an external HTTP load balancer with URL map routing",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud compute url-maps create",
+    "dry_run_supported": false
+  },
+  {
+    "query": "My health check is failing for the backend service",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud compute health-checks describe",
+    "dry_run_supported": false
+  },
+  {
+    "query": "Add a new backend to the existing load balancer backend service",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud compute backend-services add-backend",
+    "dry_run_supported": false
+  },
+  {
+    "query": "Delete the forwarding rule my-prod-lb-https-rule",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud compute forwarding-rules delete",
+    "dry_run_supported": false,
+    "safety_check": true
+  },
+  {
+    "query": "Create an internal TCP load balancer for our database cluster",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud compute backend-services create.*--protocol=TCP",
+    "dry_run_supported": false
+  },
+  {
+    "query": "Set up SSL certificate for my load balancer with domain example.com",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud compute ssl-certificates create",
+    "dry_run_supported": false
+  },
+  {
+    "query": "Create a network endpoint group for my Cloud Run service",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud compute network-endpoint-groups create",
+    "dry_run_supported": false
+  },
+  {
+    "query": "\u5e2e\u6211\u914d\u7f6e URL \u6620\u5c04\uff0c\u8ba9 /api \u8def\u5f84\u8d70 api \u540e\u7aef\u670d\u52a1",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud compute url-maps add-path-matcher",
+    "dry_run_supported": false
+  },
+  {
+    "query": "Check the health status of my load balancer backend",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud compute backend-services get-health",
+    "dry_run_supported": false
+  },
+  {
+    "query": "I need to expose my internal service through an internal load balancer",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud compute forwarding-rules create.*--load-balancing-scheme=INTERNAL",
+    "dry_run_supported": false
+  },
+  {
+    "query": "Set up traffic splitting between two backend services on the URL map",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud compute url-maps edit",
+    "dry_run_supported": false
+  },
+  {
+    "query": "My external load balancer returns 502 Bad Gateway",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud compute backend-services describe",
+    "dry_run_supported": false
+  },
+  {
+    "query": "How do I create a managed SSL certificate for load balancer?",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud compute ssl-certificates create.*--domains",
+    "dry_run_supported": false
+  },
+  {
+    "query": "create a GKE cluster",
+    "should_trigger": false
+  },
+  {
+    "query": "deploy to Cloud Run",
+    "should_trigger": false
+  },
+  {
+    "query": "create a BigQuery dataset",
+    "should_trigger": false
+  },
+  {
+    "query": "create a Cloud SQL instance",
+    "should_trigger": false
+  },
+  {
+    "query": "create a Cloud Storage bucket",
+    "should_trigger": false
+  },
+  {
+    "query": "backend service web-bs has failing health checks, update the health check port",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud compute health-checks update http",
+    "dry_run_supported": true
+  },
+  {
+    "query": "backend capacity exhausted on mig-1, scale the MIG up to 10",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud compute instance-groups managed resize",
+    "dry_run_supported": true
+  },
+  {
+    "query": "managed SSL certificate app-cert is FAILED, recreate it",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud compute ssl-certificates create",
+    "dry_run_supported": true
+  },
+  {
+    "query": "create a Pub/Sub topic",
+    "should_trigger": false
+  }
 ]

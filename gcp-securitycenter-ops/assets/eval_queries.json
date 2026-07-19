@@ -178,5 +178,29 @@
     "should_trigger": false,
     "expected_cmd_pattern": "gcloud projects get-iam-policy",
     "dry_run_supported": true
+  },
+  {
+    "query": "Finding velocity spiked 3x in the last hour — detect the anomaly and dry-run a mute config for the low-severity active findings",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud scc findings list",
+    "dry_run_supported": true
+  },
+  {
+    "query": "Create a mute config to auto-suppress low-severity active findings after the human review gate passes",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud scc mute-configs create",
+    "dry_run_supported": false
+  },
+  {
+    "query": "Preview which active findings a proposed mute config would cover before applying it",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud scc mute-configs describe",
+    "dry_run_supported": true
+  },
+  {
+    "query": "Rotate the SOC webhook signing secret stored in Secret Manager",
+    "should_trigger": false,
+    "expected_cmd_pattern": "gcloud secrets versions add",
+    "dry_run_supported": false
   }
 ]

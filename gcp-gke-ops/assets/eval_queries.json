@@ -18,5 +18,11 @@
   {"query": "create a VM in GCE", "should_trigger": false},
   {"query": "set up a VPC network", "should_trigger": false},
   {"query": "deploy to Cloud Run", "should_trigger": false},
-  {"query": "create a BigQuery dataset", "should_trigger": false}
+  {"query": "create a BigQuery dataset", "should_trigger": false},
+  {"query": "GKE node is NotReady, enable autorepair on the node pool", "should_trigger": true, "expected_cmd_pattern": "gcloud container node-pools update.*--enable-autorepair", "dry_run_supported": false},
+  {"query": "node pool scale-up failed, resize the node pool to 8 nodes", "should_trigger": true, "expected_cmd_pattern": "gcloud container clusters resize.*--num-nodes", "dry_run_supported": false},
+  {"query": "pod is in CrashLoopBackOff, rollout restart the deployment", "should_trigger": true, "expected_cmd_pattern": "kubectl rollout restart deployment", "dry_run_supported": false},
+  {"query": "HPA hit max replicas, raise maxReplicas to 20", "should_trigger": true, "expected_cmd_pattern": "kubectl patch hpa.*maxReplicas", "dry_run_supported": false},
+  {"query": "detect GKE nodes that are NotReady", "should_trigger": true, "expected_cmd_pattern": "kubectl get nodes.*jq", "dry_run_supported": false},
+  {"query": "delete the GKE node pool to fix the anomaly", "should_trigger": false}
 ]

@@ -29,5 +29,10 @@
   {"query": "deploy a Cloud Run service", "should_trigger": false},
   {"query": "create a Spanner instance", "should_trigger": false},
   {"query": "create a Bigtable instance", "should_trigger": false},
-  {"query": "resize a persistent disk", "should_trigger": false}
+  {"query": "resize a persistent disk", "should_trigger": false},
+  {"query": "BigQuery slot quota exhausted, scale up the reservation by 100 slots", "should_trigger": true, "expected_cmd_pattern": "bq update.*--reservation_id.*--slots", "dry_run_supported": false},
+  {"query": "long-running query is blocking slots, cancel the job", "should_trigger": true, "expected_cmd_pattern": "bq cancel", "dry_run_supported": false},
+  {"query": "storage anomaly growth, set table expiration to 30 days", "should_trigger": true, "expected_cmd_pattern": "bq update.*--expiration", "dry_run_supported": false},
+  {"query": "detect BigQuery slot utilization anomaly with a dry run", "should_trigger": true, "expected_cmd_pattern": "bq query.*--dry_run", "dry_run_supported": true},
+  {"query": "delete the dataset to fix the storage anomaly", "should_trigger": false}
 ]
