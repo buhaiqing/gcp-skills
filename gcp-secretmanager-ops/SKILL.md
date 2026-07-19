@@ -636,3 +636,7 @@ SKILL.md has full flow; references/ doesn't repeat execution steps — only expa
 
 ### TE-7: Layer professional content
 Advanced AIOps/FinOps topics in `references/advanced/` (future expansion).
+
+## AIOps 自愈 (Self-Healing)
+
+> Secret Manager 异常检测与自愈锚点（版本禁用、访问权限漂移、密钥误销毁）见 [references/advanced/aiops-secretmanager-anomaly.md](references/advanced/aiops-secretmanager-anomaly.md)。所有自愈动作均带 **dry-run + 幂等 + 人工复核门禁**，破坏性操作标 **HALT**，绝不自动执行。凭证值一律遮蔽为 `****`。

@@ -594,3 +594,7 @@ Report: function names, states, URLs, runtimes. Note: gen1 functions use a diffe
 ## See Also
 
 Cross-product delegation targets (IAM, VPC, Secret Manager, Cloud Run, Monitoring, Eventarc, Scheduler, Cloud Build) are listed in [Delegation Rules](#delegation-rules) above. Full command references and recovery detail live in `references/` (see [References](#references)).
+
+## AIOps 自愈 (Self-Healing)
+
+> Cloud Functions 异常检测与自愈锚点（冷启动超时、并发超限、部署/回滚失败）见 [references/advanced/aiops-cloudfunctions-anomaly.md](references/advanced/aiops-cloudfunctions-anomaly.md)。所有自愈动作均带 **dry-run + 幂等 + 人工复核门禁**，破坏性操作标 **HALT**，绝不自动执行。

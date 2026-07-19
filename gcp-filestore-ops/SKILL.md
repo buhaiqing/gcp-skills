@@ -726,3 +726,7 @@ SKILL.md has full flow; references do not repeat SKILL.md content.
 - **Compute Engine**: [gcp-gce-ops](../gcp-gce-ops/SKILL.md) — Mount Filestore from GCE
 - **Monitoring**: [gcp-monitoring-ops](../gcp-monitoring-ops/SKILL.md) — Dashboards and alerts
 - **GCL Runner**: [gcp-gcl-runner-ops](../gcp-gcl-runner-ops/SKILL.md) — Execution quality gate
+
+## AIOps 自愈 (Self-Healing)
+
+> Cloud Filestore 异常检测与自愈锚点（文件共享容量耗尽、实例卡在 REPAIRING、备份失败）见 [references/advanced/aiops-filestore-anomaly.md](references/advanced/aiops-filestore-anomaly.md)。所有自愈动作均带 **dry-run + 幂等 + 人工复核门禁**，破坏性操作标 **HALT**，绝不自动执行。

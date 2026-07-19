@@ -600,3 +600,7 @@ SKILL.md has full flow; references do not repeat execution steps.
 - **DNS**: gcp-dns-ops — DNS records pointing at LB IP
 - **Monitoring**: gcp-monitoring-ops — Dashboards and alerts
 - **GCL Runner**: gcp-gcl-runner-ops — Execution quality gate
+
+## AIOps 自愈 (Self-Healing)
+
+> Cloud Load Balancing 异常检测与自愈锚点（健康检查失败、后端容量耗尽、SSL 证书过期）见 [references/advanced/aiops-lb-anomaly.md](references/advanced/aiops-lb-anomaly.md)。所有自愈动作均带 **dry-run + 幂等 + 人工复核门禁**，破坏性操作标 **HALT**，绝不自动执行。
