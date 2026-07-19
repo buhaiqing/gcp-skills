@@ -251,15 +251,46 @@ gcloud alpha monitoring policies create \
 
 ### Auto-Delete Old Objects
 
+> ⚠️ **IRREVERSIBLE** — this deletes live data. A real delete can ONLY run after a dry-run preview AND an explicit confirmation gate. Never print credential values (see AGENTS.md §0.1 — mask SA key content with `****`).
+
 ```bash
 #!/bin/bash
 # auto-delete-old-objects.sh
+# IRREVERSIBLE: deletes objects older than N days. Dry-run + explicit confirm required.
+# Credential safety: never echo $GOOGLE_APPLICATION_CREDENTIALS content (AGENTS.md §0.1).
+set -euo pipefail
 
-BUCKET=$1
-DAYS=$2
+BUCKET=${1:-}
+DAYS=${2:-}
+CONFIRM=${3:-}
 
-gsutil -m rm -r gs://$BUCKET/** \
-  "gs://$(date -v-${DAYS}d +%Y-%m-%d)T*"
+# HALT if required args missing
+if [[ -z "$BUCKET" || -z "$DAYS" ]]; then
+  echo "[ERROR] Usage: $0 <BUCKET> <DAYS> [--confirm]" >&2
+  exit 1
+fi
+
+PREFIX="gs://$BUCKET/**"
+CUTOFF="gs://$(date -v-${DAYS}d +%Y-%m-%d)T*"
+
+# DRY-RUN: list exactly what WOULD be deleted, no mutation
+echo "[DRY-RUN] Objects that would be deleted (older than $DAYS days):"
+gsutil -m ls "$PREFIX" "$CUTOFF" || true
+echo "[DRY-RUN] Command that would execute:"
+echo "  gsutil -m rm -r $PREFIX $CUTOFF"
+
+# GATE: require explicit --confirm after operator reviews the dry-run
+if [[ "$CONFIRM" != "--confirm" ]]; then
+  echo "[CONFIRM] Review the dry-run above. To apply, re-run with the exact flag:"
+  echo "  $0 $BUCKET $DAYS --confirm"
+  echo "[HALT] No delete performed."
+  exit 0
+fi
+
+# APPLY: real delete only after explicit confirmation
+echo "[EXEC] Deleting objects older than $DAYS days from gs://$BUCKET"
+gsutil -m rm -r "$PREFIX" "$CUTOFF"
+echo "[RESULT] Done."
 ```
 
 ### Auto-Transition to Nearline

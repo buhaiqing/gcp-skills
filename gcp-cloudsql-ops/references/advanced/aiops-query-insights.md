@@ -83,33 +83,35 @@ gcloud sql instances list --format="table(name,databaseVersion,region)"
 
 ```bash
 # Find slow queries using Cloud SQL Insights
+# NOTE: operationType is NOT a valid server-side --filter field for
+# `gcloud sql operations list`; the filter would silently return nothing.
+# List all operations and filter client-side with jq on the real JSON field.
 gcloud sql operations list \
   --instance=my-instance \
-  --filter="operationType=QUERY" \
-  --format="table(id,user,startTime,duration)"
+  --format="json" | \
+  jq -r '.[] | select(.operationType == "QUERY") | [.name, .user, .startTime, .duration] | @tsv'
 ```
 
 ### Query Performance Analysis
 
 ```bash
 # Analyze query performance
+# NOTE: operationType is filtered client-side (not a valid --filter field).
 gcloud sql operations list \
   --instance=my-instance \
-  --filter="operationType=QUERY" \
   --format="json" | \
-  jq '.[] | select(.duration > 300)' | \
-  jq '{id, user, query, duration}'
+  jq '.[] | select(.operationType == "QUERY" and .duration > 300) | {id, user, query, duration}'
 ```
 
 ### Performance Regression Detection
 
 ```bash
 # Detect performance regression (queries getting slower)
+# NOTE: operationType is filtered client-side (not a valid --filter field).
 gcloud sql operations list \
   --instance=my-instance \
-  --filter="operationType=QUERY" \
   --format="json" | \
-  jq 'group_by(.startTime[:10]) | map({day: .[0].startTime[:10], avgDuration: (map(.duration) | add / length)})' | \
+  jq '[.[] | select(.operationType == "QUERY")] | group_by(.startTime[:10]) | map({day: .[0].startTime[:10], avgDuration: (map(.duration) | add / length)})' | \
   jq '.[] | select(.avgDuration > 60)'
 ```
 
@@ -131,31 +133,34 @@ echo "Quota: $(gcloud sql instances describe my-instance --format="value(diskQuo
 
 ```bash
 # Predict storage growth (linear regression)
+# NOTE: `gcloud sql operations list` has NO valid server-side filter for the
+# storage operation type, nor a valid date-comparison filter expression — those
+# silently return nothing. Historical point-in-time disk usage is NOT available
+# via `gcloud sql instances describe` (it only reports the CURRENT usage). For
+# real trending, export disk metrics from Cloud Monitoring
+# (cloudsql.googleapis.com/database/disk/usage) to BigQuery and run the
+# regression there. Below is a CURRENT-USAGE snapshot plus the regression
+# helper, kept honest about its single-point limitation.
 cat << 'EOF' > predict_storage.sh
 #!/bin/bash
 INSTANCE=$1
-DAYS=$2
 
-# Get historical storage data
-for i in $(seq 0 $DAYS); do
-  DATE=$(date -v-${i}d +%Y-%m-%d)
-  USAGE=$(gcloud sql operations list --instance=$INSTANCE \
-    --filter="operationType=STORAGE" \
-    --filter="startTime<=$DATE" \
-    --format="value(diskUsageBytes)" | tail -1)
-  echo "$DATE $USAGE"
-done | awk '{
-  sum_x += NR; sum_y += $2; sum_xy += NR*$2; sum_x2 += NR*NR; n++
-}
-END {
-  slope = (n*sum_xy - sum_x*sum_y) / (n*sum_x2 - sum_x*sum_x)
-  intercept = (sum_y - slope*sum_x) / n
-  printf "Projected daily growth: %.2f bytes\n", slope
-  printf "Projected monthly growth: %.2f GB\n", slope*30/1073741824
-}'
+# Current disk usage snapshot (single point-in-time; not historical trend)
+USAGE=$(gcloud sql instances describe "$INSTANCE" --format="value(diskUsageBytes)")
+QUOTA=$(gcloud sql instances describe "$INSTANCE" --format="value(diskQuota)")
+echo "Current usage: $USAGE bytes"
+echo "Quota:         $QUOTA bytes"
+echo "Used pct:      $(awk "BEGIN { printf \"%.1f\", ($USAGE*100)/$QUOTA }")%"
+
+# For historical trend + linear regression, query exported Cloud Monitoring
+# metrics instead of operations list. Example (requires metrics export to bq):
+#   bq query --use_legacy_sql=false \
+#     "SELECT timestamp, value FROM \`project.dataset.cloudsql_disk_usage\`
+#      WHERE instance='$INSTANCE' ORDER BY timestamp"
+# Then fit slope/intercept over the returned (x=day_index, y=bytes) series.
 EOF
 chmod +x predict_storage.sh
-./predict_storage.sh my-instance 30
+./predict_storage.sh my-instance
 ```
 
 ## Connection Pool Monitoring
@@ -164,28 +169,28 @@ chmod +x predict_storage.sh
 
 ```bash
 # Monitor active connections
+# NOTE: operationType is filtered client-side (not a valid --filter field).
 gcloud sql operations list \
   --instance=my-instance \
-  --filter="operationType=CONNECT" \
-  --format="table(user,clientAddr,startTime)"
+  --format="json" | \
+  jq -r '.[] | select(.operationType == "CONNECT") | [.user, .clientAddr, .startTime] | @tsv'
 
 # Count connections by user
 gcloud sql operations list \
   --instance=my-instance \
-  --filter="operationType=CONNECT" \
   --format="json" | \
-  jq 'group_by(.user) | map({user: .[0].user, count: length})'
+  jq '[.[] | select(.operationType == "CONNECT")] | group_by(.user) | map({user: .[0].user, count: length})'
 ```
 
 ### Connection Pool Exhaustion Detection
 
 ```bash
 # Detect connection pool exhaustion
+# NOTE: operationType is filtered client-side (not a valid --filter field).
 gcloud sql operations list \
   --instance=my-instance \
-  --filter="operationType=CONNECT" \
   --format="json" | \
-  jq 'map(select(.status == "REJECTED")) | length' | \
+  jq '[.[] | select(.operationType == "CONNECT" and .status == "REJECTED")] | length' | \
   xargs -I {} echo "Rejected connections: {}"
 ```
 
@@ -246,14 +251,14 @@ fi
 # auto-kill-long-queries.sh
 
 INSTANCE=$1
+# NOTE: operationType is filtered client-side (not a valid --filter field).
 gcloud sql operations list --instance=$INSTANCE \
-  --filter="operationType=QUERY" \
   --format="json" | \
-  jq '.[] | select(.duration > 300) | .id' | \
-while read -r op_id; do
-  echo "Killing long query: $op_id"
-  gcloud sql operations cancel $INSTANCE $op_id
-done
+  jq -r '.[] | select(.operationType == "QUERY" and .duration > 300) | .id' | \
+  while read -r op_id; do
+    echo "Killing long query: $op_id"
+    gcloud sql operations cancel $INSTANCE $op_id
+  done
 ```
 
 ## Best Practices
@@ -353,16 +358,18 @@ gcloud sql instances describe "{{user.instance_name}}" \
 **Detection**
 ```bash
 # 识别落盘长事务 / 慢查询（duration > 300s）
+# NOTE: operationType 不是 `gcloud sql operations list` 的有效 server-side
+# --filter 字段，改为客户端 jq 过滤。
 gcloud sql operations list --instance="{{user.instance_name}}" \
-  --filter="operationType=QUERY" --format="json" \
-  | jq '.[] | select(.duration > 300) | {id, user, startTime, duration}'
+  --format="json" \
+  | jq '.[] | select(.operationType == "QUERY" and .duration > 300) | {id, user, startTime, duration}'
 ```
 
 **DRY-RUN preview** — 列出将被取消的操作，不实际取消：
 ```bash
 gcloud sql operations list --instance="{{user.instance_name}}" \
-  --filter="operationType=QUERY" --format="json" \
-  | jq -r '.[] | select(.duration > 300) | "[DRY-RUN] Would cancel op: \(.id) user=\(.user) duration=\(.duration)"'
+  --format="json" \
+  | jq -r '.[] | select(.operationType == "QUERY" and .duration > 300) | "[DRY-RUN] Would cancel op: \(.id) user=\(.user) duration=\(.duration)"'
 ```
 
 **Gate** — 非 HALT，需人工确认后放行（取消查询可能中断在途业务）。
@@ -371,8 +378,8 @@ gcloud sql operations list --instance="{{user.instance_name}}" \
 ```bash
 # 幂等：已取消的操作再次 cancel 返回 NOT_FOUND，无副作用
 gcloud sql operations list --instance="{{user.instance_name}}" \
-  --filter="operationType=QUERY" --format="json" \
-  | jq -r '.[] | select(.duration > 300) | .id' \
+  --format="json" \
+  | jq -r '.[] | select(.operationType == "QUERY" and .duration > 300) | .id' \
   | while read -r op_id; do
       gcloud sql operations cancel "{{user.instance_name}}" "$op_id" \
         --project="{{env.CLOUDSDK_CORE_PROJECT}}" --format=json || true

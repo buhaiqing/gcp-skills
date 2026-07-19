@@ -7,6 +7,7 @@ Advanced operational runbooks extending the core Terraform lifecycle management.
 | File | Description |
 |------|-------------|
 | [finops-cost-from-plan.md](./finops-cost-from-plan.md) | Parse `terraform show -json plan` to estimate costs using Infracost or GCP Pricing API; integrate into CI/CD with pre-apply cost gates |
+| [aiops-drift-detection.md](./aiops-drift-detection.md) | AIOps drift detection via `terraform plan -detailed-exitcode`; scheduled plan runs; IaC security scan on plan JSON (public buckets, missing encryption, open firewalls) |
 | [validation-scripts-ci-cd.md](./validation-scripts-ci-cd.md) | Standalone validation scripts for CI/CD: `terraform fmt -check`, `terraform validate`, Checkov security scanning, Terratest unit testing |
 | [terraform-import-resources.md](./terraform-import-resources.md) | `terraform import` for Cloud SQL, GKE, GCS, BigQuery with examples, state file management, and bulk import patterns |
 | [workspace-team-collaboration.md](./workspace-team-collaboration.md) | Terraform workspace-based team collaboration: workspace isolation, state locking with GCS/DynamoDB, team IAM policies, CI/CD integration |
@@ -19,6 +20,7 @@ These runbooks are loaded **on-demand** when the referenced operation is needed:
 | Operation | Load Condition |
 |-----------|----------------|
 | FinOps cost estimation | User asks about cost implications before apply |
+| Drift detection / IaC security | Scheduled drift check or pre-apply security scan of planned resources |
 | Validation scripts | CI/CD pipeline or pre-apply checks |
 | Resource import | `terraform import` or adopting existing resources |
 | Workspace management | Multi-environment or team collaboration |

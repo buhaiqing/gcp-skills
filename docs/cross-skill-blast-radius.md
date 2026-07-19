@@ -3,7 +3,7 @@
 > **Purpose:** 在 27 个 `gcp-*-ops` skill 的孤立 `aiops-*.md` 之上，提供跨域依赖 / blast-radius / 降级顺序的全局视图。当单点变更或故障沿上游→下游扩散时，本文件给出关联排障的入口与告警锚点。
 > **Version:** 1.0.0
 > **Last Updated:** 2026-07-19
-> **Scope:** 仅基于已核查的 10 个 aiops 文档锚点（vpc / iam / billing / cloudbuild / gcs / bigquery / gke / cloudsql / pubsub / securitycenter）。未列锚点的产品（LB / GCE / CDN / DNS）暂无独立 aiops 文档，其关联排障回退到最近的锚点 skill，详见各链路「回退」标注。
+> **Scope:** 覆盖全部 27 个 `gcp-*-ops` skill 的跨域关联。已核查锚点（vpc / iam / billing / cloudbuild / gcs / bigquery / gke / cloudsql / pubsub / securitycenter）有独立 aiops 文档；其余产品（gce / lb / logging / kms / memorystore / dns / cloudrun / cloudfunctions / monitoring / secretmanager / cdn / securitycenter / filestore / gcl-runner / terraform / armor / composer）暂无独立 aiops 文档，其关联排障回退到最近的锚点 skill，详见各链路「回退」标注。
 
 ---
 
@@ -177,6 +177,267 @@ gcloud logging read \
 - [gcp-gcs-ops AIOps](gcp-gcs-ops/references/advanced/aiops-storage-anomaly.md)
 - [gcp-bigquery-ops AIOps](gcp-bigquery-ops/references/advanced/aiops-bigquery-anomaly.md)
 - [docs/error-taxonomy.md](error-taxonomy.md)（Permission / Authentication 维度）
+
+---
+
+## 链路 4：LB / CDN / Armor（边缘 / 流量层）
+
+### 拓扑（上游 → 下游）
+
+```
+LB (转发规则 / 后端服务 / NEG / SSL 证书)
+   ├──► CDN (缓存策略、回源 Host、签名 URL)
+   ├──► Armor (安全策略、WAF 规则、DDoS 防护)
+   └──► GCE / GKE 后端 (实例组 / NEG 健康检查)
+```
+
+> **回退说明**：LB / CDN / Armor 暂无独立 aiops 文档。LB 后端异常排障回退到 `gcp-gce-ops` / `gcp-gke-ops` 的健康检查章节；CDN 回源异常回退到 `gcp-gcs-ops`（回源源站）；Armor 策略误杀排障回退到 `gcp-vpc-ops` 防火墙章节。
+
+### Blast radius
+
+| 上游变更 | 影响边界 | 典型 error-taxonomy 维度 |
+|----------|----------|--------------------------|
+| LB 后端服务摘除 / NEG 清空 | CDN 回源 502、Armor 转发目标不可达 | `UNAVAILABLE` (Network) |
+| SSL 证书过期 / 误删 | 全站 TLS 握手失败、CDN 回源 525 | `FAILED_PRECONDITION` (Config) |
+| Armor 安全策略误配（deny 过宽） | 合法流量被 403，LB 转发被拦截 | `PERMISSION_DENIED` (Permission) |
+| CDN 缓存策略误清 | 回源压力骤增、源站限流 `RATE_LIMITED` | `RATE_LIMITED` (Rate Limit) |
+
+### 降级顺序建议
+
+1. **先保**：恢复 LB 后端健康（保住数据平面入口）。
+2. **次保**：回滚 Armor 过宽 deny 规则（恢复合法流量）。
+3. **后弃**：下调 CDN 日志采样率（省成本，不阻断业务）。
+
+### 锚点链接
+
+- [gcp-vpc-ops AIOps](gcp-vpc-ops/references/advanced/aiops-network-anomaly.md)（Armor 回退）
+- [gcp-gcs-ops AIOps](gcp-gcs-ops/references/advanced/aiops-storage-anomaly.md)（CDN 回源）
+- [gcp-gke-ops AIOps](gcp-gke-ops/references/advanced/aiops-gke-anomaly.md)（NEG 后端）
+
+---
+
+## 链路 5：Pub/Sub → Cloud Run / Cloud Functions / BigQuery（事件 / 数据管道层）
+
+### 拓扑（上游 → 下游）
+
+```
+Pub/Sub (topic / subscription / schema / sink)
+   ├──► Cloud Run (push 订阅触发服务)
+   ├──► Cloud Functions (trigger 触发函数)
+   └──► BigQuery (subscription sink 写入表)
+```
+
+> **回退说明**：Cloud Run / Cloud Functions 暂无独立 aiops 文档。函数/服务调用失败排障回退到 `gcp-logging-ops`（调用日志）与 `gcp-monitoring-ops`（延迟/错误率指标）；BigQuery sink 有独立锚点。
+
+### Blast radius
+
+| 上游变更 | 影响边界 | 典型 error-taxonomy 维度 |
+|----------|----------|--------------------------|
+| topic 删除 / 重命名 | 订阅者 `NOT_FOUND`、Cloud Run/Functions 触发中断 | `NOT_FOUND` (Resource State) |
+| subscription 推送端点不可达 | Cloud Run 重试堆积、消息积压 `UNAVAILABLE` | `UNAVAILABLE` (Network) |
+| schema 变更不兼容 | 消息校验失败、Functions 解析异常 `INVALID_ARGUMENT` | `INVALID_ARGUMENT` (Config) |
+| BigQuery sink IAM 收紧 | 订阅写入表 `PERMISSION_DENIED` | `PERMISSION_DENIED` (Permission) |
+
+### 降级顺序建议
+
+1. **先保**：恢复 topic / subscription（保住事件管道，数据平面优先）。
+2. **次保**：修复 Cloud Run / Functions 端点可达性（恢复消费）。
+3. **后弃**：暂停 BigQuery sink 增量分析（延迟可接受）。
+
+### 锚点链接
+
+- [gcp-bigquery-ops AIOps](gcp-bigquery-ops/references/advanced/aiops-bigquery-anomaly.md)
+- [gcp-logging-ops AIOps](gcp-logging-ops/references/advanced/aiops-logging-anomaly.md)（回退）
+- [gcp-monitoring-ops AIOps](gcp-monitoring-ops/references/advanced/aiops-monitoring-anomaly.md)（回退）
+
+---
+
+## 链路 6：KMS / Secret Manager → 加密资源（密钥 / 机密层）
+
+### 拓扑（上游 → 下游）
+
+```
+KMS (key ring / crypto key / version)
+   ├──► GCS (CMEK 加密 bucket)
+   ├──► Cloud SQL (CMEK 实例)
+   └──► Secret Manager (secret / version)
+Secret Manager
+   ├──► Cloud Run / Cloud Functions (挂载机密)
+   └──► Composer (connection 密码)
+```
+
+> **回退说明**：KMS / Secret Manager 暂无独立 aiops 文档。密钥禁用导致加密资源不可读排障回退到对应资源 skill（GCS / Cloud SQL）；机密挂载失败回退到 `gcp-logging-ops`。
+
+### Blast radius
+
+| 上游变更 | 影响边界 | 典型 error-taxonomy 维度 |
+|----------|----------|--------------------------|
+| KMS key version 禁用 / 销毁 | CMEK bucket / 实例读取 `PERMISSION_DENIED` 或 `FAILED_PRECONDITION` | `FAILED_PRECONDITION` (Config) |
+| Secret version 禁用 / 删除 | Cloud Run / Functions 启动拉取机密失败 `NOT_FOUND` | `NOT_FOUND` (Resource State) |
+| KMS key 轮转 | 旧密文短暂不可解密、依赖服务重试 `UNAVAILABLE` | `UNAVAILABLE` (Network) |
+| Secret IAM 收紧 | Composer connection 取密 `PERMISSION_DENIED` | `PERMISSION_DENIED` (Permission) |
+
+### 降级顺序建议
+
+1. **先保**：重新启用 KMS key version / Secret version（恢复加密资源可读）。
+2. **次保**：恢复 Secret IAM binding（恢复服务机密挂载）。
+3. **后弃**：暂停非关键 CMEK 审计扫描。
+
+### 锚点链接
+
+- [gcp-gcs-ops AIOps](gcp-gcs-ops/references/advanced/aiops-storage-anomaly.md)（CMEK）
+- [gcp-cloudsql-ops AIOps](gcp-cloudsql-ops/references/advanced/aiops-query-insights.md)（CMEK）
+- [gcp-logging-ops AIOps](gcp-logging-ops/references/advanced/aiops-logging-anomaly.md)（机密挂载回退）
+
+---
+
+## 链路 7：Composer → GCS / Pub/Sub / BigQuery（编排层）
+
+### 拓扑（上游 → 下游）
+
+```
+Composer (Airflow environment / DAG / connection / PyPI)
+   ├──► GCS (DAG bucket / 数据落地)
+   ├──► Pub/Sub (operator 发布消息)
+   └──► BigQuery (operator 执行查询 / 写入)
+```
+
+> **回退说明**：Composer 暂无独立 aiops 文档。DAG 失败排障回退到 `gcp-gcs-ops`（DAG bucket）、`gcp-pubsub-ops`、`gcp-bigquery-ops` 各自锚点；环境创建失败回退到 `gcp-vpc-ops`（私有 IP / 子网）。
+
+### Blast radius
+
+| 上游变更 | 影响边界 | 典型 error-taxonomy 维度 |
+|----------|----------|--------------------------|
+| DAG bucket 删除 / IAM 收紧 | DAG 同步失败、任务 `NOT_FOUND` / `PERMISSION_DENIED` | `NOT_FOUND` (Resource State) |
+| Composer connection 密码失效 | BigQuery / Pub/Sub operator 认证 `AUTH_FAILED` | `AUTH_FAILED` (Auth) |
+| PyPI 包冲突 / 环境重建失败 | 所有 DAG 调度中断 `FAILED_PRECONDITION` | `FAILED_PRECONDITION` (Config) |
+| 私有环境子网 CIDR 耗尽 | 环境创建 `INSUFFICIENT_CIDR` 失败 | `FAILED_PRECONDITION` (Config) |
+
+### 降级顺序建议
+
+1. **先保**：恢复 DAG bucket IAM / connection 密码（恢复调度与下游写入）。
+2. **次保**：重建 PyPI 依赖（恢复 DAG 执行）。
+3. **后弃**：暂停非关键 DAG 回填作业。
+
+### 锚点链接
+
+- [gcp-gcs-ops AIOps](gcp-gcs-ops/references/advanced/aiops-storage-anomaly.md)
+- [gcp-bigquery-ops AIOps](gcp-bigquery-ops/references/advanced/aiops-bigquery-anomaly.md)
+- [gcp-pubsub-ops AIOps](gcp-pubsub-ops/references/advanced/aiops-pubsub-anomaly.md)
+- [gcp-vpc-ops AIOps](gcp-vpc-ops/references/advanced/aiops-network-anomaly.md)（私有环境回退）
+
+---
+
+## 链路 8：Monitoring / Logging / Security Center（观测 / 安全层）
+
+### 拓扑（上游 → 下游）
+
+```
+Monitoring (metric / dashboard / alert policy)
+   ├──► Logging (log-based metric / sink / exclusion)
+   └──► Security Center (finding / mute rule / source)
+```
+
+> **回退说明**：Monitoring / Logging / Security Center 暂无独立 aiops 文档（Security Center 有锚点）。告警/日志管道异常排障回退到 `gcp-logging-ops` 与 `gcp-monitoring-ops`；安全发现误报回退到 `gcp-securitycenter-ops`。
+
+### Blast radius
+
+| 上游变更 | 影响边界 | 典型 error-taxonomy 维度 |
+|----------|----------|--------------------------|
+| Logging sink 删除 | Monitoring 日志指标断流、告警静默 `NOT_FOUND` | `NOT_FOUND` (Resource State) |
+| Alert policy 误删 | 下游故障无告警、MTTR 上升 | `FAILED_PRECONDITION` (Config) |
+| Log exclusion 过宽 | 安全相关日志被丢弃、Security Center 漏检 | `FAILED_PRECONDITION` (Config) |
+| Mute rule 过宽 | 真实发现被静默 `PERMISSION_DENIED`（误判） | `PERMISSION_DENIED` (Permission) |
+
+### 降级顺序建议
+
+1. **先保**：恢复 Logging sink（保住指标与告警数据源）。
+2. **次保**：回滚过宽 exclusion / mute rule（恢复检测覆盖）。
+3. **后弃**：暂停非关键 dashboard 刷新。
+
+### 锚点链接
+
+- [gcp-securitycenter-ops AIOps](gcp-securitycenter-ops/references/advanced/aiops-security-anomaly.md)
+- [gcp-logging-ops AIOps](gcp-logging-ops/references/advanced/aiops-logging-anomaly.md)（回退）
+- [gcp-monitoring-ops AIOps](gcp-monitoring-ops/references/advanced/aiops-monitoring-anomaly.md)（回退）
+
+---
+
+## 链路 9：Memorystore / Filestore / Cloud SQL（数据层）
+
+### 拓扑（上游 → 下游）
+
+```
+Memorystore (Redis instance / failover)
+   ├──► GCE / GKE (应用缓存客户端)
+Filestore (instance / file share / NFS)
+   ├──► GCE / GKE (挂载 NFS 的工作负载)
+Cloud SQL (instance / replica / backup)
+   ├──► Cloud Run / GKE (应用数据库连接)
+   └──► Composer (connection 数据源)
+```
+
+> **回退说明**：Memorystore / Filestore 暂无独立 aiops 文档。Redis 故障排障回退到 `gcp-gce-ops` / `gcp-gke-ops` 客户端连接章节；Filestore 挂载失败回退到 `gcp-vpc-ops`（NFS 端口 / 防火墙）；Cloud SQL 有独立锚点。
+
+### Blast radius
+
+| 上游变更 | 影响边界 | 典型 error-taxonomy 维度 |
+|----------|----------|--------------------------|
+| Memorystore 故障转移 / 实例删除 | 应用缓存击穿、GKE Pod 连接 `UNAVAILABLE` | `UNAVAILABLE` (Network) |
+| Filestore 实例删除 / 配额满 | GCE 挂载点 IO 错误 `STORAGE_FULL` / `NOT_FOUND` | `STORAGE_FULL` (Resource State) |
+| Cloud SQL 主实例删除 / 只读切换 | 应用连接 `UNAVAILABLE`、Composer DAG 失败 | `UNAVAILABLE` (Network) |
+| Cloud SQL 存储满 | 写入 `STORAGE_FULL`、备份 `BACKUP_FAILED` | `STORAGE_FULL` (Resource State) |
+
+### 降级顺序建议
+
+1. **先保**：恢复 Cloud SQL 主实例 / Memorystore（保住应用数据平面）。
+2. **次保**：扩容 Filestore / Cloud SQL 存储（恢复写入）。
+3. **后弃**：暂停非关键备份保留策略。
+
+### 锚点链接
+
+- [gcp-cloudsql-ops AIOps](gcp-cloudsql-ops/references/advanced/aiops-query-insights.md)
+- [gcp-gke-ops AIOps](gcp-gke-ops/references/advanced/aiops-gke-anomaly.md)
+- [gcp-vpc-ops AIOps](gcp-vpc-ops/references/advanced/aiops-network-anomaly.md)（Filestore NFS 回退）
+
+---
+
+## 链路 10：Cloud Build / Terraform（交付 / IaC 层）
+
+### 拓扑（上游 → 下游）
+
+```
+Cloud Build (build / trigger / worker pool)
+   ├──► GCS (构建产物 / 源码 tarball)
+   ├──► Artifact Registry / Container (镜像推送)
+   └──► Cloud Run / GKE (部署目标)
+Terraform (plan / apply / destroy / state)
+   ├──► 任意 gcp-*-ops 资源 (声明式创建/变更)
+   └──► GCS (remote state bucket)
+```
+
+> **回退说明**：Cloud Build / Terraform 暂无独立 aiops 文档。构建失败排障回退到 `gcp-logging-ops`（构建日志）与 `gcp-gcs-ops`（产物）；Terraform state 冲突回退到 `gcp-gcs-ops`（remote state bucket）与 `gcp-iam-ops`（state 锁 IAM）。
+
+### Blast radius
+
+| 上游变更 | 影响边界 | 典型 error-taxonomy 维度 |
+|----------|----------|--------------------------|
+| 构建产物 bucket 删除 | 部署拉取镜像/包 `NOT_FOUND` | `NOT_FOUND` (Resource State) |
+| 私有 worker pool 子网耗尽 | 构建排队失败 `FAILED_PRECONDITION` | `FAILED_PRECONDITION` (Config) |
+| Terraform remote state 锁冲突 | `apply` 并发 `ABORTED` | `ABORTED` (Dependency) |
+| Terraform 误 `destroy` 资源 | 下游服务 `NOT_FOUND`（需 HALT 人工确认） | `NOT_FOUND` (Resource State) |
+
+### 降级顺序建议
+
+1. **先保**：恢复 remote state bucket / 释放 state 锁（恢复 IaC 可控性）。
+2. **次保**：恢复构建产物 bucket（恢复部署链路）。
+3. **后弃**：暂停非关键 nightly 构建。
+
+### 锚点链接
+
+- [gcp-gcs-ops AIOps](gcp-gcs-ops/references/advanced/aiops-storage-anomaly.md)
+- [gcp-logging-ops AIOps](gcp-logging-ops/references/advanced/aiops-logging-anomaly.md)（构建日志回退）
+- [gcp-iam-ops AIOps](gcp-iam-ops/references/advanced/aiops-iam-anomaly.md)（state 锁回退）
 
 ---
 

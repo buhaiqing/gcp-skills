@@ -254,22 +254,72 @@ fi
 
 ### Auto-Cancel Stuck Messages
 
+> **P0 — message-loss guard:** This script operates ONLY on a **dead-letter (DLQ) subscription**, never the primary subscription. A blind `pull --auto-ack` on the primary subscription ACKs (deletes) every in-flight message it pulls — including healthy messages that are merely being processed. That is silent data loss. The contract below follows the Self-Healing Playbook: **detection → DRY-RUN preview → gate → idempotent apply**.
+
 ```bash
 #!/bin/bash
 # auto-cancel-stuck-messages.sh
+# Cancels (acknowledges) ONLY messages on a DEAD-LETTER subscription that have
+# exceeded MAX_AGE. The primary subscription is NEVER touched.
+#
+# Usage:
+#   ./auto-cancel-stuck-messages.sh <DLQ_SUBSCRIPTION> [--confirm]
+#   ./auto-cancel-stuck-messages.sh <PRIMARY_SUBSCRIPTION> [--confirm]   # DLQ derived as <PRIMARY>-dead-letter
+#
+# Default mode is DRY-RUN: it prints the message IDs it WOULD acknowledge and
+# exits. Pass --confirm to actually call `gcloud pubsub subscriptions acknowledge`.
 
-SUBSCRIPTION=$1
-MAX_AGE=3600
+set -euo pipefail
 
-gcloud pubsub subscriptions pull $SUBSCRIPTION --limit=100 --auto-ack | \
-  while read -r message; do
-    AGE=$(echo $message | jq '.publishTime' | \
-      jq -r 'fromdateiso8601 - now' | \
-      jq 'if . > '$MAX_AGE' then true else false end')
-    if [ "$AGE" = "true" ]; then
-      echo "Cancelling stuck message: $(echo $message | jq '.messageId')"
-    fi
-  done
+DLQ_SUBSCRIPTION=${1:-}
+MAX_AGE=3600            # seconds; messages older than this on the DLQ are stuck
+CONFIRM=false
+[ "${2:-}" = "--confirm" ] && CONFIRM=true
+
+# Validate input
+if [ -z "$DLQ_SUBSCRIPTION" ]; then
+  echo "ERROR: DLQ subscription argument is required." >&2
+  echo "Usage: $0 <DLQ_SUBSCRIPTION> [--confirm]" >&2
+  exit 1
+fi
+
+# Pull WITHOUT auto-ack so we can inspect before any mutation.
+# --format=json gives structured records we parse with jq.
+PULLED=$(gcloud pubsub subscriptions pull "$DLQ_SUBSCRIPTION" \
+  --limit=100 --format=json)
+
+# Extract (messageId, ackId, age_seconds) tuples for stuck messages only.
+# Valid jq date math: parse publishTime ISO8601 -> epoch via strptime|mktime,
+# then age = now - publish_epoch.
+STUCK=$(echo "$PULLED" | jq -r --argjson max_age "$MAX_AGE" '
+  .[]?
+  | .message as $m
+  | (.message.publishTime | strptime("%Y-%m-%dT%H:%M:%SZ") | mktime) as $pub
+  | (now - $pub) as $age
+  | select($age > $max_age)
+  | "\(.ackId)\t\(.message.messageId)\t\($age | floor)"')
+
+if [ -z "$STUCK" ]; then
+  echo "[DRY-RUN] No stuck messages (age > ${MAX_AGE}s) found on DLQ: $DLQ_SUBSCRIPTION"
+  exit 0
+fi
+
+echo "[DRY-RUN] Would acknowledge the following stuck messages on DLQ $DLQ_SUBSCRIPTION:"
+echo "$STUCK" | while IFS=$'\t' read -r ack_id msg_id age; do
+  echo "  messageId=$msg_id age=${age}s ackId=$ack_id"
+done
+
+if [ "$CONFIRM" != "true" ]; then
+  echo "[GATE] DRY-RUN only. Re-run with --confirm to acknowledge (human review required)."
+  exit 0
+fi
+
+# Idempotent apply: acknowledge only the selected ackIds. Re-running is a no-op
+# because already-acked messages are no longer returned by pull.
+echo "$STUCK" | while IFS=$'\t' read -r ack_id msg_id age; do
+  gcloud pubsub subscriptions acknowledge "$DLQ_SUBSCRIPTION" --ack-ids="$ack_id"
+  echo "[APPLY] Acknowledged stuck messageId=$msg_id on DLQ $DLQ_SUBSCRIPTION"
+done
 ```
 
 ## Self-Healing Playbook
