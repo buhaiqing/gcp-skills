@@ -137,6 +137,6 @@ gcloud compute ssl-certificates create "{{user.certificate_name}}-new" \
 
 ## Cross-Skill References
 
-- Error taxonomy: [../../docs/error-taxonomy.md](../../docs/error-taxonomy.md)
-- Blast radius map: [../../docs/cross-skill-blast-radius.md](../../docs/cross-skill-blast-radius.md)
-- Related skills: [gcp-gce-ops](../gcp-gce-ops/SKILL.md) · [gcp-dns-ops](../gcp-dns-ops/SKILL.md) · [gcp-vpc-ops](../gcp-vpc-ops/SKILL.md) · [gcp-cdn-ops](../gcp-cdn-ops/SKILL.md)
+- Error taxonomy: [../../docs/error-taxonomy.md](../../../docs/error-taxonomy.md)
+- Blast radius map: [../../docs/cross-skill-blast-radius.md](../../../docs/cross-skill-blast-radius.md)
+- Related skills: [gcp-gce-ops](../../../gcp-gce-ops/SKILL.md) · [gcp-dns-ops](../../../gcp-dns-ops/SKILL.md) · [gcp-vpc-ops](../../../gcp-vpc-ops/SKILL.md) · [gcp-cdn-ops](../../../gcp-cdn-ops/SKILL.md)

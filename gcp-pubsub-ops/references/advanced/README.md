@@ -11,4 +11,4 @@
 | Schema Management | `schema-management.md` | Schema CRUD operations, Avro/Protobuf examples, revision history, compatibility checking |
 | Streaming Pull Deep Dive | `streaming-pull-deep-dive.md` | Exactly-once delivery, DLQ setup, retry policies, flow control, consumer health monitoring |
 
-> Topics marked ⬜ in [TODO.md](../../TODO.md) are planned but not yet authored.
+> Topics marked ⬜ in [TODO.md](../../../TODO.md) are planned but not yet authored.

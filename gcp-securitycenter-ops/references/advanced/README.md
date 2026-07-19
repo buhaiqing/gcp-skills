@@ -11,4 +11,4 @@
 | SCC Enterprise | `scc-enterprise.md` | Enterprise tier features, attack path analysis, Chronicle integration |
 | SDK-Only Operations | `sdk-operations.md` | Custom modules, effective modules, resource value configs |
 
-> Topics marked ⬜ in [TODO.md](../../TODO.md) are planned but not yet authored.
+> Topics marked ⬜ in [TODO.md](../../../TODO.md) are planned but not yet authored.

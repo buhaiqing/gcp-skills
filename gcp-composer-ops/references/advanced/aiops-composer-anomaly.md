@@ -254,9 +254,9 @@ Map Composer self-healing outcomes to `docs/error-taxonomy.md` canonical codes:
 
 ## See Also
 
-- [Error Taxonomy (authoritative)](../../docs/error-taxonomy.md) — canonical recovery verbs and idempotency flags
-- [Cross-Skill Blast Radius](../../docs/cross-skill-blast-radius.md) (⬜ planned) — aggregated dependency impact across skills
+- [Error Taxonomy (authoritative)](../../../docs/error-taxonomy.md) — canonical recovery verbs and idempotency flags
+- [Cross-Skill Blast Radius](../../../docs/cross-skill-blast-radius.md) (⬜ planned) — aggregated dependency impact across skills
 - [Troubleshooting Guide](../troubleshooting.md) — product-specific diagnosis
 - [Advanced DAG Patterns](advanced-dag-patterns.md) — DAG design to reduce failure blast radius
-- [gcp-gke-ops](../../gcp-gke-ops/SKILL.md) — delegate node-pool remediation
-- [gcp-gcs-ops](../../gcp-gcs-ops/SKILL.md) — delegate DAG-bucket IAM remediation
+- [gcp-gke-ops](../../../gcp-gke-ops/SKILL.md) — delegate node-pool remediation
+- [gcp-gcs-ops](../../../gcp-gcs-ops/SKILL.md) — delegate DAG-bucket IAM remediation

@@ -392,6 +392,6 @@ terraform state list | grep budget
 
 ## See Also
 
-- [FinOps Cost Analysis](../finops-cost-analysis.md)
+- [FinOps Cost Analysis](finops-cost-analysis.md)
 - [Google Cloud Budgets Terraform Provider](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/billing_account_budget)
 - [Google Cloud Budgets Documentation](https://cloud.google.com/cost-management/docs/how-to/budgets)

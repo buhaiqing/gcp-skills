@@ -195,5 +195,5 @@ gcloud compute backend-services describe "{{user.backend_name}}" \
 - [CDN Anomaly Detection](./aiops-cdn-anomaly-detection.md)
 - [CDN Auto-Remediation](./aiops-cdn-auto-remediation.md)
 - [CDN Cost Analysis](./finops-cdn-cost-analysis.md)
-- [Error Taxonomy](../../docs/error-taxonomy.md)
-- [Cross-Skill Blast Radius](../../docs/cross-skill-blast-radius.md)
+- [Error Taxonomy](../../../docs/error-taxonomy.md)
+- [Cross-Skill Blast Radius](../../../docs/cross-skill-blast-radius.md)

@@ -9,4 +9,4 @@
 | AIOps Anomaly Detection | `aiops-billing-anomaly.md` | Spend anomaly detection, budget threshold prediction, cost spike alerting |
 | FinOps Cost Optimization | `finops-cost-analysis.md` | Committed use discounts, sustained use optimization, cost allocation |
 
-> Topics marked ⬜ in [TODO.md](../../TODO.md) are planned but not yet authored.
+> Topics marked ⬜ in [TODO.md](../../../TODO.md) are planned but not yet authored.

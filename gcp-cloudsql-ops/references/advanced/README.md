@@ -13,4 +13,4 @@
 | Rotate Server CA | `rotate-server-ca.md` | Server CA rotation, intermediate CA, application restart |
 | Reschedule Maintenance | `reschedule-maintenance.md` | Maintenance window configuration, in-place vs blue-green |
 
-> Topics marked ⬜ in [TODO.md](../../TODO.md) are planned but not yet authored.
+> Topics marked ⬜ in [TODO.md](../../../TODO.md) are planned but not yet authored.

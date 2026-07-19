@@ -151,7 +151,7 @@ Every self-healing action in this runbook obeys three gates:
 [HH:MM:SS] [RESULT] policy_enabled=false
 ```
 
-> **Blast radius:** Silencing a policy removes detection coverage for its condition during the mute window. Always record the mute window and auto-unsilence. See [docs/cross-skill-blast-radius.md](../docs/cross-skill-blast-radius.md).
+> **Blast radius:** Silencing a policy removes detection coverage for its condition during the mute window. Always record the mute window and auto-unsilence. See [docs/cross-skill-blast-radius.md](../../../docs/cross-skill-blast-radius.md).
 
 ## Cross-Skill Trigger Map
 
@@ -189,7 +189,7 @@ Alert fires (monitoring)
 ## See Also
 
 - [Cloud Monitoring Docs](https://cloud.google.com/monitoring/docs)
-- [VPC AIOps Anomaly](../gcp-vpc-ops/references/advanced/aiops-network-anomaly.md)
-- [Security Center Auto-Mute](../../gcp-securitycenter-ops/SKILL.md) — out-of-scope auto-mute logic
-- [Error Taxonomy (repo-wide)](../../docs/error-taxonomy.md)
-- [Cross-Skill Blast Radius](../../docs/cross-skill-blast-radius.md)
+- [VPC AIOps Anomaly](../../../gcp-vpc-ops/references/advanced/aiops-network-anomaly.md)
+- [Security Center Auto-Mute](../../../gcp-securitycenter-ops/SKILL.md) — out-of-scope auto-mute logic
+- [Error Taxonomy (repo-wide)](../../../docs/error-taxonomy.md)
+- [Cross-Skill Blast Radius](../../../docs/cross-skill-blast-radius.md)

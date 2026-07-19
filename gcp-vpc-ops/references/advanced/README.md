@@ -11,4 +11,4 @@
 | AIOps Anomaly Detection | `aiops-network-anomaly.md` | VPC flow log analysis, connectivity anomaly detection |
 | FinOps Cost Optimization | `finops-vpc-cost.md` | NAT/VPN cost analysis, flow log cost optimization |
 
-> Topics marked ⬜ in [TODO.md](../../TODO.md) are planned but not yet authored.
+> Topics marked ⬜ in [TODO.md](../../../TODO.md) are planned but not yet authored.

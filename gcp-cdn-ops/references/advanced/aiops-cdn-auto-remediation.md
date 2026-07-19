@@ -193,5 +193,5 @@ Verify status is `DONE`. **Idempotent**: re-invalidating same path is safe (cach
 - [CDN Anomaly Detection](./aiops-cdn-anomaly-detection.md)
 - [CDN Prediction](./aiops-cdn-prediction.md)
 - [CDN Cost Analysis](./finops-cdn-cost-analysis.md)
-- [Error Taxonomy](../../docs/error-taxonomy.md)
-- [Cross-Skill Blast Radius](../../docs/cross-skill-blast-radius.md)
+- [Error Taxonomy](../../../docs/error-taxonomy.md)
+- [Cross-Skill Blast Radius](../../../docs/cross-skill-blast-radius.md)

@@ -131,6 +131,6 @@ gcloud dns managed-zones update "{{user.zone_name}}" \
 
 ## Cross-Skill References
 
-- Error taxonomy: [../../docs/error-taxonomy.md](../../docs/error-taxonomy.md)
-- Blast radius map: [../../docs/cross-skill-blast-radius.md](../../docs/cross-skill-blast-radius.md)
-- Related skills: [gcp-lb-ops](../gcp-lb-ops/SKILL.md) · [gcp-cdn-ops](../gcp-cdn-ops/SKILL.md) · [gcp-vpc-ops](../gcp-vpc-ops/SKILL.md)
+- Error taxonomy: [../../docs/error-taxonomy.md](../../../docs/error-taxonomy.md)
+- Blast radius map: [../../docs/cross-skill-blast-radius.md](../../../docs/cross-skill-blast-radius.md)
+- Related skills: [gcp-lb-ops](../../../gcp-lb-ops/SKILL.md) · [gcp-cdn-ops](../../../gcp-cdn-ops/SKILL.md) · [gcp-vpc-ops](../../../gcp-vpc-ops/SKILL.md)

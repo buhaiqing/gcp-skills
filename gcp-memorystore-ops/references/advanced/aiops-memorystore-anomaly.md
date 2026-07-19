@@ -250,5 +250,5 @@ Error codes follow [docs/error-taxonomy.md](../../../docs/error-taxonomy.md). Pr
 - [Cross-Skill Blast Radius](../../../docs/cross-skill-blast-radius.md) — T1–T4 impact model
 - [Monitoring Reference](../monitoring.md) — Redis metrics & alert policies
 - [Troubleshooting](../troubleshooting.md) — product-specific diagnosis
-- [VPC Ops AIOps](../gcp-vpc-ops/references/advanced/aiops-network-anomaly.md) — sibling AIOps runbook
-- [GCE Ops](../gcp-gce-ops/SKILL.md) / [GKE Ops](../gcp-gke-ops/SKILL.md) — dependent-skill coordination (T3)
+- [VPC Ops AIOps](../../../gcp-vpc-ops/references/advanced/aiops-network-anomaly.md) — sibling AIOps runbook
+- [GCE Ops](../../../gcp-gce-ops/SKILL.md) / [GKE Ops](../../../gcp-gke-ops/SKILL.md) — dependent-skill coordination (T3)

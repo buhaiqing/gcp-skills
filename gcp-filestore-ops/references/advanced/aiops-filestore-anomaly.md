@@ -143,6 +143,6 @@ gcloud filestore backups create "{{user.backup_name}}-$(date +%Y%m%d%H%M)" \
 
 ## Cross-Skill References
 
-- Error taxonomy: [../../docs/error-taxonomy.md](../../docs/error-taxonomy.md)
-- Blast radius map: [../../docs/cross-skill-blast-radius.md](../../docs/cross-skill-blast-radius.md)
-- Related skills: [gcp-gce-ops](../gcp-gce-ops/SKILL.md) · [gcp-vpc-ops](../gcp-vpc-ops/SKILL.md) · [gcp-kms-ops](../gcp-kms-ops/SKILL.md) · [gcp-billing-ops](../gcp-billing-ops/SKILL.md)
+- Error taxonomy: [../../docs/error-taxonomy.md](../../../docs/error-taxonomy.md)
+- Blast radius map: [../../docs/cross-skill-blast-radius.md](../../../docs/cross-skill-blast-radius.md)
+- Related skills: [gcp-gce-ops](../../../gcp-gce-ops/SKILL.md) · [gcp-vpc-ops](../../../gcp-vpc-ops/SKILL.md) · [gcp-kms-ops](../../../gcp-kms-ops/SKILL.md) · [gcp-billing-ops](../../../gcp-billing-ops/SKILL.md)

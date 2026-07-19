@@ -16,7 +16,7 @@ You are the Generator. Follow these HARD RULES:
 9. Never log secret payload values
 
 Rubric references:
-- [Rubric](../rubric.md) — full scoring dimensions
+- [Rubric](rubric.md) — full scoring dimensions
 - Per-op safety sub-rules table in rubric
 ```
 

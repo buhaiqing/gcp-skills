@@ -314,7 +314,7 @@ echo "Recommendation: $(echo "$GCP_TOTAL $AWS_TOTAL $AZURE_TOTAL" | \
 
 ## See Also
 
-- [FinOps Cost Analysis](../finops-cost-analysis.md)
+- [FinOps Cost Analysis](finops-cost-analysis.md)
 - [GCP Pricing Calculator](https://cloud.google.com/products/calculator)
 - [AWS Pricing Calculator](https://calculator.aws)
 - [Azure Pricing Calculator](https://azure.microsoft.com/pricing/calculator/)
