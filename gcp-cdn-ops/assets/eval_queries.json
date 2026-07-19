@@ -100,5 +100,39 @@
   {
     "query": "create a Cloud SQL instance",
     "should_trigger": false
+  },
+  {
+    "query": "Generate a signed URL for my-backend valid for 1 hour using key prod-key",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud compute sign-url.*--key-name=prod-key",
+    "dry_run_supported": true
+  },
+  {
+    "query": "Set CDN cache mode to CACHE_ALL_STATIC with client TTL 3600 on web-bs",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud compute backend-services update.*--cache-mode=CACHE_ALL_STATIC",
+    "dry_run_supported": true
+  },
+  {
+    "query": "Map backend bucket static-assets to url-map web-map as the default CDN route",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud compute url-maps add-path-matcher.*backend-bucket",
+    "dry_run_supported": true
+  },
+  {
+    "query": "Rotate the TLS certificate on the CDN HTTPS frontend to cert-new-2026",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud compute target-https-proxies update.*--ssl-certificates",
+    "dry_run_supported": true
+  },
+  {
+    "query": "Configure the CDN origin to point at storage bucket gs://my-assets for web-bs",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud compute backend-buckets update.*--gcs-bucket-name",
+    "dry_run_supported": true
+  },
+  {
+    "query": "Provision a new Compute Engine VM instance in us-central1-a",
+    "should_trigger": false
   }
 ]
