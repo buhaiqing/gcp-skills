@@ -148,6 +148,22 @@ This skill implements the GCL quality gate defined in `AGENTS.md §11`. As a **s
 |---------|------|---------|
 | 1.0.0 | 2026-06-07 | Initial GCL runner with mechanical Critic, `gcloud`/Python SDK support |
 
+## Trace Feedback (Closed-Loop Quality)
+
+`trace_feedback.py` closes the AIOps loop: it scans `audit-results/gcl-trace-*.json`
+and aggregates failures per skill into a quality report, so failure patterns flow
+back into skill improvement. Failure = `result != "PASS"`; dimensions clustered:
+`result` breakdown, `error_type`, `degraded_to_human`, low `safety_score` / `autonomy_ratio`.
+
+```bash
+# Report to stdout (default trace dir ./audit-results)
+python3 {{env.GCP_SKILLS_ROOT}}/gcp-gcl-runner-ops/trace_feedback.py --trace-dir ./audit-results
+
+# Persist report to a file
+python3 {{env.GCP_SKILLS_ROOT}}/gcp-gcl-runner-ops/trace_feedback.py \
+  --trace-dir ./audit-results --report-path skill-quality-report.md
+```
+
 ## See Also
 
 - [`audit-results/`](../audit-results/) — gitignored; ephemeral GCL trace storage
