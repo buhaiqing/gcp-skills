@@ -203,6 +203,14 @@ No planned items.
 
 ---
 
+## gcp-gcl-runner-ops
+
+| Planned Feature | Status | Notes |
+|----------------|--------|-------|
+| P4-1.1 Trajectory auto-classification (SUCCESS/FAILURE/ANOMALY) | ✅ | trajectory_classifier.py — classify_trace + classify_directory over local JSON traces, 13 tests |
+
+---
+
 ## gcp-terraform-ops
 
 | Planned Feature | Status | Notes |
