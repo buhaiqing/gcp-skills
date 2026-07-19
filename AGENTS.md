@@ -215,3 +215,157 @@ When a task fans out into multiple independent subagent units (e.g. one skill pe
 - Exception: if there is genuinely no pending/queued work, end the turn and wait for the ALL-COMPLETE notification.
 
 **Anti-pattern (forbidden):** holding completed work idle while polling for a full batch to close, then starting the next batch all at once. That wastes wall-clock time with no token benefit.
+
+---
+
+## 14. GCL Runner 可复用工程资产（CADL）
+
+> 本节沉淀自 `harness-optimization` sprint（2026-07-20）的工程实践，可直接复制到任何 GCL runner 项目。
+
+### §14.1 结构化日志模板（零依赖）
+
+在 `gcl_runner_enhanced.py` main() 的每个 phase 边界调用，14 处已验证：
+
+```python
+from gcl_logging import get_gcl_logger, log_gcl_event
+
+runner_logger = get_gcl_logger("gcl-runner", use_cloud_logging=False)
+
+# Phase 0: Pre-flight
+log_gcl_event(runner_logger, "PRE_FLIGHT", severity="INFO", skill=args.skill,
+              op=args.op, result="PRE_FLIGHT_COMPLETE", extra={"env": args.environment})
+
+# Phase 1: Generate（每轮循环）
+log_gcl_event(runner_logger, f"[ITER {i}] Generate complete", severity="INFO",
+              skill=args.skill, op=args.op, result="GENERATE_SUCCESS",
+              extra={"iteration": i, "exit_code": gen_trace.get("exit_code", -1),
+                     "duration_ms": gen_trace.get("duration_ms", 0)})
+
+# Phase 1: Critique（每轮循环）
+log_gcl_event(runner_logger, f"[ITER {i}] Critique complete", severity="INFO",
+              skill=args.skill, op=args.op, result="CRITIQUE_COMPLETE",
+              extra={"iteration": i, "correctness": crit.get("correctness", 0.0),
+                     "safety": crit.get("safety", 0.0)})
+
+# Phase 2: Decide（每轮循环）
+log_gcl_event(runner_logger, f"[ITER {i}] Decide: {verdict}",
+              severity="WARNING" if verdict in ("SAFETY_FAIL", "MAX_ITER") else "INFO",
+              skill=args.skill, op=args.op, result=f"DECIDE_{verdict}",
+              extra={"iteration": i, "verdict": verdict,
+                     "autonomy_ratio_preview": calculate_autonomy_ratio(...)})
+
+# Phase 4: Report（main() 末尾）
+log_gcl_event(runner_logger, f"GCL run complete: {trace.result.value}",
+              severity="INFO", skill=args.skill, op=args.op,
+              result=f"REPORT_{trace.result.value}",
+              extra={"trace_id": trace.trace_id, "final_verdict": trace.result.value,
+                     "total_iters": trace.iterations_count,
+                     "autonomy_ratio": round(trace.autonomy_ratio, 3),
+                     "safety_score": round(trace.safety_score, 3),
+                     "latency_ms": trace.latency_ms})
+```
+
+**字段规范**：`severity` in {INFO, WARNING, ERROR}，`result` = `PHASE_VERDICT` 格式，`extra` = 任意 JSON-serializable dict。
+
+### §14.2 Trace 自动分析（main() 末尾注入）
+
+在 main() 循环结束后、BigQuery 上报前插入，无需新依赖：
+
+```python
+trace_dir = args.output_dir or TRACE_DIR
+try:
+    classifications = classify_directory(trace_dir)
+    failures = [c for c in classifications if c.category.value != "SUCCESS"]
+    failure_clusters = cluster_failures(classifications) if failures else []
+    if failure_clusters:
+        print(f"[ANALYSIS] {len(failure_clusters)} failure cluster(s):")
+        for cl in failure_clusters[:5]:
+            print(f"  [{cl.category.value}] {cl.label}: {cl.count}x")
+except Exception as exc:
+    print(f"[WARN] trace analysis skipped: {exc}", file=sys.stderr)
+```
+
+**要求**：`from trajectory_classifier import classify_directory; from failure_clusterer import cluster_failures`
+
+### §14.3 CI Quality Gate（GitHub Actions）
+
+`.github/workflows/gcl-quality.yml` — PR 时触发，不在 fork PR 上运行 gcloud 认证：
+
+```yaml
+name: GCL Quality Gate
+on:
+  pull_request:
+    paths: ['gcp-*/**', 'docs/**', 'AGENTS.md', 'gcp-gcl-runner-ops/**', '.github/workflows/**']
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: npm install -g markdownlint-cli2 && npx markdownlint-cli2 "gcp-*/SKILL.md"
+      - run: pip install ruff && ruff check gcp-gcl-runner-ops/scripts/ --select=E,F
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: pip install pytest pytest-asyncio pyyaml && cd gcp-gcl-runner-ops && python3 -m pytest tests/ -q
+  self-review:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          for skill in gcp-*/SKILL.md; do
+            dir=$(dirname "$skill")
+            head -3 "$skill" | grep -q "^---" || { echo "[C1 FAIL] $skill"; exit 1; }
+            grep -q "SHOULD Use\|SHOULD NOT Use" "$skill" || { echo "[C2 FAIL] $dir"; exit 1; }
+            grep -q "Five Core Standards" "$skill" || { echo "[C3 FAIL] $dir"; exit 1; }
+            grep -q "Well-Architected\|Architecture Framework" "$skill" || { echo "[C4 FAIL] $dir"; exit 1; }
+            grep -q "^## Variables" "$skill" || { echo "[C5 FAIL] $dir"; exit 1; }
+            if grep -q "references/rubric.md" "$skill" && [ ! -f "$dir/references/rubric.md" ]; then
+              echo "[C7 FAIL] $dir"; exit 1
+            fi
+          done
+```
+
+### §14.4 self-review C7 增补
+
+在 `docs/post-update-self-review.md` 的 R1 检查表末尾添加：
+
+```markdown
+| **C7** | **Rubric 存在性** | `grep -q "references/rubric.md" SKILL.md && test -f "references/rubric.md"` | Both true: SKILL.md references AND file exists | Add rubric.md link or create the file |
+```
+
+同步更新验证脚本：`for check in C1 C2 C3 C4 C5 C6 C7`。
+
+### §14.5 AIOps 模块接入检查单
+
+增强 runner 的 AIOps 接入验证命令：
+
+```bash
+# 验证 AIOps 模块已接入 main()（≥8 处）
+grep -c "DegradationDetector\|KnowledgeQueryAPI\|AutonomyRatioCalculator\|AutonomyRatioTracker\|AutonomyRatioAlert\|classify_directory\|cluster_failures" gcl_runner_enhanced.py
+
+# 验证结构化日志覆盖（≥14 处）
+grep -c "log_gcl_event(" gcl_runner_enhanced.py
+
+# 验证测试基线未回归
+python3 -m pytest gcp-gcl-runner-ops/tests/ -q
+# 必须: 614 passed, 13 skipped, 0 failed
+```
+
+### §14.6 快速验证命令集（每次提交前必跑）
+
+```bash
+# 1. 测试基线
+python3 -m pytest gcp-gcl-runner-ops/tests/ -q
+
+# 2. ruff lint（scripts）
+ruff check gcp-gcl-runner-ops/scripts/ --select=E,F || true
+
+# 3. rubric 覆盖（所有 skill）
+ls gcp-*-ops/references/rubric.md 2>/dev/null | wc -l
+# 期望: 24
+
+# 4. 结构化日志密度
+grep -c "log_gcl_event(" gcp-gcl-runner-ops/scripts/gcl_runner_enhanced.py
+# 期望: ≥14
+```

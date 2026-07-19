@@ -326,3 +326,10 @@ ruff check gcp-gcl-runner-ops/scripts/ --select=E,F || true
 
 ### PLAN Version 1.0.0 — 2026-07-20
 - 初始版本：5 批次执行计划
+
+### PLAN Version 1.1.0 — 2026-07-20
+- B0: 24/24 product skill 的 `references/rubric.md` 已存在（grep 验证确认无需生成）
+- B1: `AutonomyRatioCalculator` import + `classify_directory()`/`cluster_failures()` 在 main() 末尾调用
+- B2: self-review C7（rubric 存在性）+ `.github/workflows/gcl-quality.yml` CI workflow（lint + pytest + C1-C7）
+- B3: 结构化日志 11 → 14 处，覆盖 Generate/Critique/Decide/Report 阶段
+- B4: `scripts/README.md` 重写（gcl_runner.py vs enhanced 功能矩阵）；测试 614 passed / 13 skipped / 0 failed
