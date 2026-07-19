@@ -8,20 +8,7 @@
 
 ### Go Runtime Bootstrap
 
-```bash
-if ! command -v go &> /dev/null; then
-    OS=$(uname -s | tr '[:upper:]' '[:lower:]')
-    ARCH=$(uname -m)
-    [ "$ARCH" = "x86_64" ] && ARCH="amd64"
-    [ "$ARCH" = "aarch64" ] && ARCH="arm64"
-    mkdir -p /tmp/go-runtime
-    curl -fsSL "https://go.dev/dl/go1.24.0.${OS}-${ARCH}.tar.gz" | tar -xz -C /tmp/go-runtime
-    export PATH="/tmp/go-runtime/go/bin:$PATH"
-    export GOPATH="/tmp/go-workspace"
-    export GOCACHE="/tmp/go-cache"
-fi
-go version
-```
+> See AGENTS.md §0.2 — embedded Go JIT bootstrap (do not duplicate here).
 
 ### JIT Go SDK Workflow
 

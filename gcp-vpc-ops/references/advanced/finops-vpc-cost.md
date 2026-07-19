@@ -269,16 +269,15 @@ gcloud billing budgets create \
   --budget-amount=500USD \
   --threshold-rules=percent=0.5 \
   --filter-projects="projects/{{env.CLOUDSDK_CORE_PROJECT}}" \
-  --filter-labels="service:networking"
 ```
 
 ### Cost Explorer Queries
 
 ```bash
 # Query networking costs
-gcloud billing accounts describe "{{user.billing_account_id}}" \
+gcloud beta billing accounts describe "{{user.billing_account_id}}" \
   --format="json" | \
-  jq '.costBreakdown.network'
+  jq '.costOptimizationRecommendations'
 
 # List top-cost VPC resources
 gcloud billing budgets list \
