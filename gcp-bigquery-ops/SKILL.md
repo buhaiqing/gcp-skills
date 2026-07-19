@@ -452,3 +452,7 @@ gcloud config set project "{{env.CLOUDSDK_CORE_PROJECT}}"
 - **Performance**: Partition large tables, cluster on filter columns, use materialized views
 - **Data governance**: Dataset-level access controls, table expiration policies, audit trails
 - **Naming**: `{project}_{dataset}_{table}` — descriptive, consistent, lowercase with underscores
+
+## AIOps Self-Healing
+
+For anomaly-driven automated remediation (slot quota exhaustion, long-running query blocking, storage anomaly growth, export failure), see the closed-loop playbook: [references/advanced/aiops-bigquery-anomaly.md](references/advanced/aiops-bigquery-anomaly.md#self-healing-playbook). Every remediation follows **detect → dry-run preview → gate → idempotent apply**; dataset deletion and IAM changes are **HALT** (human confirmation required). Credential masking per AGENTS.md §0.1.
