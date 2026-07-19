@@ -10,6 +10,7 @@ from __future__ import annotations
 from unittest.mock import MagicMock, patch
 
 import pytest
+from google.api_core.exceptions import NotFound
 
 
 class TestCreateOrUpdateMetric:
@@ -20,9 +21,9 @@ class TestCreateOrUpdateMetric:
         """Test creating a new metric when it doesn't exist."""
         from scripts.create_log_metrics import create_or_update_metric
 
-        # Setup mock
+        # Setup mock: get_log_metric raises NotFound (metric does not exist)
         mock_client = MagicMock()
-        mock_client.get_log_metric.side_effect = Exception("Not found")
+        mock_client.get_log_metric.side_effect = NotFound("not found")
         mock_logging_v2.LoggingServiceV2Client.return_value = mock_client
 
         metric_def = {
