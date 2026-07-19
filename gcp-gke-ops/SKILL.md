@@ -508,6 +508,14 @@ Every `gcp-*-ops` SKILL.md MUST include this section. Rules TE-1 to TE-7 sourced
 
 **Non-compressible**: Agent-executable commands (params, JSON paths), error recovery logic, safety gates, credential rules, cross-skill orchestration chains.
 
+## AIOps 自愈 (Self-Healing)
+
+GKE 异常检测与自愈闭环（节点 NotReady / 节点池扩容失败 / 工作负载 CrashLoopBackOff / HPA 上限）的完整 runbook，含 detection → DRY-RUN preview → 门禁 → 幂等 apply，以及 HALT 路径（节点池删除/版本升级回滚）与闭环反馈模式：
+
+- [AIOps 自愈 Playbook](references/advanced/aiops-gke-anomaly.md#self-healing-playbook)
+
+> 自愈遵循 `AGENTS.md §0.1` 凭证遮蔽、`docs/error-taxonomy.md` 错误分类、`AGENTS.md §5/§7` 跨技能爆炸半径约束，并通过 `gcp-gcl-runner-ops/trace_feedback.py` 回写 GCL 闭环。
+
 ## Changelog
 
 | Version | Date | Changes |
