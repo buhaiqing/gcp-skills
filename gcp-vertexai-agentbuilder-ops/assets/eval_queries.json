@@ -1,0 +1,191 @@
+[
+  {
+    "query": "create a Vertex AI Agent Builder agent named order-bot",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud ai agents create",
+    "dry_run_supported": false
+  },
+  {
+    "query": "list all agents in my project",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud ai agents list",
+    "dry_run_supported": false
+  },
+  {
+    "query": "describe agent my-agent-01",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud ai agents describe",
+    "dry_run_supported": false
+  },
+  {
+    "query": "update my agent's display name",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud ai agents update",
+    "dry_run_supported": false
+  },
+  {
+    "query": "delete agent test-agent",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud ai agents delete",
+    "dry_run_supported": false,
+    "safety_check": true
+  },
+  {
+    "query": "register a function calling tool for my agent",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud ai agents tools create",
+    "dry_run_supported": false
+  },
+  {
+    "query": "create a new conversation session for my agent",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud ai agents sessions create",
+    "dry_run_supported": false
+  },
+  {
+    "query": "send a message to my agent using streaming",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud ai agents run.*--streaming",
+    "dry_run_supported": true
+  },
+  {
+    "query": "detect the intent of user input",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud ai agents detect-intent",
+    "dry_run_supported": false
+  },
+  {
+    "query": "delete a conversation session",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud ai agents sessions delete",
+    "dry_run_supported": false,
+    "safety_check": true
+  },
+  {
+    "query": "list all tools registered for my agent",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud ai agents tools list",
+    "dry_run_supported": false
+  },
+  {
+    "query": "export my agent config to GCS",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud ai agents export",
+    "dry_run_supported": false
+  },
+  {
+    "query": "import an agent from GCS bucket",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud ai agents import",
+    "dry_run_supported": false
+  },
+  {
+    "query": "build a chatbot using Vertex AI Agent Builder",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud ai agents create",
+    "dry_run_supported": false
+  },
+  {
+    "query": "configure grounding with Vertex AI Search for my agent",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud ai agents tools create",
+    "dry_run_supported": false
+  },
+  {
+    "query": "monitor my agent's conversation latency",
+    "should_trigger": true,
+    "expected_cmd_pattern": "monitoring",
+    "dry_run_supported": false
+  },
+  {
+    "query": "tune the underlying LLM model for my agent",
+    "should_trigger": false,
+    "expected_cmd_pattern": "vertexai-ops"
+  },
+  {
+    "query": "check my monthly GCP bill",
+    "should_trigger": false,
+    "expected_cmd_pattern": "gcp-billing-ops"
+  },
+  {
+    "query": "create a GCS bucket for agent exports",
+    "should_trigger": false,
+    "expected_cmd_pattern": "gcp-gcs-ops"
+  },
+  {
+    "query": "grant IAM permissions to my agent service account",
+    "should_trigger": false,
+    "expected_cmd_pattern": "gcp-iam-ops"
+  },
+  {
+    "query": "deploy my agent to production",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud ai agents update",
+    "dry_run_supported": false
+  },
+  {
+    "query": "check the conversation history of a session",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud ai agents sessions list",
+    "dry_run_supported": false
+  },
+  {
+    "query": "fix a tool that's not being invoked by my agent",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud ai agents tools",
+    "dry_run_supported": false
+  },
+  {
+    "query": "set up a Dialogflow CX agent",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud ai agents",
+    "dry_run_supported": false
+  },
+  {
+    "query": "how do I register a webhook as a tool for my Vertex AI agent",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud ai agents tools create",
+    "dry_run_supported": false
+  },
+  {
+    "query": "I want to build an enterprise RAG chatbot with Vertex AI",
+    "should_trigger": true,
+    "expected_cmd_pattern": "gcloud ai agents create.*tools",
+    "dry_run_supported": false
+  },
+  {
+    "query": "rotate the service account key for my agent builder SA",
+    "should_trigger": false,
+    "expected_cmd_pattern": "gcp-iam-ops"
+  },
+  {
+    "query": "configure autoscaling for my agent's tool endpoint",
+    "should_trigger": false,
+    "expected_cmd_pattern": "gcp-cloudrun-ops"
+  },
+  {
+    "query": "create a Vertex AI tuning job for the agent model",
+    "should_trigger": false,
+    "expected_cmd_pattern": "gcp-vertexai-ops"
+  },
+  {
+    "query": "set up a VPC for my agent's tool endpoints",
+    "should_trigger": false,
+    "expected_cmd_pattern": "gcp-vpc-ops"
+  },
+  {
+    "query": "set up a private VPC endpoint for my agent's tool service",
+    "should_trigger": false,
+    "expected_cmd_pattern": "gcp-vpc-ops"
+  },
+  {
+    "query": "configure a Cloud Run service to handle agent tool webhooks",
+    "should_trigger": false,
+    "expected_cmd_pattern": "gcp-cloudrun-ops"
+  },
+  {
+    "query": "set up Pub/Sub for agent event notifications",
+    "should_trigger": false,
+    "expected_cmd_pattern": "gcp-pubsub-ops"
+  }
+]

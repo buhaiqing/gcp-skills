@@ -1,0 +1,127 @@
+# Example Configuration — Vertex AI Agent Builder
+
+# Environment defaults
+x-env: &env
+  project: "my-gcp-project"
+  location: "us-central1"
+  credentials: &creds "/path/to/sa-key.json"
+
+# Agent definition
+x-agent-base: &agent
+  <<: *env
+  display_name: "order-agent"
+  description: "Customer order assistance agent"
+  language_code: "en"
+  time_zone: "America/New_York"
+  default_llm_model: "gemini-2.0-flash-001"
+
+# Agent with grounding
+agent_with_grounding:
+  <<: *agent
+  display_name: "support-agent-grounded"
+  description: "Support agent with enterprise knowledge grounding"
+  tools:
+    - tool_type: "VERTEX_AI_SEARCH"
+      datastore: "projects/my-gcp-project/locations/global/collections/default_collection/dataStores/enterprise-kb"
+      max_results: 5
+    - tool_type: "FUNCTION_CALLING"
+      name: "get_order_status"
+      description: "Retrieve order status by order ID"
+      webhook_uri: "https://my-service.example.com/api/order/status"
+      openapi_spec: "./tools/get_order_status.yaml"
+
+# Tool definition (OpenAPI 3.0)
+tools:
+  get_order_status:
+    openapi: "3.0.0"
+    info:
+      title: "Order Service API"
+      version: "1.0.0"
+    paths:
+      /order/status:
+        get:
+          operationId: "getOrderStatus"
+          parameters:
+            - name: orderId
+              in: query
+              required: true
+              schema:
+                type: string
+                pattern: "^ORD-[0-9]{6}$"
+          responses:
+            "200":
+              description: "Order status retrieved"
+              content:
+                application/json:
+                  schema:
+                    type: object
+                    properties:
+                      orderId:
+                        type: string
+                      status:
+                        type: string
+                        enum: [pending, processing, shipped, delivered]
+                      eta:
+                        type: string
+                        format: date-time
+
+  check_inventory:
+    openapi: "3.0.0"
+    info:
+      title: "Inventory Service"
+      version: "1.0.0"
+    paths:
+      /inventory/check:
+        post:
+          operationId: "checkInventory"
+          requestBody:
+            required: true
+            content:
+              application/json:
+                schema:
+                  type: object
+                  required: [sku, warehouseId]
+                  properties:
+                    sku:
+                      type: string
+                    warehouseId:
+                      type: string
+          responses:
+            "200":
+              description: "Inventory available"
+
+# Session configuration
+session_config:
+  <<: *env
+  session_ttl: "1800s"          # 30 minutes (default)
+  language_code: "en"
+  time_zone: "America/New_York"
+
+# Monitoring config
+monitoring:
+  <<: *env
+  latency_threshold_p95: 5       # seconds
+  fallback_rate_threshold: 0.20   # 20%
+  error_rate_threshold: 0.05      # 5%
+  alert_channels:
+    - "CHANNEL_ID_1"
+    - "CHANNEL_ID_2"
+
+# Backup config
+backup:
+  <<: *env
+  gcs_bucket: "gs://my-backup-bucket/agent-exports"
+  schedule: "0 2 * * *"          # Daily at 2am UTC
+  retention_days: 30
+
+# Production environment
+production:
+  <<: *env
+  location: "us-central1"
+  agent:
+    <<: *agent
+    display_name: "order-agent-prod"
+  tools:
+    - tool_type: "FUNCTION_CALLING"
+      name: "get_order_status"
+      webhook_uri: "https://prod-service.example.com/api/order/status"
